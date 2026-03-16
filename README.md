@@ -40,7 +40,7 @@ The dedicated team from section **CS32S3** behind this project includes:
 * **Instructor:** Ms. Elizzette Joy Mationg 👩‍🏫 
 
 
-* **Term:** Midterm Period, S.Y. 2025-2026 📅 
+* **Term:** S.Y. 2025-2026 📅 
 
 
 ---
