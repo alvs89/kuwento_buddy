@@ -1,0 +1,43 @@
+name: kuwentobuddy
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+dependencies:
+  confetti: 0.8.0
+  fluttertoast: ^9.0.0
+  flutter_tts: ^4.0.0
+  shared_preferences: ^2.0.0
+  cloud_firestore: '>=5.5.0'
+  firebase_auth: '>=5.3.3'
+  firebase_core: '>=2.21.1'
+  google_sign_in: ^6.2.2
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  go_router: ^16.2.0
+  provider: ^6.1.2
+  http: ^1.2.2
+  flutter_svg: ^2.0.10+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icons/kuwentobuddy_icon.png
+  remove_alpha_ios: true

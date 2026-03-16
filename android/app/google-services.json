@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "1027680552915",
+    "project_id": "kuwentobuddy-57511",
+    "storage_bucket": "kuwentobuddy-57511.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1027680552915:android:98db5fd47d392010bf1126",
+        "android_client_info": {
+          "package_name": "com.kuwentobuddy.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1027680552915-55ue9dr5lsttuqb0qauimh5ceulc5q69.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kuwentobuddy.app",
+            "certificate_hash": "bb9267c862f825882ae564e96961473fc72e0c77"
+          }
+        },
+        {
+          "client_id": "1027680552915-vn72vfpet2lapdte0l7nhvgk7og8ugbq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpRbpRL6ZjEdjIToJPnoASZIjVd_H3p1M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1027680552915-vn72vfpet2lapdte0l7nhvgk7og8ugbq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1027680552915-4q10o0r7v7l353sqdkbuhh4lj934dkai.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.CounterApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1027680552915:android:d1423072f698e56ebf1126",
+        "android_client_info": {
+          "package_name": "com.mycompany.CounterApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1027680552915-cl9ggqj3426pbpbd6fjkc7m1irqs5kvl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.CounterApp",
+            "certificate_hash": "bb9267c862f825882ae564e96961473fc72e0c77"
+          }
+        },
+        {
+          "client_id": "1027680552915-vn72vfpet2lapdte0l7nhvgk7og8ugbq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpRbpRL6ZjEdjIToJPnoASZIjVd_H3p1M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1027680552915-vn72vfpet2lapdte0l7nhvgk7og8ugbq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1027680552915-4q10o0r7v7l353sqdkbuhh4lj934dkai.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.CounterApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

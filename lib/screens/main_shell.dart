@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:kuwentobuddy/theme.dart';
+import 'package:kuwentobuddy/widgets/buddy_companion.dart';
+
+/// Main shell with bottom navigation - Spotify-style layout
+class MainShell extends StatelessWidget {
+  final Widget child;
+  final int currentIndex;
+
+  const MainShell({
+    super.key,
+    required this.child,
+    required this.currentIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final media = MediaQuery.of(context);
+    final bottomInset = media.padding.bottom;
+    final keyboardInset = media.viewInsets.bottom;
+    final buddySize = media.size.width < 360 ? 60.0 : 68.0;
+    final buddyBottomOffset = media.size.width < 360 ? 62.0 : 58.0;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          child,
+          if (keyboardInset == 0)
+            Positioned(
+              right: AppSpacing.md,
+              bottom: AppSpacing.xs + bottomInset + buddyBottomOffset,
+              child: IgnorePointer(
+                child: BuddyCompanion(
+                  state: BuddyState.happy,
+                  size: buddySize,
+                  showSpeechBubble: false,
+                ),
+              ),
+            ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? KuwentoColors.cardDark : Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home,
+                  label: 'Home',
+                  isActive: currentIndex == 0,
+                  onTap: () => context.go('/'),
+                ),
+                _NavItem(
+                  icon: Icons.search_outlined,
+                  activeIcon: Icons.search,
+                  label: 'Search',
+                  isActive: currentIndex == 1,
+                  onTap: () => context.go('/search'),
+                ),
+                _NavItem(
+                  icon: Icons.library_books_outlined,
+                  activeIcon: Icons.library_books,
+                  label: 'My Library',
+                  isActive: currentIndex == 2,
+                  onTap: () => context.go('/my-stories'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isActive
+              ? KuwentoColors.deepTeal.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive
+                  ? KuwentoColors.deepTeal
+                  : (isDark ? Colors.white54 : KuwentoColors.textMuted),
+              size: 26,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: isActive
+                    ? KuwentoColors.deepTeal
+                    : (isDark ? Colors.white54 : KuwentoColors.textMuted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
