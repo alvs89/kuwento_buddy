@@ -1,3 +1,5 @@
+⚠️ Academic Integrity Notice: This repository is a dedicated workspace for an ongoing project at the Technological Institute of the Philippines. Access and use of these files are strictly limited to the members of Group 8 (CS32S3). We kindly ask that external visitors do not fork, pull, or distribute this source code.
+
 # 📖 KuwentoBuddy: Your Interactive Reading Companion
 
 **KuwentoBuddy** is a mobile learning application designed to help users of all ages improve their reading comprehension skills through an interactive and engaging experience. By transforming passive reading into an active **"Read-Think-Continue"** dialogue, the app ensures that learners don't just recognize words but truly understand the narrative flow.
