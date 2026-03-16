@@ -1,11 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/models/question_model.dart';
 import 'package:kuwentobuddy/models/user_model.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
-import 'package:kuwentobuddy/services/user_service.dart';
 import 'package:kuwentobuddy/services/toast_service.dart';
 
 /// Story session state for tracking progress
@@ -16,7 +13,6 @@ enum SessionState { reading, questioning, completed }
 class StoryController extends ChangeNotifier {
   final StoryModel story;
   final AuthService _authService = AuthService();
-  final UserService _userService = UserService();
   final ToastService _toastService = ToastService();
 
   // Current segment index
@@ -105,32 +101,47 @@ class StoryController extends ChangeNotifier {
   /// Load saved progress
   Future<void> _loadProgress() async {
     try {
-      final user = _authService.currentUser;
-      if (user != null) {
-        final progress = user.storyProgress[story.id];
-        if (progress != null && !progress.isCompleted) {
-          _currentSegmentIndex = progress.currentSegmentIndex;
-          _unlockedSegmentIndex = progress.currentSegmentIndex;
-          _correctAnswers = progress.correctAnswers;
-          _totalQuestions = progress.totalQuestions;
-          _skillCorrect.addAll(progress.skillCorrect);
-          _skillTotal.addAll(progress.skillTotal);
-          notifyListeners();
-        }
+      final user = await _waitForHydratedUser();
+      if (user == null) return;
+
+      final progress = user.storyProgress[story.id];
+      if (progress != null && !progress.isCompleted) {
+        _currentSegmentIndex = progress.currentSegmentIndex;
+        _unlockedSegmentIndex = progress.currentSegmentIndex;
+        _correctAnswers = progress.correctAnswers;
+        _totalQuestions = progress.totalQuestions;
+        _skillCorrect.addAll(progress.skillCorrect);
+        _skillTotal.addAll(progress.skillTotal);
+        notifyListeners();
+      } else if (progress == null) {
+        // Seed first-open progress so Firestore reflects started stories.
+        await _saveProgress();
       }
     } catch (e) {
       debugPrint('Error loading progress: $e');
     }
   }
 
+  Future<UserModel?> _waitForHydratedUser() async {
+    // Auth state can still be hydrating when a story opens; retry briefly.
+    for (var attempt = 0; attempt < 8; attempt++) {
+      final current = _authService.currentUser;
+      if (current != null) return current;
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    return _authService.currentUser;
+  }
+
   /// Save current progress
   Future<void> _saveProgress() async {
     try {
-      final userSnapshot = _authService.currentUser;
+      final userSnapshot =
+          _authService.currentUser ?? await _waitForHydratedUser();
       if (userSnapshot == null) return;
 
       final progress = StoryProgress(
         storyId: story.id,
+        storyTitle: story.title,
         currentSegmentIndex: _currentSegmentIndex,
         totalSegments: totalSegments,
         isCompleted: _sessionState == SessionState.completed,

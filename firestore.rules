@@ -1,19 +1,232 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection - Private access
-    match /users/{userId} {
-      // Users can only read/write their own data
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow create for new users
-      allow create: if request.auth != null && request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
-    
+
+    function isNumeric(value) {
+      return value is int || value is float;
+    }
+
+    function isTimestampOrNull(value) {
+      return value == null || value is timestamp;
+    }
+
+    function validPreferences(pref) {
+      return pref is map
+        && pref.keys().hasOnly([
+          'voiceGender',
+          'language',
+          'voiceSpeed',
+          'enableTTS',
+          'enableAnimations',
+        ])
+        && (!('voiceGender' in pref) || pref.voiceGender is string)
+        && (!('language' in pref) || pref.language is string)
+        && (!('voiceSpeed' in pref) || isNumeric(pref.voiceSpeed))
+        && (!('enableTTS' in pref) || pref.enableTTS is bool)
+        && (!('enableAnimations' in pref) || pref.enableAnimations is bool);
+    }
+
+    function validUserDoc() {
+      return request.resource.data.keys().hasOnly([
+        'displayName',
+        'email',
+        'photoUrl',
+        'totalStars',
+        'storiesCompleted',
+        'progressCount',
+        'favoritesCount',
+        'completedCount',
+        'isGuest',
+        'createdAt',
+        'updatedAt',
+        'preferences',
+        'schemaVersion',
+        // Legacy fields kept for backward compatibility.
+        'favoriteStoryIds',
+        'storyProgress',
+      ])
+      && (!('displayName' in request.resource.data) || request.resource.data.displayName is string || request.resource.data.displayName == null)
+      && (!('email' in request.resource.data) || request.resource.data.email is string || request.resource.data.email == null)
+      && (!('photoUrl' in request.resource.data) || request.resource.data.photoUrl is string || request.resource.data.photoUrl == null)
+      && (!('totalStars' in request.resource.data) || request.resource.data.totalStars is int)
+      && (!('storiesCompleted' in request.resource.data) || request.resource.data.storiesCompleted is int)
+      && (!('progressCount' in request.resource.data) || request.resource.data.progressCount is int)
+      && (!('favoritesCount' in request.resource.data) || request.resource.data.favoritesCount is int)
+      && (!('completedCount' in request.resource.data) || request.resource.data.completedCount is int)
+      && (!('isGuest' in request.resource.data) || request.resource.data.isGuest is bool)
+      && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+      && ('updatedAt' in request.resource.data && request.resource.data.updatedAt is timestamp)
+      && (!('schemaVersion' in request.resource.data) || request.resource.data.schemaVersion is int)
+      && (!('preferences' in request.resource.data) || validPreferences(request.resource.data.preferences))
+      && (!('favoriteStoryIds' in request.resource.data) || request.resource.data.favoriteStoryIds is list)
+      && (!('storyProgress' in request.resource.data) || request.resource.data.storyProgress is map);
+    }
+
+    function validUserUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'displayName',
+        'email',
+        'photoUrl',
+        'totalStars',
+        'storiesCompleted',
+        'progressCount',
+        'favoritesCount',
+        'completedCount',
+        'isGuest',
+        'createdAt',
+        'updatedAt',
+        'preferences',
+        'schemaVersion',
+        'favoriteStoryIds',
+        'storyProgress',
+      ]) && validUserDoc();
+    }
+
+    function validProgressDoc(storyId) {
+      return request.resource.data.keys().hasOnly([
+        'storyId',
+        'storyTitle',
+        'currentSegmentIndex',
+        'lastPage', // Legacy alias
+        'comprehensionScore',
+        'isCompleted',
+        'completed', // Legacy alias
+        'correctAnswers',
+        'totalQuestions',
+        'starsEarned',
+        'totalSegments',
+        'skillCorrect',
+        'skillTotal',
+        'startedAt',
+        'completedAt',
+        'updatedAt',
+      ])
+      && request.resource.data.storyId == storyId
+      && (!('storyTitle' in request.resource.data) || request.resource.data.storyTitle is string)
+      && (
+        ('currentSegmentIndex' in request.resource.data && request.resource.data.currentSegmentIndex is int)
+        ||
+        ('lastPage' in request.resource.data && request.resource.data.lastPage is int)
+      )
+      && (!('comprehensionScore' in request.resource.data) || isNumeric(request.resource.data.comprehensionScore))
+      && (
+        ('isCompleted' in request.resource.data && request.resource.data.isCompleted is bool)
+        ||
+        ('completed' in request.resource.data && request.resource.data.completed is bool)
+      )
+      && (!('correctAnswers' in request.resource.data) || request.resource.data.correctAnswers is int)
+      && (!('totalQuestions' in request.resource.data) || request.resource.data.totalQuestions is int)
+      && (!('starsEarned' in request.resource.data) || request.resource.data.starsEarned is int)
+      && (!('totalSegments' in request.resource.data) || request.resource.data.totalSegments is int)
+      && (!('skillCorrect' in request.resource.data) || request.resource.data.skillCorrect is map)
+      && (!('skillTotal' in request.resource.data) || request.resource.data.skillTotal is map)
+      && (!('startedAt' in request.resource.data) || request.resource.data.startedAt is timestamp)
+      && (!('completedAt' in request.resource.data) || isTimestampOrNull(request.resource.data.completedAt))
+      && ('updatedAt' in request.resource.data && request.resource.data.updatedAt is timestamp);
+    }
+
+    function validProgressUpdate(storyId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'storyId',
+        'storyTitle',
+        'currentSegmentIndex',
+        'lastPage',
+        'comprehensionScore',
+        'isCompleted',
+        'completed',
+        'correctAnswers',
+        'totalQuestions',
+        'starsEarned',
+        'totalSegments',
+        'skillCorrect',
+        'skillTotal',
+        'startedAt',
+        'completedAt',
+        'updatedAt',
+      ]) && validProgressDoc(storyId);
+    }
+
+    function validFavoriteDoc(storyId) {
+      return request.resource.data.keys().hasOnly([
+        'storyId',
+        'storyTitle',
+        'addedAt',
+      ])
+      && request.resource.data.storyId == storyId
+      && request.resource.data.storyTitle is string
+      && request.resource.data.addedAt is timestamp;
+    }
+
+    function validFavoriteUpdate(storyId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'storyId',
+        'storyTitle',
+        'addedAt',
+      ]) && validFavoriteDoc(storyId);
+    }
+
+    function validCompletedDoc(storyId) {
+      return request.resource.data.keys().hasOnly([
+        'storyId',
+        'storyTitle',
+        'score',
+        'completedAt',
+      ])
+      && request.resource.data.storyId == storyId
+      && (!('storyTitle' in request.resource.data) || request.resource.data.storyTitle is string)
+      && isNumeric(request.resource.data.score)
+      && request.resource.data.completedAt is timestamp;
+    }
+
+    function validCompletedUpdate(storyId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'storyId',
+        'storyTitle',
+        'score',
+        'completedAt',
+      ]) && validCompletedDoc(storyId);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && validUserDoc();
+      allow update: if isOwner(userId) && validUserUpdate();
+      allow delete: if false;
+
+      match /storyProgress/{storyId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validProgressDoc(storyId);
+        allow update: if isOwner(userId) && validProgressUpdate(storyId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /favorites/{storyId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validFavoriteDoc(storyId);
+        allow update: if isOwner(userId) && validFavoriteUpdate(storyId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /completedStories/{storyId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validCompletedDoc(storyId);
+        allow update: if isOwner(userId) && validCompletedUpdate(storyId);
+        allow delete: if isOwner(userId);
+      }
+    }
+
     // Stories collection - Public read access (if we add it later)
     match /stories/{storyId} {
       allow read: if true;
       allow write: if false; // Only admin can write stories
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

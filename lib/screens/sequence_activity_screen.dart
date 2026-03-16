@@ -157,11 +157,13 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
     final completedProgress = (existingProgress ??
             StoryProgress(
               storyId: story.id,
+              storyTitle: story.title,
               totalSegments: story.totalSegments,
               startedAt: now,
               updatedAt: now,
             ))
         .copyWith(
+      storyTitle: existingProgress?.storyTitle ?? story.title,
       currentSegmentIndex:
           story.totalSegments > 0 ? story.totalSegments - 1 : 0,
       totalSegments: story.totalSegments,

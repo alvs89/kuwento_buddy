@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -16,7 +17,7 @@ import 'package:kuwentobuddy/services/tts_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Firebase must be ready before creating AuthService/FirebaseAuth instances.
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -30,17 +31,8 @@ void main() async {
     ),
   );
 
-  // Initialize services
   final authService = AuthService();
-  await authService.initialize();
-
   final ttsService = TTSService();
-  await ttsService.initialize();
-
-  final currentUser = authService.currentUser;
-  if (currentUser != null) {
-    await ttsService.applyPreferences(currentUser.preferences);
-  }
 
   runApp(
     MultiProvider(
@@ -51,6 +43,26 @@ void main() async {
       child: const KuwentoBuddyApp(),
     ),
   );
+
+  // Bootstrap heavy startup work in background so splash renders immediately.
+  unawaited(_bootstrapServices(authService, ttsService));
+}
+
+Future<void> _bootstrapServices(
+  AuthService authService,
+  TTSService ttsService,
+) async {
+  try {
+    await authService.initialize();
+    await ttsService.initialize();
+
+    final currentUser = authService.currentUser;
+    if (currentUser != null) {
+      await ttsService.applyPreferences(currentUser.preferences);
+    }
+  } catch (e) {
+    debugPrint('App bootstrap failed: $e');
+  }
 }
 
 class KuwentoBuddyApp extends StatelessWidget {

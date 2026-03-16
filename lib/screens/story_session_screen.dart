@@ -175,7 +175,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     final user = authService.currentUser;
     if (user == null || _story == null) return;
 
-    final isNowFavorite = await authService.toggleFavoriteStory(_story!.id);
+    final isNowFavorite = await authService.toggleFavoriteStory(
+      _story!.id,
+      storyTitle: _story!.title,
+    );
     if (isNowFavorite) {
       _toastService.showSuccess('Added to favorites! ❤️');
     } else {

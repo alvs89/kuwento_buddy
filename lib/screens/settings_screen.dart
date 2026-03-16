@@ -71,8 +71,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _ensureSpeedInitialized(AuthService authService, TTSService ttsService) {
     if (_speedInitialized) return;
 
-    _voiceSpeed =
-        authService.currentUser?.preferences.voiceSpeed ?? ttsService.voiceSpeedMultiplier;
+    _voiceSpeed = authService.currentUser?.preferences.voiceSpeed ??
+        ttsService.voiceSpeedMultiplier;
     _voiceSpeed = _voiceSpeed.clamp(0.5, 2.0);
     _speedInitialized = true;
   }
@@ -99,6 +99,147 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _savingVoiceSpeed = false;
     });
     _toastService.showSuccess('Voice speed saved');
+  }
+
+  Future<void> _confirmAndSignOut(AuthService authService) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final shouldSignOut = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final size = MediaQuery.of(dialogContext).size;
+        final compact = size.width < 360;
+        final maxDialogWidth = compact ? size.width * 0.94 : 420.0;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.lg,
+          ),
+          backgroundColor: Colors.transparent,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxDialogWidth),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: isDark ? KuwentoColors.cardDark : Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(
+                  color: KuwentoColors.pastelBlue.withValues(alpha: 0.25),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.14),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: KuwentoColors.softCoral.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: KuwentoColors.softCoral,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Sign out?',
+                    style: Theme.of(dialogContext)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isDark ? Colors.white : KuwentoColors.textPrimary,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Do you want to sign out of your account? You can sign back in anytime.',
+                    style:
+                        Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+                              color: isDark
+                                  ? Colors.white70
+                                  : KuwentoColors.textSecondary,
+                              height: 1.4,
+                            ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    height: 48,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            style: OutlinedButton.styleFrom(
+                              fixedSize: const Size.fromHeight(48),
+                              side: BorderSide(
+                                color: KuwentoColors.pastelBlue
+                                    .withValues(alpha: 0.55),
+                                width: 1.4,
+                              ),
+                              padding: EdgeInsets.zero,
+                              foregroundColor: isDark
+                                  ? Colors.white70
+                                  : KuwentoColors.textSecondary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
+                              ),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            style: FilledButton.styleFrom(
+                              fixedSize: const Size.fromHeight(48),
+                              backgroundColor: KuwentoColors.softCoral,
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(
+                                color: KuwentoColors.softCoral,
+                                width: 1.4,
+                              ),
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
+                              ),
+                            ),
+                            child: const Text('Sign Out'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (shouldSignOut != true || !mounted) return;
+
+    await authService.signOut();
+    if (!mounted) return;
+    context.go('/login');
   }
 
   @override
@@ -509,8 +650,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               .textTheme
                                               .labelMedium
                                               ?.copyWith(
-                                                color:
-                                                    KuwentoColors.pastelBlue,
+                                                color: KuwentoColors.pastelBlue,
                                                 fontWeight: FontWeight.w700,
                                               ),
                                         ),
@@ -750,12 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: KuwentoColors.softCoral,
                         ),
                       ),
-                      onTap: () async {
-                        await authService.signOut();
-                        if (context.mounted) {
-                          context.go('/login');
-                        }
-                      },
+                      onTap: () => _confirmAndSignOut(authService),
                     ),
                   ),
                 ],

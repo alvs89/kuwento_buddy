@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDpRbpRL6ZjEdjIToJPnoASZIjVd_H3p1M',
-    appId: '1:1027680552915:android:d1423072f698e56ebf1126',
+    appId: '1:1027680552915:android:98db5fd47d392010bf1126',
     messagingSenderId: '1027680552915',
     projectId: 'kuwentobuddy-57511',
     storageBucket: 'kuwentobuddy-57511.firebasestorage.app',
@@ -77,9 +77,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'YOUR_WINDOWS_API_KEY',
-    appId: 'YOUR_WINDOWS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'kuwentobuddy',
+    apiKey: 'AIzaSyC2cwFqyYKHhlnMjDDMwPv3navWggTGHzg',
+    appId: '1:1027680552915:web:bc84af0f17c6a570bf1126',
+    messagingSenderId: '1027680552915',
+    projectId: 'kuwentobuddy-57511',
+    authDomain: 'kuwentobuddy-57511.firebaseapp.com',
+    storageBucket: 'kuwentobuddy-57511.firebasestorage.app',
   );
 }

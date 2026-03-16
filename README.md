@@ -48,3 +48,19 @@ The dedicated team from section **CS32S3** behind this project includes:
 ---
 
 *Developed with ❤️ to empower every reader.*
+
+---
+
+### Android Device Compatibility Checklist
+
+To keep KuwentoBuddy working across different Android phones and build environments:
+
+1. Keep `applicationId` as `com.kuwentobuddy.app`.
+2. Use `minSdk = 21` so older Android devices can still install the app.
+3. Add both debug and release SHA keys in Firebase for `com.kuwentobuddy.app`.
+4. Download and replace `android/app/google-services.json` whenever SHA keys or package settings change.
+5. Enable Google sign-in in Firebase Authentication.
+6. Deploy Firestore rules after updates:
+	`firebase deploy --only firestore:rules`
+
+Without steps 3 to 6, Google login and cloud sync may fail on some devices/builds even if local app launch works.

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,6 +52,7 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isGuest => _status == AuthStatus.guest;
+  bool get _hasFirebaseSession => _auth.currentUser != null;
 
   /// Initialize auth state
   Future<void> initialize() async {
@@ -61,9 +63,24 @@ class AuthService extends ChangeNotifier {
       // Check for existing Firebase user
       final firebaseUser = _auth.currentUser;
       if (firebaseUser != null) {
-        await _loadOrCreateUser(firebaseUser);
         _status = AuthStatus.authenticated;
-        await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
+        try {
+          await _loadOrCreateUser(firebaseUser);
+          await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
+        } catch (e) {
+          // Keep authenticated state when Firebase session exists, even if
+          // profile sync temporarily fails.
+          debugPrint('Auth profile bootstrap failed, using fallback user: $e');
+          _currentUser ??= UserModel(
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoUrl: firebaseUser.photoURL,
+            isGuest: false,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }
       } else {
         // Check for guest session
         final prefs = await SharedPreferences.getInstance();
@@ -116,6 +133,8 @@ class AuthService extends ChangeNotifier {
             .timeout(const Duration(seconds: 45));
       } else {
         // Mobile uses GoogleSignIn, then exchanges tokens with Firebase.
+        // Clear stale local Google session first so users can pick any account.
+        await _googleSignIn.signOut();
         final googleUser =
             await _googleSignIn.signIn().timeout(const Duration(seconds: 45));
         if (googleUser == null) {
@@ -138,37 +157,45 @@ class AuthService extends ChangeNotifier {
       if (userCredential.user != null) {
         final firebaseUser = userCredential.user!;
         final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        var cloudProfileReady = false;
 
         try {
-          await _loadOrCreateUser(firebaseUser)
-              .timeout(const Duration(seconds: 30));
+          await _loadOrCreateUser(
+            firebaseUser,
+            allowCachedFallback: false,
+          ).timeout(const Duration(seconds: 30));
           await _mergeGuestProgress().timeout(const Duration(seconds: 20));
           await _syncAuthenticatedStateWithCloud(firebaseUser.uid)
               .timeout(const Duration(seconds: 20));
+          cloudProfileReady = _currentUser != null &&
+              _currentUser!.id == firebaseUser.uid &&
+              !_currentUser!.isGuest;
         } catch (e) {
-          // Do not fail sign-in if profile sync has transient backend issues.
-          // Create a minimal local profile so the user can proceed.
-          debugPrint('Post-auth profile sync failed, using local fallback: $e');
-          _currentUser ??= UserModel(
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoUrl: firebaseUser.photoURL,
-            isGuest: false,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
+          debugPrint('Post-auth profile sync failed: $e');
         }
 
-        _currentUser ??= UserModel(
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoUrl: firebaseUser.photoURL,
-          isGuest: false,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
+        if (!cloudProfileReady) {
+          try {
+            _currentUser = await _ensureCloudProfileReady(firebaseUser);
+            cloudProfileReady = _currentUser != null &&
+                _currentUser!.id == firebaseUser.uid &&
+                !_currentUser!.isGuest;
+          } catch (e) {
+            debugPrint('Failed to ensure cloud profile after sign-in: $e');
+          }
+        }
+
+        if (!cloudProfileReady) {
+          await _auth.signOut();
+          await _googleSignIn.signOut();
+          _currentUser = null;
+          _status = AuthStatus.unauthenticated;
+          notifyListeners();
+          return const GoogleAuthResult(
+            errorMessage:
+                'Sign-in succeeded, but cloud profile setup failed. Please check internet and try again so progress can sync.',
+          );
+        }
 
         try {
           await _cacheAuthenticatedUser(_currentUser!);
@@ -198,6 +225,18 @@ class AuthService extends ChangeNotifier {
       debugPrint(
           'Google sign in FirebaseAuthException: ${e.code} ${e.message}');
       return GoogleAuthResult(errorMessage: _mapFirebaseAuthError(e));
+    } on PlatformException catch (e) {
+      debugPrint('Google sign in PlatformException: ${e.code} ${e.message}');
+      if (e.code == 'sign_in_failed' ||
+          e.message?.contains('ApiException: 10') == true) {
+        return const GoogleAuthResult(
+          errorMessage:
+              'Google Sign-In is misconfigured for this app build. Add this device SHA-1/SHA-256 to Firebase, then download a fresh google-services.json.',
+        );
+      }
+      return const GoogleAuthResult(
+        errorMessage: 'Google Sign-In failed. Please try again.',
+      );
     } catch (e) {
       debugPrint('Google sign in error: $e');
       return const GoogleAuthResult(
@@ -280,7 +319,10 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Load or create user from Firebase user
-  Future<void> _loadOrCreateUser(User firebaseUser) async {
+  Future<void> _loadOrCreateUser(
+    User firebaseUser, {
+    bool allowCachedFallback = true,
+  }) async {
     try {
       _currentUser = await _userService.getOrCreateUser(
         uid: firebaseUser.uid,
@@ -293,6 +335,7 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Failed to load user from Firestore: $e');
+      if (!allowCachedFallback) rethrow;
       final cached = await _loadCachedAuthenticatedUser(firebaseUser.uid);
       if (cached != null) {
         _currentUser = cached;
@@ -300,6 +343,61 @@ class AuthService extends ChangeNotifier {
         rethrow;
       }
     }
+  }
+
+  Future<UserModel?> _ensureCloudProfileReady(User firebaseUser) async {
+    const retryDelays = <Duration>[
+      Duration(milliseconds: 450),
+      Duration(milliseconds: 900),
+      Duration(milliseconds: 1800),
+    ];
+
+    Object? lastError;
+
+    for (var attempt = 0; attempt < retryDelays.length; attempt++) {
+      try {
+        // Force-refresh token so Firestore rules can see the latest auth state.
+        await firebaseUser.getIdToken(true);
+
+        final hydrated = await _userService
+            .getOrCreateUser(
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoUrl: firebaseUser.photoURL,
+            )
+            .timeout(const Duration(seconds: 25));
+
+        _currentUser = hydrated;
+        await _cacheAuthenticatedUser(hydrated);
+        return hydrated;
+      } catch (e) {
+        lastError = e;
+        debugPrint(
+          'Cloud profile ensure attempt ${attempt + 1}/${retryDelays.length} failed: $e',
+        );
+        if (!_isRetryableCloudProfileError(e) ||
+            attempt == retryDelays.length - 1) {
+          break;
+        }
+        await Future.delayed(retryDelays[attempt]);
+      }
+    }
+
+    if (lastError != null) {
+      debugPrint('Cloud profile setup failed after retries: $lastError');
+    }
+    return null;
+  }
+
+  bool _isRetryableCloudProfileError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('permission-denied') ||
+        message.contains('insufficient permissions') ||
+        message.contains('network') ||
+        message.contains('unavailable') ||
+        message.contains('timed out') ||
+        message.contains('offline');
   }
 
   /// Merge guest progress to authenticated user
@@ -348,24 +446,66 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (_status == AuthStatus.guest) {
+      if (_status == AuthStatus.guest && !_hasFirebaseSession) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_guestUserKey, jsonEncode(user.toJson()));
-      } else if (_status == AuthStatus.authenticated) {
-        await _userService.updateUser(user);
-        await _cacheAuthenticatedUser(user);
+      } else if (_hasFirebaseSession) {
+        _status = AuthStatus.authenticated;
+
+        // Ensure user id aligns with the active Firebase user for Firestore rules.
+        final activeUid = _auth.currentUser!.uid;
+        final cloudUser =
+            user.id == activeUid ? user : user.copyWith(id: activeUid);
+
+        if (_currentUser == null || _currentUser!.id != activeUid) {
+          _currentUser = await _userService.getOrCreateUser(
+            uid: activeUid,
+            email: _auth.currentUser!.email,
+            displayName: _auth.currentUser!.displayName,
+            photoUrl: _auth.currentUser!.photoURL,
+          );
+        }
+
+        await _userService.updateUser(cloudUser);
+        _currentUser = cloudUser;
+        await _cacheAuthenticatedUser(cloudUser);
       }
     } catch (e) {
       debugPrint('Failed to persist user update: $e');
-      if (_status == AuthStatus.authenticated) {
-        await _cacheAuthenticatedUser(user);
+      if (_hasFirebaseSession) {
+        // Retry once after rehydrating the authoritative cloud profile for UID.
+        final activeUid = _auth.currentUser!.uid;
+        try {
+          await _userService.getOrCreateUser(
+            uid: activeUid,
+            email: _auth.currentUser!.email,
+            displayName: _auth.currentUser!.displayName,
+            photoUrl: _auth.currentUser!.photoURL,
+          );
+
+          final retryUser =
+              user.id == activeUid ? user : user.copyWith(id: activeUid);
+          await _userService.updateUser(retryUser);
+          _status = AuthStatus.authenticated;
+          _currentUser = retryUser;
+          await _cacheAuthenticatedUser(retryUser);
+          return;
+        } catch (retryError) {
+          debugPrint('Retry failed while persisting user update: $retryError');
+        }
+
+        _status = AuthStatus.authenticated;
+        final fallbackUser =
+            user.id == activeUid ? user : user.copyWith(id: activeUid);
+        _currentUser = fallbackUser;
+        await _cacheAuthenticatedUser(fallbackUser);
       }
     }
   }
 
   /// Toggle a story favorite and persist it safely without overwriting other fields.
   /// Returns true when the story is now favorited, false when removed.
-  Future<bool> toggleFavoriteStory(String storyId) async {
+  Future<bool> toggleFavoriteStory(String storyId, {String? storyTitle}) async {
     final user = _currentUser;
     if (user == null) return false;
 
@@ -392,17 +532,36 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (_status == AuthStatus.guest) {
+      if (_status == AuthStatus.guest && !_hasFirebaseSession) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_guestUserKey, jsonEncode(updatedUser.toJson()));
-      } else if (_status == AuthStatus.authenticated) {
+      } else if (_hasFirebaseSession) {
+        _status = AuthStatus.authenticated;
+        final activeUid = _auth.currentUser!.uid;
+        final persistedStoryId = storyId.trim();
+
+        if (_currentUser == null || _currentUser!.id != activeUid) {
+          _currentUser = await _userService.getOrCreateUser(
+            uid: activeUid,
+            email: _auth.currentUser!.email,
+            displayName: _auth.currentUser!.displayName,
+            photoUrl: _auth.currentUser!.photoURL,
+          );
+        }
+
         await _userService.toggleFavorite(
-            _currentUser!.id, storyId, isNowFavorite);
-        await _cacheAuthenticatedUser(updatedUser);
+          activeUid,
+          persistedStoryId,
+          isNowFavorite,
+          storyTitle: storyTitle,
+        );
+        _currentUser = updatedUser.copyWith(id: activeUid);
+        await _cacheAuthenticatedUser(_currentUser!);
       }
     } catch (e) {
       debugPrint('Failed to persist favorite toggle: $e');
-      if (_status == AuthStatus.authenticated) {
+      if (_hasFirebaseSession) {
+        _status = AuthStatus.authenticated;
         await _cacheAuthenticatedUser(updatedUser);
       }
     }

@@ -4,6 +4,7 @@ import 'package:kuwentobuddy/models/question_model.dart';
 /// User progress for a specific story
 class StoryProgress {
   final String storyId;
+  final String? storyTitle;
   final int currentSegmentIndex;
   final int totalSegments;
   final bool isCompleted;
@@ -18,6 +19,7 @@ class StoryProgress {
 
   const StoryProgress({
     required this.storyId,
+    this.storyTitle,
     this.currentSegmentIndex = 0,
     this.totalSegments = 0,
     this.isCompleted = false,
@@ -45,6 +47,7 @@ class StoryProgress {
 
   factory StoryProgress.fromJson(Map<String, dynamic> json) => StoryProgress(
         storyId: json['storyId'] as String,
+        storyTitle: json['storyTitle'] as String?,
         currentSegmentIndex: json['currentSegmentIndex'] as int? ?? 0,
         totalSegments: json['totalSegments'] as int? ?? 0,
         isCompleted: json['isCompleted'] as bool? ?? false,
@@ -62,6 +65,7 @@ class StoryProgress {
 
   Map<String, dynamic> toJson() => {
         'storyId': storyId,
+        'storyTitle': storyTitle,
         'currentSegmentIndex': currentSegmentIndex,
         'totalSegments': totalSegments,
         'isCompleted': isCompleted,
@@ -77,6 +81,7 @@ class StoryProgress {
 
   StoryProgress copyWith({
     String? storyId,
+    String? storyTitle,
     int? currentSegmentIndex,
     int? totalSegments,
     bool? isCompleted,
@@ -91,6 +96,7 @@ class StoryProgress {
   }) =>
       StoryProgress(
         storyId: storyId ?? this.storyId,
+        storyTitle: storyTitle ?? this.storyTitle,
         currentSegmentIndex: currentSegmentIndex ?? this.currentSegmentIndex,
         totalSegments: totalSegments ?? this.totalSegments,
         isCompleted: isCompleted ?? this.isCompleted,
@@ -129,7 +135,7 @@ class UserPreferences {
 
   factory UserPreferences.fromJson(Map<String, dynamic> json) =>
       UserPreferences(
-        voiceGender: 'female',
+        voiceGender: json['voiceGender'] as String? ?? 'female',
         language: json['language'] as String? ?? 'en',
         voiceSpeed: (json['voiceSpeed'] as num?)?.toDouble() ?? 1.0,
         enableTTS: json['enableTTS'] as bool? ?? true,
@@ -152,7 +158,7 @@ class UserPreferences {
     bool? enableAnimations,
   }) =>
       UserPreferences(
-        voiceGender: 'female',
+        voiceGender: voiceGender ?? this.voiceGender,
         language: language ?? this.language,
         voiceSpeed: voiceSpeed ?? this.voiceSpeed,
         enableTTS: enableTTS ?? this.enableTTS,
