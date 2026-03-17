@@ -640,6 +640,9 @@ class AuthService extends ChangeNotifier {
 
       await _userService.updateUser(merged);
 
+      // Clean up stories with currentSegmentIndex = 0 (never actually read)
+      await _userService.cleanupUnstartedStories(uid);
+
       final refreshed = await _userService.getUser(uid);
       _currentUser = refreshed ?? merged;
       await _cacheAuthenticatedUser(_currentUser!);

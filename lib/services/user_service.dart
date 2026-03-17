@@ -548,6 +548,11 @@ class UserService {
 
   Future<void> _writeStoryProgress(
       String userId, StoryProgress progress) async {
+    // Don't write stories that haven't been read yet (currentSegmentIndex = 0)
+    if (progress.currentSegmentIndex == 0) {
+      return;
+    }
+
     final storyKey = _storyKeyForFirestore(
       appStoryId: progress.storyId,
       fallbackTitle: progress.storyTitle,
@@ -966,5 +971,32 @@ class UserService {
       }
     }
     return null;
+  }
+
+  /// Clean up stories with currentSegmentIndex = 0 (never actually read)
+  /// These should not count as "in progress"
+  Future<void> cleanupUnstartedStories(String userId) async {
+    try {
+      final progressSnap = await _progressCol(userId).get();
+      final writes = _firestore.batch();
+      var hasWrites = false;
+
+      for (final doc in progressSnap.docs) {
+        final currentSegmentIndex = doc.data()['currentSegmentIndex'] as int? ?? 0;
+        // Delete stories that were never actually read (currentSegmentIndex = 0)
+        if (currentSegmentIndex == 0) {
+          writes.delete(doc.reference);
+          hasWrites = true;
+        }
+      }
+
+      if (hasWrites) {
+        await writes.commit();
+        // Update the count
+        await _syncUserCountsFromSubcollections(userId);
+      }
+    } catch (e) {
+      debugPrint('Error cleaning up unstarted stories: $e');
+    }
   }
 }

@@ -113,10 +113,8 @@ class StoryController extends ChangeNotifier {
         _skillCorrect.addAll(progress.skillCorrect);
         _skillTotal.addAll(progress.skillTotal);
         notifyListeners();
-      } else if (progress == null) {
-        // Seed first-open progress so Firestore reflects started stories.
-        await _saveProgress();
       }
+      // Don't create progress entry on first open - only when user advances
     } catch (e) {
       debugPrint('Error loading progress: $e');
     }
