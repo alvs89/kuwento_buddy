@@ -1,16 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/foundation.dart';
+
 import 'package:kuwentobuddy/models/user_model.dart';
+
 import 'package:kuwentobuddy/services/story_service.dart';
 
 /// Service for managing user data in Firestore
+
 class UserService {
   static final UserService _instance = UserService._internal();
+
   factory UserService() => _instance;
+
   UserService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final StoryService _storyService = StoryService();
+
   final String _collection = 'users';
 
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
@@ -26,6 +34,7 @@ class UserService {
       _userDoc(uid).collection('completedStories');
 
   /// Get or create user
+
   Future<UserModel> getOrCreateUser({
     required String uid,
     String? email,
@@ -33,27 +42,42 @@ class UserService {
     String? photoUrl,
   }) async {
     final docRef = _userDoc(uid);
+
     final doc = await docRef.get();
 
     if (!doc.exists) {
       await docRef.set({
         'displayName': displayName,
+
         'email': email,
+
         'photoUrl': photoUrl,
+
         'totalStars': 0,
+
         'progressCount': 0,
+
         'favoritesCount': 0,
+
         'completedCount': 0,
+
         'favoriteStoryIds': <String>[], // Legacy compatibility
+
         'storyProgress': <String, dynamic>{}, // Legacy compatibility
+
         'preferences': const UserPreferences().toJson(),
+
         'schemaVersion': 2,
+
         'isGuest': false,
+
         'createdAt': FieldValue.serverTimestamp(),
+
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } else {
       final existingData = Map<String, dynamic>.from(doc.data() ?? {});
+
       final canonical = _buildCanonicalUserDoc(
         existingData: existingData,
         displayName: displayName,
@@ -61,12 +85,15 @@ class UserService {
         photoUrl: photoUrl,
       );
 
-      // Overwrite document with canonical schema so unknown legacy keys
-      // cannot keep violating Firestore rules on every update.
+// Overwrite document with canonical schema so unknown legacy keys
+
+// cannot keep violating Firestore rules on every update.
+
       await docRef.set(canonical);
     }
 
     final hydrated = await getUser(uid);
+
     if (hydrated != null) return hydrated;
 
     return UserModel(
@@ -81,38 +108,50 @@ class UserService {
   }
 
   /// Get user by ID
+
   Future<UserModel?> getUser(String uid) async {
     try {
       final userDoc = await _userDoc(uid).get();
+
       if (!userDoc.exists) return null;
 
       final baseData = Map<String, dynamic>.from(userDoc.data() ?? {});
+
       final normalizedPrefs = _sanitizePreferencesMap(baseData['preferences']);
+
       final legacyFixes = _legacyUserFieldFixes(baseData);
+
       if (normalizedPrefs != null || legacyFixes.isNotEmpty) {
         await _userDoc(uid).set({
           if (normalizedPrefs != null) 'preferences': normalizedPrefs,
           ...legacyFixes,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+
         if (normalizedPrefs != null) {
           baseData['preferences'] = normalizedPrefs;
         }
       }
 
       final progressSnap = await _progressCol(uid).get();
+
       final favoritesSnap = await _favoritesCol(uid).get();
+
       final completedSnap = await _completedCol(uid).get();
 
       final subProgress = <String, StoryProgress>{};
+
       for (final doc in progressSnap.docs) {
         try {
           final data = doc.data();
 
-          // FIXED: Parse appStoryId FIRST (fastest match)
+// FIXED: Parse appStoryId FIRST (fastest match)
+
           String appStoryId;
+
           if (data['appStoryId'] is String) {
             appStoryId = (data['appStoryId'] as String).trim();
+
             debugPrint(
                 'UserService.getUser: Found appStoryId=$appStoryId in ${doc.id}');
           } else {
@@ -146,17 +185,21 @@ class UserService {
             updatedAt: _asDateTime(data['updatedAt']) ?? DateTime.now(),
             hintAttemptsUsed: _asInt(data['hintAttemptsUsed']) ?? 0,
           );
+
           subProgress[progress.storyId] = progress;
         } catch (e) {
           debugPrint('Skipping malformed progress doc ${doc.id}: $e');
         }
       }
 
-      // Keep completed stories visible to UI compatibility consumers even when
-      // canonical storage is in completedStories subcollection.
+// Keep completed stories visible to UI compatibility consumers even when
+
+// canonical storage is in completedStories subcollection.
+
       for (final doc in completedSnap.docs) {
         try {
           final data = doc.data();
+
           final appStoryId = _resolveAppStoryId(
             firestoreDocId: doc.id,
             firestoreStoryIdentifier: data['storyId'] as String?,
@@ -164,10 +207,12 @@ class UserService {
           );
 
           final startedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
+
           final completedAt =
               _asDateTime(data['completedAt']) ?? DateTime.now();
 
-          // Completed state must win over any lingering in-progress doc.
+// Completed state must win over any lingering in-progress doc.
+
           subProgress[appStoryId] = StoryProgress(
             storyId: appStoryId,
             storyTitle: _resolveStoryTitle(
@@ -216,12 +261,17 @@ class UserService {
 
       final mergedFavorites =
           subFavorites.isNotEmpty ? subFavorites : legacyFavorites;
+
       final completedCount = completedSnap.docs.length;
+
       final progressCount = progressSnap.docs.length;
+
       final favoritesCount = mergedFavorites.toSet().length;
 
       final existingProgressCount = baseData['progressCount'] as int?;
+
       final existingFavoritesCount = baseData['favoritesCount'] as int?;
+
       final existingCompletedCount = baseData['completedCount'] as int?;
 
       if (existingProgressCount != progressCount ||
@@ -246,16 +296,22 @@ class UserService {
         hasLegacyFavoritesField: baseData.containsKey('favoriteStoryIds'),
       );
 
-      // Re-read canonical subcollections after migration/backfill so anything
-      // shown in UI directly reflects Firestore source-of-truth collections.
+// Re-read canonical subcollections after migration/backfill so anything
+
+// shown in UI directly reflects Firestore source-of-truth collections.
+
       final canonicalProgressSnap = await _progressCol(uid).get();
+
       final canonicalFavoritesSnap = await _favoritesCol(uid).get();
+
       final canonicalCompletedSnap = await _completedCol(uid).get();
 
       final canonicalProgress = <String, StoryProgress>{};
+
       for (final doc in canonicalProgressSnap.docs) {
         try {
           final data = doc.data();
+
           final appStoryId = _resolveAppStoryId(
             firestoreDocId: doc.id,
             firestoreStoryIdentifier: data['storyId'] as String?,
@@ -290,11 +346,14 @@ class UserService {
         }
       }
 
-      // Include completed stories from canonical completedStories for
-      // compatibility with existing UI logic in Completed tab.
+// Include completed stories from canonical completedStories for
+
+// compatibility with existing UI logic in Completed tab.
+
       for (final doc in canonicalCompletedSnap.docs) {
         try {
           final data = doc.data();
+
           final appStoryId = _resolveAppStoryId(
             firestoreDocId: doc.id,
             firestoreStoryIdentifier: data['storyId'] as String?,
@@ -303,15 +362,21 @@ class UserService {
 
           final completedAt =
               _asDateTime(data['completedAt']) ?? DateTime.now();
+
           final existing = canonicalProgress[appStoryId];
-          // If the user has already reopened this story, keep the newer
-          // in-progress write instead of forcing it back to Completed.
+
+// If the user has already reopened this story, keep the newer
+
+// in-progress write instead of forcing it back to Completed.
+
           if (existing != null &&
               !existing.isCompleted &&
               existing.updatedAt.isAfter(completedAt)) {
             continue;
           }
-          // Completed state must win over any lingering in-progress doc.
+
+// Completed state must win over any lingering in-progress doc.
+
           canonicalProgress[appStoryId] = StoryProgress(
             storyId: appStoryId,
             storyTitle: _resolveStoryTitle(
@@ -357,11 +422,13 @@ class UserService {
       });
     } catch (e) {
       debugPrint('Error getting user: $e');
+
       return null;
     }
   }
 
   /// Update user
+
   Future<void> updateUser(UserModel user) async {
     try {
       await _userDoc(user.id).set({
@@ -375,7 +442,8 @@ class UserService {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Canonical persistence lives in subcollections for scalability.
+// Canonical persistence lives in subcollections for scalability.
+
       for (final entry in user.storyProgress.entries) {
         if (entry.value.isCompleted) {
           await _deleteProgressDoc(
@@ -383,8 +451,10 @@ class UserService {
             appStoryId: entry.key,
             fallbackTitle: entry.value.storyTitle,
           );
+
           continue;
         }
+
         await _writeStoryProgress(user.id, entry.value);
       }
 
@@ -421,11 +491,13 @@ class UserService {
       await _syncUserCountsFromSubcollections(user.id);
     } catch (e) {
       debugPrint('Error updating user: $e');
+
       rethrow;
     }
   }
 
   /// Update story progress
+
   Future<void> updateStoryProgress(
     String userId,
     StoryProgress progress, {
@@ -469,11 +541,13 @@ class UserService {
       await _syncUserCountsFromSubcollections(userId);
     } catch (e) {
       debugPrint('Error updating story progress: $e');
+
       rethrow;
     }
   }
 
   /// Add stars to user
+
   Future<void> addStars(String userId, int stars) async {
     try {
       await _userDoc(userId).set({
@@ -482,21 +556,25 @@ class UserService {
       }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error adding stars: $e');
+
       rethrow;
     }
   }
 
   /// Increment stories completed
+
   Future<void> incrementStoriesCompleted(String userId) async {
     try {
       await _syncUserCountsFromSubcollections(userId);
     } catch (e) {
       debugPrint('Error incrementing stories completed: $e');
+
       rethrow;
     }
   }
 
   /// Toggle favorite story
+
   Future<void> toggleFavorite(String userId, String storyId, bool isFavorite,
       {String? storyTitle}) async {
     try {
@@ -516,17 +594,20 @@ class UserService {
           appStoryId: storyId,
           fallbackTitle: storyTitle,
         );
+
         await _favoritesCol(userId).doc(storyKey).delete();
       }
 
       await _syncUserCountsFromSubcollections(userId);
     } catch (e) {
       debugPrint('Error toggling favorite: $e');
+
       rethrow;
     }
   }
 
   /// Update user preferences
+
   Future<void> updatePreferences(
       String userId, UserPreferences preferences) async {
     try {
@@ -536,11 +617,13 @@ class UserService {
       }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error updating preferences: $e');
+
       rethrow;
     }
   }
 
   /// Merge guest progress to authenticated user
+
   Future<void> mergeProgress({
     required String userId,
     required Map<String, StoryProgress> guestProgress,
@@ -550,12 +633,14 @@ class UserService {
   }) async {
     try {
       final userRef = _userDoc(userId);
+
       final updates = <String, dynamic>{
         'schemaVersion': 2,
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      // Update each story progress
+// Update each story progress
+
       for (final entry in guestProgress.entries) {
         if (entry.value.isCompleted) {
           final storyKey = _storyKeyForFirestore(
@@ -591,15 +676,18 @@ class UserService {
         }
       }
 
-      // Add stars and completed stories
+// Add stars and completed stories
+
       if (guestStars > 0) {
         updates['totalStars'] = FieldValue.increment(guestStars);
       }
+
       if (guestStoriesCompleted > 0) {
         debugPrint(
           'Ignoring legacy guest storiesCompleted counter ($guestStoriesCompleted); completedStories documents are canonical.',
         );
       }
+
       if (guestFavorites.isNotEmpty) {
         for (final storyId in guestFavorites.toSet()) {
           await _upsertFavoriteDoc(
@@ -615,13 +703,16 @@ class UserService {
       await _syncUserCountsFromSubcollections(userId);
     } catch (e) {
       debugPrint('Error merging progress: $e');
+
       rethrow;
     }
   }
 
   Future<void> _syncUserCountsFromSubcollections(String userId) async {
     final progressSnap = await _progressCol(userId).get();
+
     final favoritesSnap = await _favoritesCol(userId).get();
+
     final completedSnap = await _completedCol(userId).get();
 
     await _userDoc(userId).set({
@@ -638,6 +729,7 @@ class UserService {
       appStoryId: progress.storyId,
       fallbackTitle: progress.storyTitle,
     );
+
     final resolvedTitle = _resolveStoryTitle(
       progress.storyId,
       fallback: progress.storyTitle,
@@ -648,20 +740,35 @@ class UserService {
 
     await _progressCol(userId).doc(storyKey).set({
       'appStoryId': progress.storyId, // FIXED: Canonical app story ID
+
       'storyId': storyKey,
+
       if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+
       'currentSegmentIndex': progress.currentSegmentIndex,
+
       'comprehensionScore': progress.comprehensionScore,
+
       'isCompleted': false,
+
       'correctAnswers': progress.correctAnswers,
+
       'totalQuestions': progress.totalQuestions,
+
       'starsEarned': progress.starsEarned,
+
       'totalSegments': progress.totalSegments,
+
       'skillCorrect': progress.skillCorrect,
+
       'skillTotal': progress.skillTotal,
+
       'hintAttemptsUsed': progress.hintAttemptsUsed,
+
       'startedAt': Timestamp.fromDate(progress.startedAt),
+
       'completedAt': null,
+
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -674,12 +781,14 @@ class UserService {
       appStoryId: progress.storyId,
       fallbackTitle: progress.storyTitle,
     );
+
     final resolvedTitle = _resolveStoryTitle(
       progress.storyId,
       fallback: progress.storyTitle,
     );
 
     final completedSnap = await _completedCol(userId).get();
+
     final writes = _firestore.batch();
 
     writes.set(
@@ -706,6 +815,7 @@ class UserService {
 
     for (final doc in completedSnap.docs) {
       final data = doc.data();
+
       final resolvedId = _resolveAppStoryId(
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
@@ -734,7 +844,8 @@ class UserService {
 
     await _progressCol(userId).doc(storyKey).delete();
 
-    // Backward compatibility: clean legacy ID-keyed docs if any remain.
+// Backward compatibility: clean legacy ID-keyed docs if any remain.
+
     if (storyKey != appStoryId) {
       await _progressCol(userId).doc(appStoryId).delete();
     }
@@ -743,11 +854,14 @@ class UserService {
   Future<void> _deleteAllProgressDocsForStory(
       String userId, String appStoryId) async {
     final progressSnap = await _progressCol(userId).get();
+
     final writes = _firestore.batch();
+
     var hasWrites = false;
 
     for (final doc in progressSnap.docs) {
       final data = doc.data();
+
       final resolvedId = _resolveAppStoryId(
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
@@ -756,6 +870,7 @@ class UserService {
 
       if (resolvedId == appStoryId) {
         writes.delete(doc.reference);
+
         hasWrites = true;
       }
     }
@@ -778,6 +893,7 @@ class UserService {
         desired.map((id) => _storyKeyForFirestore(appStoryId: id)).toSet();
 
     final existingDocs = await _favoritesCol(userId).get();
+
     final existing = existingDocs.docs.map((doc) => doc.id).toSet();
 
     for (final storyId in desired) {
@@ -802,8 +918,11 @@ class UserService {
       appStoryId: appStoryId,
       fallbackTitle: storyTitle,
     );
+
     final ref = _favoritesCol(userId).doc(storyKey);
+
     final existing = await ref.get();
+
     final resolvedTitle = _resolveStoryTitle(appStoryId, fallback: storyTitle);
 
     await ref.set({
@@ -820,6 +939,7 @@ class UserService {
     String? fallbackTitle,
   }) {
     final resolved = _resolveStoryTitle(appStoryId, fallback: fallbackTitle);
+
     return (resolved ?? appStoryId).trim();
   }
 
@@ -836,18 +956,23 @@ class UserService {
 
     for (final candidate in candidates) {
       final byId = _storyService.getStoryById(candidate);
+
       if (byId != null) return byId.id;
 
       final byTitle = _storyService.getAllStories().where(
             (story) => _normalizeKey(story.title) == _normalizeKey(candidate),
           );
+
       if (byTitle.isNotEmpty) return byTitle.first.id;
 
       final normalizedCandidate = _normalizeKey(candidate);
+
       if (normalizedCandidate.isNotEmpty) {
         for (final story in _storyService.getAllStories()) {
           final normalizedStoryId = _normalizeKey(story.id);
+
           final normalizedStoryTitle = _normalizeKey(story.title);
+
           if (normalizedStoryId.contains(normalizedCandidate) ||
               normalizedCandidate.contains(normalizedStoryId) ||
               normalizedStoryTitle.contains(normalizedCandidate) ||
@@ -865,45 +990,59 @@ class UserService {
 
   String? _resolveStoryTitle(String storyId, {String? fallback}) {
     final trimmedFallback = fallback?.trim();
+
     final story = _storyService.getStoryById(storyId);
+
     if (story != null && story.title.trim().isNotEmpty) {
       return story.title.trim();
     }
+
     if (trimmedFallback != null &&
         trimmedFallback.isNotEmpty &&
         trimmedFallback.toLowerCase() != storyId.trim().toLowerCase()) {
       return trimmedFallback;
     }
+
     return null;
   }
 
   int? _asInt(dynamic value) {
     if (value is int) return value;
+
     if (value is num) return value.toInt();
+
     if (value is String) return int.tryParse(value);
+
     return null;
   }
 
   Map<String, int> _asStringIntMap(dynamic value) {
     if (value is! Map) return const <String, int>{};
+
     final result = <String, int>{};
+
     value.forEach((key, rawValue) {
       final parsed = _asInt(rawValue);
+
       if (parsed != null) {
         result[key.toString()] = parsed;
       }
     });
+
     return result;
   }
 
   String _normalizeKey(String value) {
     final lower = value.trim().toLowerCase();
+
     return lower.replaceAll(RegExp(r'[^a-z0-9]+'), '');
   }
 
   Map<String, dynamic>? _sanitizePreferencesMap(dynamic rawPreferences) {
     if (rawPreferences is! Map) return null;
+
     final source = Map<String, dynamic>.from(rawPreferences);
+
     final sanitized = <String, dynamic>{};
 
     if (source['language'] is String) {
@@ -923,11 +1062,13 @@ class UserService {
     }
 
     if (mapEquals(source, sanitized)) return null;
+
     return sanitized;
   }
 
   List<String> _asStringList(dynamic value) {
     if (value is! List) return const <String>[];
+
     return value
         .map((e) => e?.toString() ?? '')
         .where((e) => e.isNotEmpty)
@@ -973,8 +1114,11 @@ class UserService {
 
   String? _asNullableString(dynamic value) {
     if (value == null) return null;
+
     if (value is String) return value;
+
     final stringified = value.toString();
+
     return stringified.isEmpty ? null : stringified;
   }
 
@@ -982,26 +1126,31 @@ class UserService {
     final fixes = <String, dynamic>{};
 
     final createdAt = data['createdAt'];
+
     if (createdAt != null && createdAt is! Timestamp) {
       fixes['createdAt'] = FieldValue.serverTimestamp();
     }
 
     final totalStars = _asInt(data['totalStars']);
+
     if (data['totalStars'] != null && data['totalStars'] is! int) {
       fixes['totalStars'] = totalStars ?? 0;
     }
 
     final progressCount = _asInt(data['progressCount']);
+
     if (data['progressCount'] != null && data['progressCount'] is! int) {
       fixes['progressCount'] = progressCount ?? 0;
     }
 
     final favoritesCount = _asInt(data['favoritesCount']);
+
     if (data['favoritesCount'] != null && data['favoritesCount'] is! int) {
       fixes['favoritesCount'] = favoritesCount ?? 0;
     }
 
     final completedCount = _asInt(data['completedCount']);
+
     if (data['completedCount'] != null && data['completedCount'] is! int) {
       fixes['completedCount'] = completedCount ?? 0;
     }
@@ -1038,20 +1187,26 @@ class UserService {
     required bool hasLegacyFavoritesField,
   }) async {
     final writes = _firestore.batch();
+
     var hasWrites = false;
+
     final hasSubProgress = progressSnap.docs.isNotEmpty;
+
     final hasSubFavorites = favoritesSnap.docs.isNotEmpty;
 
     if (!hasSubProgress && legacyProgress.isNotEmpty) {
       for (final entry in legacyProgress.entries) {
         final storyId = entry.key.trim();
+
         if (storyId.isEmpty) continue;
 
         final legacy = entry.value;
+
         final storyKey = _storyKeyForFirestore(
           appStoryId: storyId,
           fallbackTitle: legacy.storyTitle,
         );
+
         final resolvedTitle =
             _resolveStoryTitle(storyId, fallback: legacy.storyTitle);
 
@@ -1073,6 +1228,7 @@ class UserService {
                     : FieldValue.serverTimestamp(),
               },
               SetOptions(merge: true));
+
           hasWrites = true;
         } else {
           writes.set(
@@ -1094,6 +1250,7 @@ class UserService {
                 'updatedAt': FieldValue.serverTimestamp(),
               },
               SetOptions(merge: true));
+
           hasWrites = true;
         }
       }
@@ -1102,8 +1259,11 @@ class UserService {
     if (!hasSubFavorites && legacyFavorites.isNotEmpty) {
       for (final id in legacyFavorites.toSet()) {
         final storyId = id.trim();
+
         if (storyId.isEmpty) continue;
+
         final storyKey = _storyKeyForFirestore(appStoryId: storyId);
+
         final resolvedTitle = _resolveStoryTitle(storyId);
 
         writes.set(
@@ -1114,21 +1274,25 @@ class UserService {
               'addedAt': FieldValue.serverTimestamp(),
             },
             SetOptions(merge: true));
+
         hasWrites = true;
       }
     }
 
     for (final doc in progressSnap.docs) {
       final data = doc.data();
+
       final appStoryId = _resolveAppStoryId(
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
       );
+
       final storyKey = _storyKeyForFirestore(
         appStoryId: appStoryId,
         fallbackTitle: data['storyTitle'] as String?,
       );
+
       if (storyKey.isEmpty) continue;
 
       final resolvedTitle = _resolveStoryTitle(
@@ -1146,7 +1310,9 @@ class UserService {
               'updatedAt': FieldValue.serverTimestamp(),
             },
             SetOptions(merge: true));
+
         writes.delete(_progressCol(userId).doc(doc.id));
+
         hasWrites = true;
       }
 
@@ -1155,6 +1321,7 @@ class UserService {
 
       if (isCompletedInProgress) {
         final completedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
+
         writes.set(
             _completedCol(userId).doc(storyKey),
             {
@@ -1170,11 +1337,15 @@ class UserService {
               'completedAt': Timestamp.fromDate(completedAt),
             },
             SetOptions(merge: true));
+
         writes.delete(_progressCol(userId).doc(storyKey));
+
         if (doc.id.trim() != storyKey) {
           writes.delete(_progressCol(userId).doc(doc.id));
         }
+
         hasWrites = true;
+
         continue;
       }
 
@@ -1188,21 +1359,25 @@ class UserService {
               'updatedAt': FieldValue.serverTimestamp(),
             },
             SetOptions(merge: true));
+
         hasWrites = true;
       }
     }
 
     for (final doc in favoritesSnap.docs) {
       final data = doc.data();
+
       final appStoryId = _resolveAppStoryId(
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
       );
+
       final storyKey = _storyKeyForFirestore(
         appStoryId: appStoryId,
         fallbackTitle: data['storyTitle'] as String?,
       );
+
       if (storyKey.isEmpty) continue;
 
       final resolvedTitle = _resolveStoryTitle(
@@ -1219,7 +1394,9 @@ class UserService {
               if (resolvedTitle != null) 'storyTitle': resolvedTitle,
             },
             SetOptions(merge: true));
+
         writes.delete(_favoritesCol(userId).doc(doc.id));
+
         hasWrites = true;
       }
 
@@ -1232,21 +1409,25 @@ class UserService {
               'storyTitle': resolvedTitle,
             },
             SetOptions(merge: true));
+
         hasWrites = true;
       }
     }
 
     for (final doc in completedSnap.docs) {
       final data = doc.data();
+
       final appStoryId = _resolveAppStoryId(
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
       );
+
       final storyKey = _storyKeyForFirestore(
         appStoryId: appStoryId,
         fallbackTitle: data['storyTitle'] as String?,
       );
+
       if (storyKey.isEmpty) continue;
 
       final resolvedTitle = _resolveStoryTitle(
@@ -1263,7 +1444,9 @@ class UserService {
               if (resolvedTitle != null) 'storyTitle': resolvedTitle,
             },
             SetOptions(merge: true));
+
         writes.delete(_completedCol(userId).doc(doc.id));
+
         hasWrites = true;
       }
 
@@ -1276,12 +1459,14 @@ class UserService {
               'storyTitle': resolvedTitle,
             },
             SetOptions(merge: true));
+
         hasWrites = true;
       }
     }
 
     final shouldPruneLegacyProgress =
         hasLegacyProgressField && (hasSubProgress || legacyProgress.isNotEmpty);
+
     final shouldPruneLegacyFavorites = hasLegacyFavoritesField &&
         (hasSubFavorites || legacyFavorites.isNotEmpty);
 
@@ -1295,6 +1480,7 @@ class UserService {
             'updatedAt': FieldValue.serverTimestamp(),
           },
           SetOptions(merge: true));
+
       hasWrites = true;
     }
 
@@ -1305,6 +1491,7 @@ class UserService {
 
   DateTime? _asDateTime(dynamic value) {
     if (value is Timestamp) return value.toDate();
+
     if (value is String) {
       try {
         return DateTime.parse(value);
@@ -1312,30 +1499,44 @@ class UserService {
         return null;
       }
     }
+
     return null;
   }
 
-  /// Clean up stories with currentSegmentIndex = 0 (never actually read)
-  /// These should not count as "in progress"
+  /// Clean up stories with currentSegmentIndex = 0 (never actually read), but keep recent "soft starts"
+  /// FIX: Soften filter - keep if updatedAt within 24h (user opened but not read yet)
   Future<void> cleanupUnstartedStories(String userId) async {
     try {
       final progressSnap = await _progressCol(userId).get();
+      final cutoffTime = DateTime.now().subtract(const Duration(hours: 24));
       final writes = _firestore.batch();
       var hasWrites = false;
+      var keptCount = 0;
 
       for (final doc in progressSnap.docs) {
-        final currentSegmentIndex =
-            _asInt(doc.data()['currentSegmentIndex']) ?? 0;
-        // Delete stories that were never actually read (currentSegmentIndex = 0)
-        if (currentSegmentIndex == 0) {
+        final data = doc.data();
+        final currentSegmentIndex = _asInt(data['currentSegmentIndex']) ?? 0;
+        final updatedAt = _asDateTime(data['updatedAt']);
+
+        if (currentSegmentIndex == 0 &&
+            updatedAt != null &&
+            updatedAt.isBefore(cutoffTime)) {
+          debugPrint(
+              'UserService.cleanup: Deleting old unstarted doc ${doc.id} (updated: $updatedAt)');
           writes.delete(doc.reference);
           hasWrites = true;
+        } else if (currentSegmentIndex == 0) {
+          debugPrint(
+              'UserService.cleanup: Keeping recent soft-start ${doc.id} (updated: $updatedAt)');
+          keptCount++;
         }
       }
 
+      debugPrint(
+          'UserService.cleanup($userId): Deleted ${progressSnap.docs.length - keptCount - (hasWrites ? 1 : 0)} unstarted, kept $keptCount recent');
+
       if (hasWrites) {
         await writes.commit();
-        // Update the count
         await _syncUserCountsFromSubcollections(userId);
       }
     } catch (e) {

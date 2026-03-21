@@ -237,6 +237,13 @@ class StoryController extends ChangeNotifier {
       final userSnapshot =
           _authService.currentUser ?? await _waitForHydratedUser();
       final existingProgress = userSnapshot?.storyProgress[story.id];
+      // FIX: For new sessions (index 0 + no existing), set effective=1 to survive cleanup
+      final effectiveIndex =
+          (_currentSegmentIndex == 0 && existingProgress == null)
+              ? 1
+              : _currentSegmentIndex;
+      debugPrint(
+          '  -> effectiveIndex=$effectiveIndex (had existing: ${existingProgress != null})');
       final isNowCompleted = _sessionState == SessionState.completed;
       final wasAlreadyCompleted = existingProgress?.isCompleted == true;
       final hadCompletedVariant = !isNowCompleted &&
@@ -251,7 +258,7 @@ class StoryController extends ChangeNotifier {
       final progress = StoryProgress(
         storyId: story.id,
         storyTitle: story.title,
-        currentSegmentIndex: _currentSegmentIndex,
+        currentSegmentIndex: effectiveIndex,
         totalSegments: totalSegments,
         isCompleted: _sessionState == SessionState.completed,
         correctAnswers: _correctAnswers,

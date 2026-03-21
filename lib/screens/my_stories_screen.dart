@@ -510,10 +510,21 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         'MyStoriesScreen: In Progress tab will show ${inProgress.length} cards');
 
     if (inProgress.isEmpty) {
-      return _buildEmptyState(
-        emoji: '📖',
-        title: 'No stories in progress',
-        subtitle: 'Start reading to see your progress here',
+      return RefreshIndicator(
+        onRefresh: () async {
+          await context.read<AuthService>().refreshCurrentUserFromCloud();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: _buildEmptyState(
+              emoji: '📖',
+              title: 'No stories in progress',
+              subtitle: 'Pull to refresh or start reading!',
+            ),
+          ),
+        ),
       );
     }
 
@@ -937,9 +948,12 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   }
 
   bool _isStoryInProgress(StoryProgress progress, StoryModel story) {
-    // Story sessions persist an in-progress entry immediately on open, so any
-    // non-completed progress record should stay visible in this tab.
-    return !_isStoryCompleted(progress, story);
+    // FIX: Show even index=0 if recent (24h) OR index>0, !completed
+    final now = DateTime.now();
+    final isRecentSoftStart = progress.currentSegmentIndex == 0 &&
+        progress.updatedAt.isAfter(now.subtract(const Duration(hours: 24)));
+    return !progress.isCompleted &&
+        (progress.currentSegmentIndex > 0 || isRecentSoftStart);
   }
 
   List<MapEntry<StoryModel, StoryProgress>> _resolvedStoryProgressEntries(

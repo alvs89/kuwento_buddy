@@ -88,6 +88,7 @@ service cloud.firestore {
 
     function validProgressDoc(storyId) {
       return request.resource.data.keys().hasOnly([
+        'appStoryId',
         'storyId',
         'storyTitle',
         'currentSegmentIndex',
@@ -107,6 +108,7 @@ service cloud.firestore {
         'updatedAt',
       ])
       && request.resource.data.storyId == storyId
+      && (!('appStoryId' in request.resource.data) || request.resource.data.appStoryId is string)
       && (!('storyTitle' in request.resource.data) || request.resource.data.storyTitle is string)
       && (
         ('currentSegmentIndex' in request.resource.data && request.resource.data.currentSegmentIndex is int)
@@ -130,6 +132,7 @@ service cloud.firestore {
       && (!('completedAt' in request.resource.data) || isTimestampOrNull(request.resource.data.completedAt))
       && ('updatedAt' in request.resource.data && request.resource.data.updatedAt is timestamp);
     }
+
 
     function validProgressUpdate(storyId) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
