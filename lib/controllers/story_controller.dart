@@ -1,9 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/models/question_model.dart';
 import 'package:kuwentobuddy/models/user_model.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
 import 'package:kuwentobuddy/services/toast_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Story session state for tracking progress
 enum SessionState { reading, questioning, completed }
@@ -29,6 +34,9 @@ class StoryController extends ChangeNotifier {
   bool _showHint = false;
   int? _selectedAnswerIndex;
   bool _isAnswerCorrect = false;
+  int _hintAttemptsUsed = 0;
+  static const int _maxHintAttempts = 3;
+  static const String _hintUsagePrefsKey = 'story_hint_usage';
 
   // Track wrong answers to allow retry (don't lock out options)
   Set<int> _wrongAnswers = {};
@@ -42,6 +50,7 @@ class StoryController extends ChangeNotifier {
 
   // Track if question was answered correctly on first try
   bool _answeredFirstTry = true;
+  Future<void> _saveQueue = Future.value();
 
   StoryController({required this.story}) {
     _loadProgress();
@@ -56,6 +65,8 @@ class StoryController extends ChangeNotifier {
   bool get showHint => _showHint;
   int? get selectedAnswerIndex => _selectedAnswerIndex;
   bool get isAnswerCorrect => _isAnswerCorrect;
+  int get remainingHintAttempts => _maxHintAttempts - _hintAttemptsUsed;
+  bool get hasHintAttemptsLeft => remainingHintAttempts > 0;
   int get correctAnswers => _correctAnswers;
   int get totalQuestions => _totalQuestions;
   int get starsEarned => _starsEarned;
@@ -112,11 +123,25 @@ class StoryController extends ChangeNotifier {
         _totalQuestions = progress.totalQuestions;
         _skillCorrect.addAll(progress.skillCorrect);
         _skillTotal.addAll(progress.skillTotal);
+        final persisted = await _loadPersistedHintAttempts();
+        final remoteHintAttempts = progress.hintAttemptsUsed;
+        _hintAttemptsUsed = math.min(
+          _maxHintAttempts,
+          math.max(remoteHintAttempts, persisted),
+        );
         notifyListeners();
+      } else {
+        final persisted = await _loadPersistedHintAttempts();
+        if (persisted > 0) {
+          _hintAttemptsUsed = math.min(_maxHintAttempts, persisted);
+          notifyListeners();
+        }
       }
-      // Don't create progress entry on first open - only when user advances
+      // Create an entry immediately so "In Progress" shows up as soon as opened.
     } catch (e) {
       debugPrint('Error loading progress: $e');
+    } finally {
+      _ensureProgressEntry(immediate: true);
     }
   }
 
@@ -130,12 +155,98 @@ class StoryController extends ChangeNotifier {
     return _authService.currentUser;
   }
 
+  void _ensureProgressEntry({bool immediate = false}) {
+    if (_sessionState == SessionState.completed) return;
+    _saveProgress(immediate: immediate);
+  }
+
+  static Future<Map<String, int>> _readHintUsageMap() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_hintUsagePrefsKey);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return decoded.map((key, value) {
+          final attempt = value is num ? value.toInt() : 0;
+          return MapEntry(key, attempt);
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to decode hint usage map: $e');
+    }
+    return {};
+  }
+
+  static Future<void> _writeHintUsageMap(Map<String, int> map) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_hintUsagePrefsKey, jsonEncode(map));
+  }
+
+  Future<int> _loadPersistedHintAttempts() async {
+    final map = await _readHintUsageMap();
+    return map[story.id] ?? 0;
+  }
+
+  Future<void> _persistHintAttempts() async {
+    try {
+      final map = await _readHintUsageMap();
+      if (_hintAttemptsUsed <= 0) {
+        if (map.remove(story.id) != null) {
+          await _writeHintUsageMap(map);
+        }
+        return;
+      }
+      map[story.id] = _hintAttemptsUsed;
+      await _writeHintUsageMap(map);
+    } catch (e) {
+      debugPrint('Failed to persist hint attempts: $e');
+    }
+  }
+
+  Future<void> _clearPersistedHintAttempts() async {
+    try {
+      final map = await _readHintUsageMap();
+      if (map.remove(story.id) != null) {
+        await _writeHintUsageMap(map);
+      }
+    } catch (e) {
+      debugPrint('Failed to clear hint attempts: $e');
+    }
+  }
+
   /// Save current progress
-  Future<void> _saveProgress() async {
+  void _saveProgress({bool immediate = false}) {
+    if (immediate) {
+      _saveQueue = _saveProgressInternal();
+      return;
+    }
+    _saveQueue = _saveQueue.then((_) => _saveProgressInternal());
+  }
+
+  /// Flush any queued progress write before leaving the story screen.
+  Future<void> saveProgress({bool immediate = false}) async {
+    _saveProgress(immediate: immediate);
+    await _saveQueue;
+  }
+
+  Future<void> _saveProgressInternal() async {
+    debugPrint(
+        'StoryController(${story.id}): Saving progress - segment=$_currentSegmentIndex, state=$_sessionState, uid=${_authService.currentUser?.id ?? "null"}');
     try {
       final userSnapshot =
           _authService.currentUser ?? await _waitForHydratedUser();
-      if (userSnapshot == null) return;
+      final existingProgress = userSnapshot?.storyProgress[story.id];
+      final isNowCompleted = _sessionState == SessionState.completed;
+      final wasAlreadyCompleted = existingProgress?.isCompleted == true;
+      final hadCompletedVariant = !isNowCompleted &&
+          (userSnapshot?.storyProgress.values.any(
+                (entry) =>
+                    entry.isCompleted &&
+                    _normalizeStoryKey(entry.storyId) ==
+                        _normalizeStoryKey(story.id),
+              ) ??
+              false);
 
       final progress = StoryProgress(
         storyId: story.id,
@@ -148,38 +259,31 @@ class StoryController extends ChangeNotifier {
         starsEarned: _starsEarned,
         skillCorrect: Map.from(_skillCorrect),
         skillTotal: Map.from(_skillTotal),
-        startedAt:
-            userSnapshot.storyProgress[story.id]?.startedAt ?? DateTime.now(),
-        completedAt:
-            _sessionState == SessionState.completed ? DateTime.now() : null,
+        startedAt: existingProgress?.startedAt ?? DateTime.now(),
+        completedAt: isNowCompleted ? DateTime.now() : null,
         updatedAt: DateTime.now(),
+        hintAttemptsUsed: _hintAttemptsUsed,
       );
 
-      // Merge with the latest user state to avoid clobbering fields like favorites.
-      final latestUser = _authService.currentUser;
-      if (latestUser == null) return;
+      // FIXED logging: approximate key (title.trim())
+      final storyKey = story.title.trim();
+      debugPrint(
+          'StoryController(${story.id}): WILL SAVE to Firestore key="$storyKey" (appStoryId=${story.id})');
 
-      final updatedProgress =
-          Map<String, StoryProgress>.from(latestUser.storyProgress);
-      updatedProgress[story.id] = progress;
-
-      final updatedUser = latestUser.copyWith(
-        storyProgress: updatedProgress,
-        totalStars: _sessionState == SessionState.completed
-            ? latestUser.totalStars + _starsEarned
-            : latestUser.totalStars,
-        storiesCompleted: _sessionState == SessionState.completed &&
-                latestUser.storyProgress[story.id]?.isCompleted != true
-            ? latestUser.storiesCompleted + 1
-            : latestUser.storiesCompleted,
-        updatedAt: DateTime.now(),
+      await _authService.saveStoryProgress(
+        progress,
+        starsDelta: isNowCompleted && !wasAlreadyCompleted ? _starsEarned : 0,
+        completedIncrement: isNowCompleted && !wasAlreadyCompleted,
+        clearCompletedVariants:
+            !isNowCompleted && (wasAlreadyCompleted || hadCompletedVariant),
       );
-
-      await _authService.updateUser(updatedUser);
     } catch (e) {
-      debugPrint('Error saving progress: $e');
+      debugPrint('StoryController(${story.id}): Error saving progress: $e');
     }
   }
+
+  String _normalizeStoryKey(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
 
   /// Navigate to next segment
   void goToNext() {
@@ -219,6 +323,48 @@ class StoryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reveal the hint proactively without waiting for a wrong attempt.
+  void revealHint() {
+    if (currentQuestion == null || _showHint) return;
+
+    _showHint = true;
+    notifyListeners();
+  }
+
+  /// Request a hint, tracking per-question attempt limits.
+  HintRequestResult requestHint() {
+    if (currentQuestion == null) {
+      return HintRequestResult(
+        hintShown: false,
+        remainingAttempts: remainingHintAttempts,
+        alreadyExhausted: remainingHintAttempts <= 0,
+      );
+    }
+
+    if (!hasHintAttemptsLeft) {
+      _showHint = true;
+      notifyListeners();
+      return HintRequestResult(
+        hintShown: false,
+        remainingAttempts: 0,
+        alreadyExhausted: true,
+      );
+    }
+
+    _hintAttemptsUsed++;
+    _showHint = true;
+    notifyListeners();
+    unawaited(_persistHintAttempts());
+    _saveProgress();
+
+    final remaining = remainingHintAttempts;
+    return HintRequestResult(
+      hintShown: true,
+      remainingAttempts: remaining,
+      alreadyExhausted: remaining == 0,
+    );
+  }
+
   /// Trigger the question checkpoint
   void triggerCheckpoint() {
     if (!hasCheckpoint) return;
@@ -229,6 +375,7 @@ class StoryController extends ChangeNotifier {
 
   /// Go back to reading from question (to re-read the story)
   void goBackToReading() {
+    _showHint = false;
     _sessionState = SessionState.reading;
     notifyListeners();
   }
@@ -300,6 +447,7 @@ class StoryController extends ChangeNotifier {
     }
 
     _saveProgress();
+    unawaited(_clearPersistedHintAttempts());
     _toastService.showStoryCompleted(_starsEarned);
   }
 
@@ -323,8 +471,11 @@ class StoryController extends ChangeNotifier {
     _skillCorrect.clear();
     _skillTotal.clear();
     _starsEarned = 0;
+    _hintAttemptsUsed = 0;
     _resetQuestionState();
     notifyListeners();
+    unawaited(_clearPersistedHintAttempts());
+    _ensureProgressEntry();
   }
 
   /// Mark segment as read and trigger checkpoint if needed
@@ -333,4 +484,17 @@ class StoryController extends ChangeNotifier {
       triggerCheckpoint();
     }
   }
+}
+
+/// Result of a hint request, letting callers manage messaging and limits.
+class HintRequestResult {
+  final bool hintShown;
+  final int remainingAttempts;
+  final bool alreadyExhausted;
+
+  HintRequestResult({
+    required this.hintShown,
+    required this.remainingAttempts,
+    required this.alreadyExhausted,
+  });
 }

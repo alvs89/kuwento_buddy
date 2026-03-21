@@ -1,4 +1,4 @@
-import 'package:kuwentobuddy/models/story_model.dart';
+﻿import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/models/question_model.dart';
 
 /// Service for managing stories - simulates a local database
@@ -79,7 +79,7 @@ Gusto ng ina na matuto si Pinang ng mga gawaing bahay, ngunit laging ikinakatwir
         StorySegment(
           id: 'pinya_3',
           content:
-              '''Nagtagal ang sakit ni Aling Rosa kaya't napilitang si Pinang ang gumagawa sa bahay. Isang araw, sa kanyang pagluluto hindi niya makita ang posporo. Tinanong ang kanyang ina kung nasaan ito. Isang beses naman ay ang sandok ang hinahanap. Ganoon ng ganoon ang nangyayari. Walang bagay na di makita at agad tinatanong ang kanyang ina. Nayamot si Aling Rosa sa katatanong ng anak kaya´t nawika nito: " Naku! Pinang, sana'y magkaroon ka ng maraming mata upang makita mo ang lahat ng bagay at hindi ka na tanong nang tanong sa akin.''',
+              '''Nagtagal ang sakit ni Aling Rosa kaya't napilitang si Pinang ang gumagawa sa bahay. Isang araw, sa kanyang pagluluto hindi niya makita ang posporo. Tinanong ang kanyang ina kung nasaan ito. Isang beses naman ay ang sandok ang hinahanap. Ganoon ng ganoon ang nangyayari. Walang bagay na di makita at agad tinatanong ang kanyang ina. Nayamot si Aling Rosa sa katatanong ng anak kayaÂ´t nawika nito: " Naku! Pinang, sana'y magkaroon ka ng maraming mata upang makita mo ang lahat ng bagay at hindi ka na tanong nang tanong sa akin.''',
           question: QuestionModel(
             id: 'pinya_q3',
             question:
@@ -194,7 +194,7 @@ They divided the banana tree. Monkey chose the top part with the leaves. "I will
 
 Turtle took the bottom part—the roots. Turtle did not say anything and just went home.
 
-Days passed. Monkey\'s part dried up and died. But Turtle\'s part grew, became strong, and produced delicious bananas!''',
+ Days passed. Monkey's part dried up and died. But Turtle's part grew, became strong, and produced delicious bananas!''',
           question: QuestionModel(
             id: 'pagong_q2',
             question:
@@ -226,9 +226,9 @@ Umakyat si Matsing sa puno at nagsimulang kumain ng mga saging nang hindi na bum
 
 "Matsing! Hindi patas iyan!" sigaw ni Pagong. Ngunit tumawa lang si Matsing.
 
-When Monkey saw Turtle\'s bananas, he became very jealous. "Turtle, please give me some bananas!" he shouted.
+ When Monkey saw Turtle's bananas, he became very jealous. "Turtle, please give me some bananas!" he shouted.
 
-"I would like to, Monkey, but I cannot climb," Turtle answered. "Why don\'t you climb up and we can share?"
+ "I would like to, Monkey, but I cannot climb," Turtle answered. "Why don't you climb up and we can share?"
 
 Monkey climbed the tree and started eating the bananas without coming down. He ate all the ripe bananas and just threw the peels at Turtle!
 
@@ -547,7 +547,7 @@ THE END''',
           content:
               '''In the Kingdom of Silverstone, everyone feared the dragon that lived in the old tower. "Stay away from the tower!" parents would warn their children. "The dragon will eat you!"
 
-But young knight-in-training, Marco, wasn\'t so sure. At night, he would hear strange sounds coming from the tower. They didn\'t sound like roars. They sounded more like... crying?
+But young knight-in-training, Marco, wasn't so sure. At night, he would hear strange sounds coming from the tower. They didn't sound like roars. They sounded more like... crying?
 
 One evening, Marco gathered his courage and climbed the tower stairs.''',
           question: QuestionModel(
@@ -572,13 +572,13 @@ One evening, Marco gathered his courage and climbed the tower stairs.''',
         StorySegment(
           id: 'seg_002_2',
           content:
-              '''At the top of the tower, Marco found the dragon. But it wasn\'t what he expected at all. The dragon was small, no bigger than a horse, with shimmering purple scales and big, sad eyes.
+              '''At the top of the tower, Marco found the dragon. But it wasn't what he expected at all. The dragon was small, no bigger than a horse, with shimmering purple scales and big, sad eyes.
 
-"Please don\'t run away," the dragon said softly. "Everyone always runs away."
+"Please don't run away," the dragon said softly. "Everyone always runs away."
 
-Marco took a deep breath. "I\'m not running. I\'m Marco. What\'s your name?"
+Marco took a deep breath. "I'm not running. I'm Marco. What's your name?"
 
-The dragon blinked in surprise. "I\'m Violet. No one has ever asked me that before."
+The dragon blinked in surprise. "I'm Violet. No one has ever asked me that before."
 
 Marco sat down beside Violet and asked, "Why do you stay up here all alone?"''',
           question: QuestionModel(
@@ -601,9 +601,9 @@ Marco sat down beside Violet and asked, "Why do you stay up here all alone?"''',
         StorySegment(
           id: 'seg_002_3',
           content:
-              '''Violet\'s eyes filled with tears. "Long ago, people were scared of me because I look different. They said mean things and threw stones. So I hid up here where I couldn\'t hurt anyone or be hurt."
+              '''Violet's eyes filled with tears. "Long ago, people were scared of me because I look different. They said mean things and threw stones. So I hid up here where I couldn't hurt anyone or be hurt."
 
-Marco felt his heart ache for the lonely dragon. "That\'s not fair," he said. "You seem really kind."
+Marco felt his heart ache for the lonely dragon. "That's not fair," he said. "You seem really kind."
 
 "I am kind!" Violet exclaimed. "I can do all sorts of helpful things. Watch!" She breathed out a gentle flame that lit up the dark room with warm, cozy light.
 
@@ -611,7 +611,7 @@ Marco had an idea. "What if I told everyone the truth about you? Would you come 
 
 Violet thought for a moment, hope slowly filling her eyes. "You would do that for me?"
 
-"That\'s what friends do," Marco smiled.''',
+"That's what friends do," Marco smiled.''',
           question: QuestionModel(
             id: 'q_002_3',
             question:
@@ -635,15 +635,15 @@ Violet thought for a moment, hope slowly filling her eyes. "You would do that fo
           content:
               '''The next day, Marco called a meeting in the village square. He was nervous, but he spoke from his heart.
 
-"Violet the dragon is not scary," he announced. "She\'s kind and helpful, and she\'s been lonely for too long. Give her a chance!"
+"Violet the dragon is not scary," he announced. "She's kind and helpful, and she's been lonely for too long. Give her a chance!"
 
 Slowly, Violet emerged from behind a building, her purple scales glittering nervously. A little girl walked up to her first.
 
-"You\'re pretty," the girl said, touching Violet\'s scales gently.
+"You're pretty," the girl said, touching Violet's scales gently.
 
 Violet smiled, and a happy tear rolled down her cheek.
 
-From that day on, Violet became the village\'s best friend. She lit lanterns at night, kept everyone warm in winter, and most importantly, she was never lonely again.
+From that day on, Violet became the village's best friend. She lit lanterns at night, kept everyone warm in winter, and most importantly, she was never lonely again.
 
 THE END''',
         ),
@@ -672,7 +672,7 @@ THE END''',
 
 Animals from all over would climb the mountain to ask him questions. "How do I become stronger?" asked the monkey. "How do I run faster?" asked the deer.
 
-But Tandang Uwak\'s answer was always the same: "First, you must learn to listen."
+But Tandang Uwak's answer was always the same: "First, you must learn to listen."
 
 One day, a young eagle named Agila flew up to the owl. "I want to be the best flyer in all the islands!" she declared proudly.''',
           question: QuestionModel(
@@ -698,7 +698,7 @@ One day, a young eagle named Agila flew up to the owl. "I want to be the best fl
           content:
               '''"To fly your best," said Tandang Uwak, "you must listen to the wind."
 
-"Listen to the wind? That\'s silly!" Agila laughed. "I already know how to fly!" And she flew away without waiting for more advice.
+"Listen to the wind? That's silly!" Agila laughed. "I already know how to fly!" And she flew away without waiting for more advice.
 
 The next day, a big storm came. Agila tried to fly through it using all her strength, but the wind pushed her around. She got tired and fell.
 
@@ -724,9 +724,9 @@ Tandang Uwak found her and brought her back to safety.
         ),
         StorySegment(
           id: 'seg_003_3',
-          content: '''"It\'s not too late to learn," smiled the wise owl.
+          content: '''"It's not too late to learn," smiled the wise owl.
 
-This time, Agila listened carefully. Tandang Uwak taught her to feel the wind\'s direction, to ride the air currents, and to rest when needed.
+This time, Agila listened carefully. Tandang Uwak taught her to feel the wind's direction, to ride the air currents, and to rest when needed.
 
 Days later, another storm came. But this time, Agila listened to the wind. She flew with it instead of against it, soaring higher than ever before.
 
@@ -761,7 +761,7 @@ THE END''',
           content:
               '''Maya had always heard stories about the Banaue Rice Terraces from her Lola. "They are the Stairway to the Sky," Lola would say, "carved by our ancestors 2,000 years ago with their bare hands."
 
-When Maya finally visited with her family, she couldn\'t believe her eyes. The terraces stretched up the mountains like giant green steps, glittering with water under the morning sun.
+When Maya finally visited with her family, she couldn't believe her eyes. The terraces stretched up the mountains like giant green steps, glittering with water under the morning sun.
 
 "How is this possible?" Maya whispered. "How did they build something so beautiful without machines?"''',
           question: QuestionModel(
@@ -792,7 +792,7 @@ When Maya finally visited with her family, she couldn\'t believe her eyes. The t
 
 Maya watched the water trickle down from step to step. It was like a living system!
 
-"Our ancestors didn\'t have machines," Tatang Ben continued, "but they had something more powerful—teamwork and patience. Thousands of people worked together, generation after generation."''',
+"Our ancestors didn't have machines," Tatang Ben continued, "but they had something more powerful—teamwork and patience. Thousands of people worked together, generation after generation."''',
           question: QuestionModel(
             id: 'q_004_2',
             question:
@@ -815,15 +815,15 @@ Maya watched the water trickle down from step to step. It was like a living syst
         StorySegment(
           id: 'seg_004_3',
           content:
-              '''Maya helped Tatang Ben plant some rice seedlings. Her hands got muddy, but she didn\'t mind.
+              '''Maya helped Tatang Ben plant some rice seedlings. Her hands got muddy, but she didn't mind.
 
 "When you plant rice here," Tatang Ben said, "you become part of a 2,000-year-old tradition. You connect with all the people who came before you."
 
 Maya felt something special growing in her heart—pride for her ancestors and respect for the land.
 
-Before leaving, she looked back at the terraces one more time. They weren\'t just stairs made of earth and stone. They were a gift from the past, a reminder that when people work together with love and patience, they can create wonders that last forever.
+Before leaving, she looked back at the terraces one more time. They weren't just stairs made of earth and stone. They were a gift from the past, a reminder that when people work together with love and patience, they can create wonders that last forever.
 
-"I\'ll come back," Maya promised. "And I\'ll bring my children someday."
+"I'll come back," Maya promised. "And I'll bring my children someday."
 
 THE END''',
         ),
@@ -882,7 +882,7 @@ It was more beautiful than he had ever imagined. Corals of every color—pink, o
 
 But something was wrong. Many corals were turning white, and some fish looked sad.
 
-A wise old turtle swam up to Kabayo. "The water is getting warmer," she explained. "When it\'s too warm, the corals get sick and lose their color."
+A wise old turtle swam up to Kabayo. "The water is getting warmer," she explained. "When it's too warm, the corals get sick and lose their color."
 
 Kabayo felt worried. "Is there anything we can do?"''',
           question: QuestionModel(
@@ -940,7 +940,7 @@ Kabayo realized something important: no matter how small you are, you matter. Ev
 
 Kabayo returned home a changed seahorse. He was still small, but he knew now that small actions, done by many, can create big changes.
 
-When he had baby seahorses of his own, he didn\'t just warn them about dangers. He taught them about the wonders of the ocean and how every creature—big or small—has the power to make a difference.
+When he had baby seahorses of his own, he didn't just warn them about dangers. He taught them about the wonders of the ocean and how every creature—big or small—has the power to make a difference.
 
 THE END''',
         ),
@@ -969,7 +969,7 @@ THE END''',
 
 "Hello!" called Tiko. "Anyone want to play?"
 
-A colorful parrot flew down. "I do! Let\'s have a race!"
+A colorful parrot flew down. "I do! Let's have a race!"
 
 They zoomed through the trees—Tiko swinging, the parrot flying. It was so much fun!''',
           question: QuestionModel(
@@ -995,7 +995,7 @@ They zoomed through the trees—Tiko swinging, the parrot flying. It was so much
           content:
               '''At the finish line, they found more friends—a friendly frog and a playful butterfly.
 
-"Let\'s all play together!" said the frog.
+"Let's all play together!" said the frog.
 
 They played hide-and-seek until the sun began to set. The sky turned orange and pink.
 
@@ -1053,3 +1053,4 @@ THE END''',
         .toList();
   }
 }
+

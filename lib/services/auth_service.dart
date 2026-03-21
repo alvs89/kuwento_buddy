@@ -40,12 +40,72 @@ class AuthService extends ChangeNotifier {
     scopes: const ['email', 'profile'],
   );
   final UserService _userService = UserService();
+  late final StreamSubscription<User?> _authStateSubscription;
   static const String _guestUserKey = 'guest_user';
   static const String _authUserCachePrefix = 'auth_user_';
 
   AuthStatus _status = AuthStatus.unknown;
   UserModel? _currentUser;
   bool _isLoading = true;
+
+  void _attachAuthStateListener() {
+    _authStateSubscription = _auth.authStateChanges().listen(
+      (firebaseUser) {
+        unawaited(_handleAuthStateChanged(firebaseUser));
+      },
+      onError: (Object e) {
+        debugPrint('Auth state listener error: $e');
+      },
+    );
+  }
+
+  Future<void> _handleAuthStateChanged(User? firebaseUser) async {
+    if (firebaseUser == null) {
+      if (_status != AuthStatus.guest) {
+        _currentUser = null;
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+      }
+      return;
+    }
+
+    await _bootstrapCloudProfile(firebaseUser, strict: false);
+  }
+
+  String? _resolvePhotoUrl(User firebaseUser) {
+    // Firebase may not always populate the top-level photoURL field, but it
+    // is typically present on the provider data (Google / Facebook, etc.).
+    final candidate = firebaseUser.photoURL?.trim();
+    if (candidate != null && candidate.isNotEmpty) return candidate;
+
+    for (final profile in firebaseUser.providerData) {
+      final providerPhoto = profile.photoURL?.trim();
+      if (providerPhoto != null && providerPhoto.isNotEmpty) {
+        return providerPhoto;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _bootstrapCloudProfile(User firebaseUser,
+      {required bool strict}) async {
+    _status = AuthStatus.authenticated;
+    try {
+      await _loadOrCreateUser(
+        firebaseUser,
+        allowCachedFallback: !strict,
+      );
+      await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
+      if (_currentUser != null) {
+        await _cacheAuthenticatedUser(_currentUser!);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Cloud bootstrap on auth state failed: $e');
+      if (strict) rethrow;
+    }
+  }
 
   AuthStatus get status => _status;
   UserModel? get currentUser => _currentUser;
@@ -60,27 +120,12 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      _attachAuthStateListener();
+
       // Check for existing Firebase user
       final firebaseUser = _auth.currentUser;
       if (firebaseUser != null) {
-        _status = AuthStatus.authenticated;
-        try {
-          await _loadOrCreateUser(firebaseUser);
-          await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
-        } catch (e) {
-          // Keep authenticated state when Firebase session exists, even if
-          // profile sync temporarily fails.
-          debugPrint('Auth profile bootstrap failed, using fallback user: $e');
-          _currentUser ??= UserModel(
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoUrl: firebaseUser.photoURL,
-            isGuest: false,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
-        }
+        await _bootstrapCloudProfile(firebaseUser, strict: false);
       } else {
         // Check for guest session
         final prefs = await SharedPreferences.getInstance();
@@ -158,12 +203,11 @@ class AuthService extends ChangeNotifier {
         final firebaseUser = userCredential.user!;
         final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
         var cloudProfileReady = false;
+        Object? profileBootstrapError;
 
         try {
-          await _loadOrCreateUser(
-            firebaseUser,
-            allowCachedFallback: false,
-          ).timeout(const Duration(seconds: 30));
+          await _bootstrapCloudProfile(firebaseUser, strict: true)
+              .timeout(const Duration(seconds: 30));
           await _mergeGuestProgress().timeout(const Duration(seconds: 20));
           await _syncAuthenticatedStateWithCloud(firebaseUser.uid)
               .timeout(const Duration(seconds: 20));
@@ -171,6 +215,7 @@ class AuthService extends ChangeNotifier {
               _currentUser!.id == firebaseUser.uid &&
               !_currentUser!.isGuest;
         } catch (e) {
+          profileBootstrapError = e;
           debugPrint('Post-auth profile sync failed: $e');
         }
 
@@ -181,19 +226,30 @@ class AuthService extends ChangeNotifier {
                 _currentUser!.id == firebaseUser.uid &&
                 !_currentUser!.isGuest;
           } catch (e) {
+            profileBootstrapError = e;
             debugPrint('Failed to ensure cloud profile after sign-in: $e');
           }
         }
 
         if (!cloudProfileReady) {
+          // Do not silently continue as authenticated when Firestore bootstrap
+          // fails; this causes "signed in but not syncing" behavior.
           await _auth.signOut();
           await _googleSignIn.signOut();
           _currentUser = null;
           _status = AuthStatus.unauthenticated;
           notifyListeners();
-          return const GoogleAuthResult(
-            errorMessage:
-                'Sign-in succeeded, but cloud profile setup failed. Please check internet and try again so progress can sync.',
+
+          var detailed =
+              'Signed in with Google, but could not connect to Firestore profile.';
+          if (profileBootstrapError is FirebaseException) {
+            final fe = profileBootstrapError;
+            detailed =
+                '$detailed (${fe.code}${fe.message != null ? ': ${fe.message}' : ''})';
+          }
+
+          return GoogleAuthResult(
+            errorMessage: '$detailed Please try again and check network.',
           );
         }
 
@@ -205,6 +261,9 @@ class AuthService extends ChangeNotifier {
 
         _status = AuthStatus.authenticated;
         notifyListeners();
+
+        // Keep profile fresh after successful sign-in.
+        unawaited(_recoverCloudProfileAfterSignIn(firebaseUser));
 
         debugPrint(
           'Google auth completed. intent=$intent, isNewUser=$isNewUser',
@@ -328,7 +387,7 @@ class AuthService extends ChangeNotifier {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
-        photoUrl: firebaseUser.photoURL,
+        photoUrl: _resolvePhotoUrl(firebaseUser),
       );
       if (_currentUser != null) {
         await _cacheAuthenticatedUser(_currentUser!);
@@ -364,7 +423,7 @@ class AuthService extends ChangeNotifier {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
-              photoUrl: firebaseUser.photoURL,
+              photoUrl: _resolvePhotoUrl(firebaseUser),
             )
             .timeout(const Duration(seconds: 25));
 
@@ -398,6 +457,22 @@ class AuthService extends ChangeNotifier {
         message.contains('unavailable') ||
         message.contains('timed out') ||
         message.contains('offline');
+  }
+
+  Future<void> _recoverCloudProfileAfterSignIn(User firebaseUser) async {
+    try {
+      final hydrated = await _ensureCloudProfileReady(firebaseUser);
+      if (hydrated == null) return;
+
+      await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
+      if (_status == AuthStatus.authenticated) {
+        _currentUser = hydrated;
+        await _cacheAuthenticatedUser(hydrated);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Background cloud profile recovery failed: $e');
+    }
   }
 
   /// Merge guest progress to authenticated user
@@ -462,13 +537,14 @@ class AuthService extends ChangeNotifier {
             uid: activeUid,
             email: _auth.currentUser!.email,
             displayName: _auth.currentUser!.displayName,
-            photoUrl: _auth.currentUser!.photoURL,
+            photoUrl: _resolvePhotoUrl(_auth.currentUser!),
           );
         }
 
         await _userService.updateUser(cloudUser);
-        _currentUser = cloudUser;
-        await _cacheAuthenticatedUser(cloudUser);
+        final refreshed = await _userService.getUser(activeUid);
+        _currentUser = refreshed ?? cloudUser;
+        await _cacheAuthenticatedUser(_currentUser!);
       }
     } catch (e) {
       debugPrint('Failed to persist user update: $e');
@@ -480,7 +556,7 @@ class AuthService extends ChangeNotifier {
             uid: activeUid,
             email: _auth.currentUser!.email,
             displayName: _auth.currentUser!.displayName,
-            photoUrl: _auth.currentUser!.photoURL,
+            photoUrl: _resolvePhotoUrl(_auth.currentUser!),
           );
 
           final retryUser =
@@ -506,7 +582,24 @@ class AuthService extends ChangeNotifier {
   /// Toggle a story favorite and persist it safely without overwriting other fields.
   /// Returns true when the story is now favorited, false when removed.
   Future<bool> toggleFavoriteStory(String storyId, {String? storyTitle}) async {
-    final user = _currentUser;
+    var user = _currentUser;
+    if (user == null) {
+      if (_hasFirebaseSession) {
+        final activeUid = _auth.currentUser!.uid;
+        user = await _userService.getUser(activeUid) ??
+            await _userService.getOrCreateUser(
+              uid: activeUid,
+              email: _auth.currentUser!.email,
+              displayName: _auth.currentUser!.displayName,
+              photoUrl: _resolvePhotoUrl(_auth.currentUser!),
+            );
+      }
+      user ??= await _loadGuestUserFromPrefs();
+      if (user != null) {
+        _currentUser = user;
+        notifyListeners();
+      }
+    }
     if (user == null) return false;
 
     final normalizedTarget = storyId.trim().toLowerCase();
@@ -545,7 +638,7 @@ class AuthService extends ChangeNotifier {
             uid: activeUid,
             email: _auth.currentUser!.email,
             displayName: _auth.currentUser!.displayName,
-            photoUrl: _auth.currentUser!.photoURL,
+            photoUrl: _resolvePhotoUrl(_auth.currentUser!),
           );
         }
 
@@ -555,7 +648,8 @@ class AuthService extends ChangeNotifier {
           isNowFavorite,
           storyTitle: storyTitle,
         );
-        _currentUser = updatedUser.copyWith(id: activeUid);
+        final refreshed = await _userService.getUser(activeUid);
+        _currentUser = refreshed ?? updatedUser.copyWith(id: activeUid);
         await _cacheAuthenticatedUser(_currentUser!);
       }
     } catch (e) {
@@ -594,61 +688,179 @@ class AuthService extends ChangeNotifier {
     if (_status != AuthStatus.authenticated) return;
 
     try {
-      final cached = await _loadCachedAuthenticatedUser(uid);
-      final current = _currentUser;
+      final fresh = await _userService.getUser(uid);
+      if (fresh != null) {
+        _currentUser = fresh;
+        await _cacheAuthenticatedUser(fresh);
+        notifyListeners();
+        return;
+      }
 
-      if (cached == null || current == null) {
-        final fresh = await _userService.getUser(uid);
+      final fallback = await _loadCachedAuthenticatedUser(uid) ?? _currentUser;
+      if (fallback != null) {
+        _currentUser = fallback;
+        await _cacheAuthenticatedUser(fallback);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Failed to sync authenticated user state with cloud: $e');
+    }
+  }
+
+  /// Save one story progress record without overwriting other user fields.
+  Future<void> saveStoryProgress(
+    StoryProgress progress, {
+    int starsDelta = 0,
+    bool completedIncrement = false,
+    bool clearCompletedVariants = false,
+  }) async {
+    var current = _currentUser;
+    if (current == null) {
+      if (_hasFirebaseSession) {
+        final activeUid = _auth.currentUser!.uid;
+        current = await _userService.getUser(activeUid) ??
+            await _userService.getOrCreateUser(
+              uid: activeUid,
+              email: _auth.currentUser!.email,
+              displayName: _auth.currentUser!.displayName,
+              photoUrl: _resolvePhotoUrl(_auth.currentUser!),
+            );
+      }
+      current ??= await _loadGuestUserFromPrefs();
+      current ??= await continueAsGuest();
+
+      if (current != null) {
+        _currentUser = current;
+        notifyListeners();
+      }
+    }
+    if (current == null) return;
+
+    final updatedProgress =
+        Map<String, StoryProgress>.from(current.storyProgress);
+    if (!progress.isCompleted) {
+      final normalizedTarget = _normalizeKey(progress.storyId);
+      updatedProgress.removeWhere((key, value) {
+        final keyMatches = _normalizeKey(key) == normalizedTarget;
+        final valueMatches = _normalizeKey(value.storyId) == normalizedTarget &&
+            value.isCompleted;
+        return (keyMatches || valueMatches) && value.isCompleted;
+      });
+    }
+    updatedProgress[progress.storyId] = progress;
+
+    final optimisticUser = current.copyWith(
+      storyProgress: updatedProgress,
+      totalStars: current.totalStars + (starsDelta > 0 ? starsDelta : 0),
+      storiesCompleted: current.storiesCompleted + (completedIncrement ? 1 : 0),
+      updatedAt: DateTime.now(),
+    );
+
+    _currentUser = optimisticUser;
+    notifyListeners();
+
+    try {
+      if (_status == AuthStatus.guest && !_hasFirebaseSession) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+            _guestUserKey, jsonEncode(optimisticUser.toJson()));
+        return;
+      }
+
+      if (_hasFirebaseSession) {
+        final activeUid = _auth.currentUser!.uid;
+        debugPrint(
+            'AuthService.saveStoryProgress: uid=$activeUid storyId=${progress.storyId} segment=${progress.currentSegmentIndex}');
+        await _userService.updateStoryProgress(
+          activeUid,
+          progress,
+          clearCompletedVariants: clearCompletedVariants,
+        );
+
+        if (starsDelta > 0) {
+          await _userService.addStars(activeUid, starsDelta);
+        }
+
+        final fresh = await _userService.getUser(activeUid);
         if (fresh != null) {
           _currentUser = fresh;
           await _cacheAuthenticatedUser(fresh);
           notifyListeners();
         }
-        return;
       }
-
-      final mergedStoryProgress = Map<String, StoryProgress>.from(
-        current.storyProgress,
-      );
-      for (final entry in cached.storyProgress.entries) {
-        final existing = mergedStoryProgress[entry.key];
-        if (existing == null ||
-            entry.value.updatedAt.isAfter(existing.updatedAt)) {
-          mergedStoryProgress[entry.key] = entry.value;
-        }
-      }
-
-      final mergedFavorites = <String>{
-        ...current.favoriteStoryIds,
-        ...cached.favoriteStoryIds,
-      }.toList();
-
-      final merged = current.copyWith(
-        totalStars: current.totalStars >= cached.totalStars
-            ? current.totalStars
-            : cached.totalStars,
-        storiesCompleted: current.storiesCompleted >= cached.storiesCompleted
-            ? current.storiesCompleted
-            : cached.storiesCompleted,
-        favoriteStoryIds: mergedFavorites,
-        storyProgress: mergedStoryProgress,
-        createdAt: current.createdAt.isBefore(cached.createdAt)
-            ? current.createdAt
-            : cached.createdAt,
-        updatedAt: DateTime.now(),
-      );
-
-      await _userService.updateUser(merged);
-
-      // Clean up stories with currentSegmentIndex = 0 (never actually read)
-      await _userService.cleanupUnstartedStories(uid);
-
-      final refreshed = await _userService.getUser(uid);
-      _currentUser = refreshed ?? merged;
-      await _cacheAuthenticatedUser(_currentUser!);
-      notifyListeners();
     } catch (e) {
-      debugPrint('Failed to sync authenticated user state with cloud: $e');
+      debugPrint('Failed to persist story progress: $e');
+      if (_hasFirebaseSession) {
+        final activeUid = _auth.currentUser!.uid;
+        try {
+          await _userService.updateStoryProgress(
+            activeUid,
+            progress,
+            clearCompletedVariants: clearCompletedVariants,
+          );
+          if (starsDelta > 0) {
+            await _userService.addStars(activeUid, starsDelta);
+          }
+          final recovered = await _userService.getUser(activeUid);
+          if (recovered != null) {
+            _currentUser = recovered;
+            await _cacheAuthenticatedUser(recovered);
+            notifyListeners();
+            return;
+          }
+        } catch (retryError) {
+          debugPrint('Retry story progress persistence failed: $retryError');
+        }
+
+        await refreshCurrentUserFromCloud();
+      }
+
+      assert(() {
+        throw StateError('Firestore story progress save failed: $e');
+      }());
     }
   }
+
+  Future<UserModel?> _loadGuestUserFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_guestUserKey);
+    if (raw == null) return null;
+
+    try {
+      return UserModel.fromJson(jsonDecode(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Force-refresh authenticated user from Firestore source-of-truth.
+  Future<void> refreshCurrentUserFromCloud() async {
+    if (!_hasFirebaseSession) return;
+
+    final uid = _auth.currentUser!.uid;
+    _status = AuthStatus.authenticated;
+
+    try {
+      final fresh = await _userService.getUser(uid);
+      if (fresh != null) {
+        _currentUser = fresh;
+        await _cacheAuthenticatedUser(fresh);
+        notifyListeners();
+        return;
+      }
+    } catch (e) {
+      debugPrint('Direct cloud refresh failed: $e');
+    }
+
+    await _syncAuthenticatedStateWithCloud(uid);
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription.cancel();
+    super.dispose();
+  }
 }
+
+String _normalizeKey(String value) =>
+    value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');

@@ -36,7 +36,6 @@ class TTSService extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isSpeaking = false;
   String _currentLanguage = 'fil-PH';
-  String _voiceGender = 'male';
   double _speechRate = 0.5;
   double _voiceSpeedMultiplier = 1.0;
   double _pitch = 1.05;
@@ -86,7 +85,6 @@ class TTSService extends ChangeNotifier {
 
   bool get isSpeaking => _isSpeaking;
   String get currentLanguage => _currentLanguage;
-  String get voiceGender => _voiceGender;
   String get selectedPersonaId => _selectedPersonaId;
   String get voiceOverLanguage => _voiceOverLanguage;
   double get voiceSpeedMultiplier => _voiceSpeedMultiplier;
@@ -137,7 +135,6 @@ class TTSService extends ChangeNotifier {
     _voiceSpeedMultiplier = _clampVoiceSpeed(preferences.voiceSpeed);
     _voiceOverLanguage = preferences.language == 'en' ? 'en' : 'fil';
     _currentLanguage = _effectiveVoiceLocale;
-    _voiceGender = _selectedPersona.gender;
     await _applySettings();
     notifyListeners();
   }
@@ -155,12 +152,12 @@ class TTSService extends ChangeNotifier {
   Future<void> _applySettings() async {
     try {
       final accentLocale = _effectiveVoiceLocale;
-      _voiceGender = _selectedPersona.gender;
       await _setVoiceForLocale(accentLocale);
       _currentLanguage = accentLocale;
       final personaBaseRate = _selectedPersona.speechRate;
       final userPreferredRate = _mapSpeedToRate(_voiceSpeedMultiplier);
-      _speechRate = ((personaBaseRate + userPreferredRate) / 2).clamp(0.28, 0.70);
+      _speechRate =
+          ((personaBaseRate + userPreferredRate) / 2).clamp(0.28, 0.70);
       await _flutterTts.setSpeechRate(_speechRate);
       _pitch = _selectedPersona.pitch;
       await _flutterTts.setPitch(_pitch);
@@ -570,7 +567,6 @@ class TTSService extends ChangeNotifier {
     if (!exists) return;
 
     _selectedPersonaId = personaId;
-    _voiceGender = _selectedPersona.gender;
     await _applySettings();
     notifyListeners();
   }
@@ -584,12 +580,6 @@ class TTSService extends ChangeNotifier {
   // Backward-compatible wrapper used by current settings UI.
   Future<void> setFemaleVoiceCharacter(String characterId) async {
     await setVoicePersona(characterId);
-  }
-
-  Future<void> setVoiceGender(String gender) async {
-    _voiceGender = gender.toLowerCase() == 'male' ? 'male' : 'female';
-    await _applySettings();
-    notifyListeners();
   }
 
   /// Dispose

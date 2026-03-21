@@ -22,7 +22,11 @@ class AppRouter {
   static Widget _withFloatingBuddy(
     Widget child, {
     double extraBottomOffset = 0,
+    double extraRightOffset = 0,
     double? size,
+    bool animateFloatingBuddy = false,
+    String? speechMessage,
+    bool allowInteraction = false,
   }) {
     return Builder(
       builder: (context) {
@@ -30,19 +34,27 @@ class AppRouter {
         final bottomInset = media.padding.bottom;
         final keyboardInset = media.viewInsets.bottom;
         final buddySize = size ?? (media.size.width < 360 ? 60.0 : 68.0);
+        final overlayBuddy = BuddyCompanion(
+          state: BuddyState.happy,
+          size: buddySize,
+          showSpeechBubble: speechMessage != null,
+          enableTapSpeechBubble: speechMessage != null,
+          message: speechMessage,
+        );
+        final buddyWidget = animateFloatingBuddy
+            ? AnimatedFloatingBuddy(child: overlayBuddy)
+            : overlayBuddy;
+
         return Stack(
           children: [
             child,
             if (keyboardInset == 0)
               Positioned(
-                right: AppSpacing.md,
+                right: AppSpacing.md + extraRightOffset,
                 bottom: AppSpacing.md + bottomInset + extraBottomOffset,
                 child: IgnorePointer(
-                  child: BuddyCompanion(
-                    state: BuddyState.happy,
-                    size: buddySize,
-                    showSpeechBubble: false,
-                  ),
+                  ignoring: !allowInteraction,
+                  child: buddyWidget,
                 ),
               ),
           ],
@@ -128,7 +140,13 @@ class AppRouter {
             LoginScreen(
               mode: state.uri.queryParameters['mode'] ?? 'signin',
             ),
-            extraBottomOffset: 12,
+            extraBottomOffset: 24,
+            extraRightOffset: 2,
+            size: 80,
+            animateFloatingBuddy: true,
+            speechMessage:
+                'Welcome! Sign in or create an account to start your reading adventure!',
+            allowInteraction: true,
           ),
         ),
       ),
@@ -366,4 +384,45 @@ class AppRoutes {
   static const String login = '/login';
   static const String storiesByLevel = '/stories/level/:level';
   static const String storiesByCategory = '/stories/category/:category';
+}
+
+/// Small helper to animate the floating buddy overlay in the login screen
+class AnimatedFloatingBuddy extends StatefulWidget {
+  final Widget child;
+
+  const AnimatedFloatingBuddy({super.key, required this.child});
+
+  @override
+  State<AnimatedFloatingBuddy> createState() => _AnimatedFloatingBuddyState();
+}
+
+class _AnimatedFloatingBuddyState extends State<AnimatedFloatingBuddy> {
+  bool _floatUp = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(
+        begin: _floatUp ? -5 : 5,
+        end: _floatUp ? 5 : -5,
+      ),
+      duration: const Duration(milliseconds: 3200),
+      curve: Curves.easeInOut,
+      onEnd: () {
+        if (!mounted) return;
+        setState(() => _floatUp = !_floatUp);
+      },
+      builder: (context, value, child) {
+        final scale = 1 + (value.abs() / 130);
+        return Transform.translate(
+          offset: Offset(0, value),
+          child: Transform.scale(
+            scale: scale,
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
+  }
 }

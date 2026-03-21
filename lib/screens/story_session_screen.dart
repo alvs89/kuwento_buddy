@@ -47,6 +47,11 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   String _activeLanguageCode = 'en';
   bool _isTranslating = false;
   bool _isNarrationPlaying = false;
+  bool _isExiting = false;
+  bool _showQuestionHintBubble = false;
+  bool _showQuestionSuccessBubble = false;
+  Timer? _hintBubbleTimer;
+  Timer? _successBubbleTimer;
 
   @override
   void initState() {
@@ -87,6 +92,12 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         _controller!.addListener(_onControllerUpdate);
         _activeLanguageCode = _sourceLanguageCode;
       });
+
+      // Persist an in-progress entry immediately so the Library tab reflects
+      // the story without waiting for further interaction.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _controller?.saveProgress(immediate: true);
+      });
     }
   }
 
@@ -99,6 +110,21 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     if (_controller?.sessionState == SessionState.completed &&
         !_showCelebration) {
       setState(() => _showCelebration = true);
+    }
+    if (_controller?.sessionState == SessionState.questioning) {
+      if (_controller?.showHint == true) {
+        _startHintBubble();
+      } else {
+        _hideHintBubble();
+      }
+      if (_controller?.isAnswerCorrect == true) {
+        _startSuccessBubble();
+      } else {
+        _hideSuccessBubble();
+      }
+    } else {
+      _hideHintBubble();
+      _hideSuccessBubble();
     }
   }
 
@@ -115,6 +141,24 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         setState(() => _showBuddyOverlay = false);
       }
     });
+    _hideHintBubble();
+    _hideSuccessBubble();
+  }
+
+  void _handleShowHintsTap() {
+    if (_controller == null) return;
+
+    final result = _controller!.requestHint();
+    if (result.remainingAttempts > 0) {
+      final label =
+          result.remainingAttempts == 1 ? 'hint attempt' : 'hint attempts';
+      _toastService.showInfo(
+        '${result.remainingAttempts} $label remaining',
+      );
+      return;
+    }
+
+    _toastService.showWarning('You\'ve used all available hints');
   }
 
   Future<void> _speakText(String text, {required String languageCode}) async {
@@ -317,6 +361,26 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     await _speakText(text, languageCode: narrationLanguageCode);
   }
 
+  Future<void> _saveProgressAndExit() async {
+    if (_isExiting) return;
+    _isExiting = true;
+
+    _stopSpeakingSilently();
+
+    try {
+      await _controller?.saveProgress(immediate: true);
+      // Pull fresh data so Library tabs reflect the latest progress right away.
+      if (mounted) {
+        await context.read<AuthService>().refreshCurrentUserFromCloud();
+      }
+    } catch (e) {
+      debugPrint('Failed to save progress before exit: $e');
+    }
+
+    if (!mounted) return;
+    context.pop();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive ||
@@ -324,12 +388,17 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
       _stopSpeakingSilently();
+      unawaited(_controller?.saveProgress(immediate: true));
+      // Best-effort refresh so background/foreground cycles keep the Library in sync.
+      unawaited(context.read<AuthService>().refreshCurrentUserFromCloud());
     }
   }
 
   @override
   void dispose() {
     _wrongAnswerHighlightTimer?.cancel();
+    _hintBubbleTimer?.cancel();
+    _successBubbleTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _stopSpeakingSilently();
     context.read<TTSService>().removeListener(_onTTSStateChanged);
@@ -360,8 +429,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         authService.currentUser?.favoriteStoryIds.contains(_story!.id) ?? false;
 
     return PopScope(
-      onPopInvokedWithResult: (_, __) {
-        _stopSpeakingSilently();
+      canPop: false,
+      onPopInvokedWithResult: (didPop, __) {
+        if (didPop) return;
+        unawaited(_saveProgressAndExit());
       },
       child: Scaffold(
         body: Stack(
@@ -389,24 +460,15 @@ class _StorySessionScreenState extends State<StorySessionScreen>
               Positioned(
                 right: 16,
                 bottom: 100,
-                child: GestureDetector(
-                  onTap: () {
-                    if (controller.hasCheckpoint &&
-                        !controller.isAnswerCorrect) {
-                      controller.triggerCheckpoint();
-                    } else {
-                      _toastService
-                          .showInfo('Keep reading! A question is coming soon.');
-                    }
-                  },
-                  child: BuddyCompanion(
-                    state:
-                        controller.hasCheckpoint && !controller.isAnswerCorrect
-                            ? BuddyState.thinking
-                            : BuddyState.idle,
-                    size: 60,
-                    showSpeechBubble: false,
-                  ),
+                child: BuddyCompanion(
+                  state: controller.hasCheckpoint && !controller.isAnswerCorrect
+                      ? BuddyState.thinking
+                      : BuddyState.idle,
+                  size: 60,
+                  showSpeechBubble: true,
+                  enableTapSpeechBubble: true,
+                  tapMessage: _floatingBuddyMessage(controller),
+                  onTap: () => _handleFloatingBuddyInteraction(controller),
                 ),
               ),
 
@@ -453,10 +515,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           Row(
             children: [
               IconButton(
-                onPressed: () {
-                  _stopSpeaking();
-                  context.pop();
-                },
+                onPressed: _saveProgressAndExit,
                 icon: Icon(
                   Icons.keyboard_arrow_down,
                   color: isDark ? Colors.white : KuwentoColors.textPrimary,
@@ -768,11 +827,26 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const BuddyCompanion(
-              state: BuddyState.thinking,
-              size: 50,
-              showSpeechBubble: false,
+            Transform.translate(
+              offset: const Offset(0, -6),
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: MediaQuery(
+                  data:
+                      MediaQuery.of(context).copyWith(disableAnimations: true),
+                  child: const Center(
+                    child: BuddyCompanion(
+                      state: BuddyState.thinking,
+                      size: 40,
+                      showSpeechBubble: false,
+                      disableHighlightEffects: true,
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -927,6 +1001,50 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     );
   }
 
+  void _handleFloatingBuddyInteraction(StoryController controller) {
+    // Intentionally left blank: tapping Buddy no longer shows a tooltip message.
+  }
+
+  String _floatingBuddyMessage(StoryController controller) {
+    if (controller.hasCheckpoint && !controller.isAnswerCorrect) {
+      return 'Checkpoint question is ready soon! Continue reading to keep up the flow.';
+    }
+
+    return 'Buddy is cheering you on!';
+  }
+
+  void _startSuccessBubble() {
+    if (_showQuestionSuccessBubble) return;
+    _successBubbleTimer?.cancel();
+    setState(() => _showQuestionSuccessBubble = true);
+    _successBubbleTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      setState(() => _showQuestionSuccessBubble = false);
+    });
+  }
+
+  void _hideSuccessBubble() {
+    if (!_showQuestionSuccessBubble) return;
+    _successBubbleTimer?.cancel();
+    setState(() => _showQuestionSuccessBubble = false);
+  }
+
+  void _startHintBubble() {
+    if (_showQuestionHintBubble) return;
+    _hintBubbleTimer?.cancel();
+    setState(() => _showQuestionHintBubble = true);
+    _hintBubbleTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      setState(() => _showQuestionHintBubble = false);
+    });
+  }
+
+  void _hideHintBubble() {
+    if (!_showQuestionHintBubble) return;
+    _hintBubbleTimer?.cancel();
+    setState(() => _showQuestionHintBubble = false);
+  }
+
   Widget _buildBuddyOverlay(BuildContext context, bool isDark) {
     final question = _controller!.currentQuestion;
     if (question == null) return const SizedBox.shrink();
@@ -950,152 +1068,223 @@ class _StorySessionScreenState extends State<StorySessionScreen>
               scale: _overlayAnimation.value,
               child: child,
             ),
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Buddy companion with appropriate state
-                    BuddyCompanion(
-                      state: _controller!.isAnswerCorrect
-                          ? BuddyState.happy
-                          : (_controller!.showHint
-                              ? BuddyState.sympathetic
-                              : BuddyState.thinking),
-                      message: _controller!.isAnswerCorrect
-                          ? displayEncouragement
-                          : (_controller!.showHint ? displayHint : null),
-                      size: 100,
-                    ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Skill badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: KuwentoColors.pastelBlue.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                      child: Text(
-                        displaySkill,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: KuwentoColors.pastelBlue,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Question card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        color: isDark ? KuwentoColors.cardDark : Colors.white,
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayQuestion,
+            child: Stack(
+              children: [
+                Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Skill badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                KuwentoColors.pastelBlue.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                          ),
+                          child: Text(
+                            displaySkill,
                             style: Theme.of(context)
                                 .textTheme
-                                .titleMedium
+                                .labelSmall
                                 ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? Colors.white
-                                      : KuwentoColors.textPrimary,
-                                ),
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Answer options
-                          ...List.generate(
-                            question.options.length,
-                            (index) => _buildAnswerOption(
-                              context,
-                              isDark,
-                              index,
-                              displayOptions[index],
-                              question,
-                            ),
-                          ),
-
-                          // "Back to Read Story Again" button (when not correct yet)
-                          if (!_controller!.isAnswerCorrect) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            SizedBox(
-                              width: double.infinity,
-                              child: TextButton.icon(
-                                onPressed: () {
-                                  _hideBuddyQuestion();
-                                  _controller!.goBackToReading();
-                                },
-                                icon: Icon(
-                                  Icons.menu_book,
-                                  size: 18,
                                   color: KuwentoColors.pastelBlue,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                label: Text(
-                                  'Back to Read Story Again',
-                                  style: TextStyle(
-                                    color: KuwentoColors.pastelBlue,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
+                        ),
 
-                          // Continue button (if correct)
-                          if (_controller!.isAnswerCorrect) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  _hideBuddyQuestion();
-                                  Future.delayed(
-                                    const Duration(milliseconds: 400),
-                                    () {
-                                      _pageController.nextPage(
-                                        duration:
-                                            const Duration(milliseconds: 300),
-                                        curve: Curves.easeInOut,
-                                      );
-                                      _controller!.continueAfterCorrect();
-                                    },
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: KuwentoColors.buddyHappy,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                ),
-                                child: const Text(
-                                  'Continue Reading ✨',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                        const SizedBox(height: AppSpacing.md),
+
+                        // Question card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark ? KuwentoColors.cardDark : Colors.white,
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayQuestion,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white
+                                          : KuwentoColors.textPrimary,
+                                    ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+
+                              // Answer options
+                              ...List.generate(
+                                question.options.length,
+                                (index) => _buildAnswerOption(
+                                  context,
+                                  isDark,
+                                  index,
+                                  displayOptions[index],
+                                  question,
                                 ),
                               ),
-                            ),
-                          ],
-                        ],
-                      ),
+
+                              // Hint/back controls (when the answer is not yet correct)
+                              if (!_controller!.isAnswerCorrect) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Opacity(
+                                    opacity: _controller!.hasHintAttemptsLeft ? 1.0 : 0.5,
+                                    child: SizedBox(
+                                      width: 200,
+                                      child: OutlinedButton(
+                                        onPressed: _controller!.hasHintAttemptsLeft
+                                            ? _handleShowHintsTap
+                                            : null,
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(
+                                            color: KuwentoColors.pastelBlue,
+                                            width: 2,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Text(
+                                              '💡Show Hints',
+                                              style: TextStyle(
+                                                color: KuwentoColors.pastelBlue,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: AppSpacing.xs),
+                                            Text(
+                                              '${_controller!.remainingHintAttempts} hint${_controller!.remainingHintAttempts == 1 ? '' : 's'} remaining',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium
+                                                  ?.copyWith(
+                                                    color: KuwentoColors.pastelBlue,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: TextButton.icon(
+                                    onPressed: () {
+                                      _hideBuddyQuestion();
+                                      _controller!.goBackToReading();
+                                    },
+                                    icon: Icon(
+                                      Icons.menu_book,
+                                      size: 18,
+                                      color: KuwentoColors.pastelBlue,
+                                    ),
+                                    label: Text(
+                                      'Back to Read Story Again',
+                                      style: TextStyle(
+                                        color: KuwentoColors.pastelBlue,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+
+                              // Continue button (if correct)
+                              if (_controller!.isAnswerCorrect) ...[
+                                const SizedBox(height: AppSpacing.lg),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      _hideBuddyQuestion();
+                                      Future.delayed(
+                                        const Duration(milliseconds: 400),
+                                        () {
+                                          _pageController.nextPage(
+                                            duration: const Duration(
+                                                milliseconds: 300),
+                                            curve: Curves.easeInOut,
+                                          );
+                                          _controller!.continueAfterCorrect();
+                                        },
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: KuwentoColors.buddyHappy,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                    ),
+                                    child: const Text(
+                                      'Continue Reading ✨',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                if (_controller!.showHint &&
+                    !_controller!.isAnswerCorrect &&
+                    _showQuestionHintBubble)
+                  Positioned(
+                    right: 16,
+                    bottom: 100,
+                    child: BuddyCompanion(
+                      state: _controller!.showHint
+                          ? BuddyState.sympathetic
+                          : BuddyState.thinking,
+                      message: displayHint,
+                      size:
+                          MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
+                      showSpeechBubble: true,
+                      enableTapSpeechBubble: false,
+                    ),
+                  ),
+                if (_controller!.isAnswerCorrect && _showQuestionSuccessBubble)
+                  Positioned(
+                    right: 16,
+                    bottom: 100,
+                    child: BuddyCompanion(
+                      state: BuddyState.happy,
+                      message: displayEncouragement,
+                      size:
+                          MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
+                      showSpeechBubble: true,
+                      enableTapSpeechBubble: false,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

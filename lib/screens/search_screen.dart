@@ -67,6 +67,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final allStories = _storyService.getAllStories();
     final currentLibraryStories = _storyService.getRecommendedStories();
 
     return Scaffold(
@@ -89,11 +90,11 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           child: Column(
             children: [
-              _buildHeader(isDark),
+              _buildHeader(isDark, allStories.length),
               Expanded(
                 child: _hasSearched
                     ? _buildSearchResults()
-                    : _buildBrowseCategories(currentLibraryStories),
+                    : _buildBrowseCategories(currentLibraryStories, allStories.length),
               ),
             ],
           ),
@@ -102,7 +103,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(bool isDark, int totalStories) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -240,7 +241,6 @@ class _SearchScreenState extends State<SearchScreen> {
       onTap: () => context.push('/story/${story.id}'),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 360;
           final horizontalPadding =
               constraints.maxWidth < 340 ? AppSpacing.sm : AppSpacing.md;
           final imageSize =
@@ -378,10 +378,16 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildBrowseCategories(List<StoryModel> currentLibraryStories) {
+  Widget _buildBrowseCategories(List<StoryModel> libraryStories, int totalStoryCount) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categoryStoryCounts =
-        _buildCategoryStoryCounts(currentLibraryStories);
+    final categoryStoryCounts = <StoryCategory, int>{};
+    for (final story in libraryStories) {
+      for (final category in story.categories) {
+        if (!_categoryMeta.containsKey(category)) continue;
+        categoryStoryCounts[category] =
+            (categoryStoryCounts[category] ?? 0) + 1;
+      }
+    }
     final categories = categoryStoryCounts.keys.toList()
       ..sort(
           (a, b) => _categoryMeta[a]!.title.compareTo(_categoryMeta[b]!.title));
@@ -429,7 +435,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.xl),
                         ),
                         child: Text(
-                          '${currentLibraryStories.length} stories',
+                          '$totalStoryCount stories',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: KuwentoColors.deepTeal,
@@ -466,11 +472,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     childAspectRatio: crossAxisCount == 1 ? 2.6 : 1.8,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final category = categories[index];
-                      final meta = _categoryMeta[category]!;
-                      final totalStories = categoryStoryCounts[category] ?? 0;
-                      return _buildCategoryCard(meta, totalStories);
+                     (context, index) {
+                       final category = categories[index];
+                       final meta = _categoryMeta[category]!;
+                       final totalStories = categoryStoryCounts[category] ?? 0;
+                       return _buildCategoryCard(meta, totalStories);
                     },
                     childCount: categories.length,
                   ),
@@ -561,18 +567,6 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
-  }
-
-  Map<StoryCategory, int> _buildCategoryStoryCounts(List<StoryModel> stories) {
-    final counts = <StoryCategory, int>{};
-    for (final story in stories) {
-      for (final category in story.categories) {
-        if (!_categoryMeta.containsKey(category)) continue;
-        counts[category] = (counts[category] ?? 0) + 1;
-      }
-    }
-
-    return counts;
   }
 
   String _formatStoryCount(int count) {

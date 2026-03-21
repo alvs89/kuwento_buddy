@@ -14,14 +14,37 @@ class MainShell extends StatelessWidget {
     required this.currentIndex,
   });
 
+  (BuddyState, String) _buddyContextByTab() {
+    switch (currentIndex) {
+      case 0:
+        return (
+          BuddyState.happy,
+          'Welcome back! Tap a story card to start reading and earn stars.',
+        );
+      case 1:
+        return (
+          BuddyState.thinking,
+          'Looking for something fun? Search by title, level, or category.',
+        );
+      case 2:
+        return (
+          BuddyState.encouraging,
+          'Welcome to your library! Revisit favorites or continue where you left off.',
+        );
+      default:
+        return (BuddyState.idle, 'Hi! I am here if you need reading tips.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final media = MediaQuery.of(context);
     final bottomInset = media.padding.bottom;
     final keyboardInset = media.viewInsets.bottom;
-    final buddySize = media.size.width < 360 ? 60.0 : 68.0;
+    final buddySize = media.size.width < 360 ? 60.0 : 78.0;
     final buddyBottomOffset = media.size.width < 360 ? 62.0 : 58.0;
+    final (buddyState, buddyMessage) = _buddyContextByTab();
 
     return Scaffold(
       body: Stack(
@@ -30,13 +53,13 @@ class MainShell extends StatelessWidget {
           if (keyboardInset == 0)
             Positioned(
               right: AppSpacing.md,
-              bottom: AppSpacing.xs + bottomInset + buddyBottomOffset,
-              child: IgnorePointer(
-                child: BuddyCompanion(
-                  state: BuddyState.happy,
-                  size: buddySize,
-                  showSpeechBubble: false,
-                ),
+              bottom: AppSpacing.sm + bottomInset + buddyBottomOffset,
+              child: BuddyCompanion(
+                state: buddyState,
+                tapMessage: buddyMessage,
+                size: buddySize,
+                showSpeechBubble: true,
+                enableTapSpeechBubble: true,
               ),
             ),
         ],

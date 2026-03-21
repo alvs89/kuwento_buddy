@@ -4,11 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/models/user_model.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
-import 'package:kuwentobuddy/services/auth_service.dart';
-import 'package:kuwentobuddy/services/toast_service.dart';
+import '../services/auth_service.dart';
 import 'package:kuwentobuddy/theme.dart';
-import 'package:kuwentobuddy/widgets/story_card.dart';
-import 'package:kuwentobuddy/widgets/buddy_companion.dart';
+import '../widgets/story_card.dart';
 
 /// My Stories screen - Progress Journal like Spotify's Library
 class MyStoriesScreen extends StatefulWidget {
@@ -22,7 +20,6 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final StoryService _storyService = StoryService();
-  final ToastService _toastService = ToastService();
   int _selectedTabIndex = 0;
 
   @override
@@ -30,14 +27,36 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_handleTabChange);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      debugPrint('MyStoriesScreen: Refreshing user from cloud on init');
+      context.read<AuthService>().refreshCurrentUserFromCloud().then((_) {
+        if (!mounted) return;
+        final user = context.read<AuthService>().currentUser;
+        debugPrint(
+            'MyStoriesScreen: Loaded user with ${user?.storyProgress.length ?? 0} progress entries');
+      }).catchError((e) {
+        debugPrint('MyStoriesScreen: Refresh failed: $e');
+      });
+    });
   }
 
   void _handleTabChange() {
     if (_selectedTabIndex == _tabController.index) return;
     if (_tabController.indexIsChanging) return;
+    final newIndex = _tabController.index;
     setState(() {
-      _selectedTabIndex = _tabController.index;
+      _selectedTabIndex = newIndex;
     });
+    if (newIndex == 0) {
+      debugPrint(
+          'MyStoriesScreen: Tab changed to In Progress, refreshing user');
+      context.read<AuthService>().refreshCurrentUserFromCloud().then((_) {
+        if (!mounted) return;
+        debugPrint('MyStoriesScreen: Tab refresh complete');
+      });
+    }
   }
 
   @override
@@ -194,14 +213,36 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
 
   Widget _buildAverageScoreCard(BuildContext context, UserModel user) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final storyProgressEntries = _resolvedStoryProgressEntries(user);
 
-    // Calculate average comprehension score across all completed stories
+    // Build the exact same completed set logic used by the Completed tab.
+    final completedEntries = storyProgressEntries
+        .where((entry) => _isStoryCompleted(entry.value, entry.key))
+        .toList();
+
+    // Calculate average comprehension score across completed stories.
     int totalScore = 0;
     int completedCount = 0;
 
-    for (final progress in user.storyProgress.values) {
-      if (progress.isCompleted && progress.totalQuestions > 0) {
+    for (final entry in completedEntries) {
+      final progress = entry.value;
+
+      // Primary source: answered questions. Fallback: persisted score/stars data
+      // for legacy completed records that may not include question counters.
+      final hasQuestionMetrics = progress.totalQuestions > 0;
+      final hasFallbackMetrics = progress.starsEarned > 0 ||
+          progress.correctAnswers > 0 ||
+          progress.totalSegments > 0;
+
+      if (hasQuestionMetrics) {
         totalScore += progress.comprehensionScore.round();
+        completedCount++;
+        continue;
+      }
+
+      if (hasFallbackMetrics) {
+        final starsBasedScore = (progress.starsEarned.clamp(0, 3) * 100) ~/ 3;
+        totalScore += starsBasedScore;
         completedCount++;
       }
     }
@@ -451,19 +492,22 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
 
   Widget _buildInProgressTab(UserModel? user) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final storyProgressEntries = _resolvedStoryProgressEntries(user);
 
     // Dynamic categorization: at least one segment done, but not fully completed.
-    final inProgress = user?.storyProgress.entries
-            .map((entry) {
-              final story = _resolveStoryById(entry.key);
-              if (story == null) return null;
-              return MapEntry(story, entry.value);
-            })
-            .whereType<MapEntry<StoryModel, StoryProgress>>()
-            .where((entry) => _isStoryInProgress(entry.value, entry.key))
-            .map((entry) => entry.key)
-            .toList() ??
-        [];
+    debugPrint(
+        'MyStoriesScreen: Processing ${storyProgressEntries.length} raw entries');
+    final rawNonCompleted = storyProgressEntries
+        .where((entry) => !_isStoryCompleted(entry.value, entry.key))
+        .length;
+    debugPrint('MyStoriesScreen: Found $rawNonCompleted non-completed entries');
+
+    final inProgress = storyProgressEntries
+        .where((entry) => _isStoryInProgress(entry.value, entry.key))
+        .toList()
+      ..sort((a, b) => b.value.updatedAt.compareTo(a.value.updatedAt));
+    debugPrint(
+        'MyStoriesScreen: In Progress tab will show ${inProgress.length} cards');
 
     if (inProgress.isEmpty) {
       return _buildEmptyState(
@@ -476,9 +520,10 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
-        children: inProgress.map((story) {
-          final progress = user?.storyProgress[story.id];
-          final progressPercent = progress?.progressPercent ?? 0;
+        children: inProgress.map((entry) {
+          final story = entry.key;
+          final progress = entry.value;
+          final progressPercent = progress.progressPercent;
 
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -587,19 +632,13 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
 
   Widget _buildCompletedTab(UserModel? user) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final storyProgressEntries = _resolvedStoryProgressEntries(user);
 
     // Dynamic categorization: completed when final sequence/segment is finished.
-    final completed = user?.storyProgress.entries
-            .map((entry) {
-              final story = _resolveStoryById(entry.key);
-              if (story == null) return null;
-              return MapEntry(story, entry.value);
-            })
-            .whereType<MapEntry<StoryModel, StoryProgress>>()
-            .where((entry) => _isStoryCompleted(entry.value, entry.key))
-            .map((entry) => entry.key)
-            .toList() ??
-        [];
+    final completed = storyProgressEntries
+        .where((entry) => _isStoryCompleted(entry.value, entry.key))
+        .map((entry) => entry.key)
+        .toList();
 
     if (completed.isEmpty) {
       return _buildEmptyState(
@@ -823,7 +862,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Your Favorited Stories',
+                        'Your Favorite Stories',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: isDark
@@ -894,15 +933,58 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   }
 
   bool _isStoryCompleted(StoryProgress progress, StoryModel story) {
-    final lastSegmentIndex =
-        story.totalSegments > 0 ? story.totalSegments - 1 : 0;
-    return progress.isCompleted ||
-        progress.currentSegmentIndex >= lastSegmentIndex;
+    return progress.isCompleted;
   }
 
   bool _isStoryInProgress(StoryProgress progress, StoryModel story) {
-    return progress.currentSegmentIndex > 0 &&
-        !_isStoryCompleted(progress, story);
+    // Story sessions persist an in-progress entry immediately on open, so any
+    // non-completed progress record should stay visible in this tab.
+    return !_isStoryCompleted(progress, story);
+  }
+
+  List<MapEntry<StoryModel, StoryProgress>> _resolvedStoryProgressEntries(
+      UserModel? user) {
+    if (user == null) return <MapEntry<StoryModel, StoryProgress>>[];
+
+    final byStoryId = <String, MapEntry<StoryModel, StoryProgress>>{};
+    for (final entry in user.storyProgress.entries) {
+      final progress = entry.value;
+      final story = _resolveStoryById(entry.key) ??
+          _resolveStoryById(progress.storyId) ??
+          _resolveStoryById(progress.storyTitle ?? '');
+      if (story == null) continue;
+
+      final candidate = MapEntry(story, progress);
+      final existing = byStoryId[story.id];
+
+      if (existing == null ||
+          _shouldReplaceProgress(existing.value, candidate.value)) {
+        byStoryId[story.id] = candidate;
+      }
+    }
+
+    return byStoryId.values.toList();
+  }
+
+  bool _shouldReplaceProgress(StoryProgress existing, StoryProgress candidate) {
+    // Prefer whichever entry is newer; allow a fresh in-progress write to
+    // replace an older completed snapshot so the story reappears under
+    // "In Progress" after reopening.
+    if (candidate.updatedAt.isAfter(existing.updatedAt)) {
+      return true;
+    }
+    if (existing.updatedAt.isAfter(candidate.updatedAt)) {
+      return false;
+    }
+
+    // Tie-breaker when timestamps are equal:
+    // - in-progress should beat completed (lets users resume)
+    // - otherwise, keep the one with deeper segment index.
+    if (existing.isCompleted != candidate.isCompleted) {
+      return !candidate.isCompleted;
+    }
+
+    return candidate.currentSegmentIndex > existing.currentSegmentIndex;
   }
 
   StoryModel? _resolveStoryById(String storyId) {
@@ -912,9 +994,13 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     final normalized = _normalizeStoryId(storyId);
     for (final story in _storyService.getAllStories()) {
       final normalizedStoryId = _normalizeStoryId(story.id);
+      final normalizedTitle = _normalizeStoryId(story.title);
       if (normalizedStoryId == normalized ||
+          normalizedTitle == normalized ||
           normalizedStoryId.contains(normalized) ||
-          normalized.contains(normalizedStoryId)) {
+          normalized.contains(normalizedStoryId) ||
+          normalizedTitle.contains(normalized) ||
+          normalized.contains(normalizedTitle)) {
         return story;
       }
     }
@@ -943,9 +1029,13 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       // Fallback matching for legacy IDs that may include separators or casing differences.
       for (final story in allStories) {
         final normalizedStoryId = _normalizeStoryId(story.id);
+        final normalizedStoryTitle = _normalizeStoryId(story.title);
         if (normalizedStoryId == normalizedFavoriteId ||
+            normalizedStoryTitle == normalizedFavoriteId ||
             normalizedStoryId.contains(normalizedFavoriteId) ||
-            normalizedFavoriteId.contains(normalizedStoryId)) {
+            normalizedFavoriteId.contains(normalizedStoryId) ||
+            normalizedStoryTitle.contains(normalizedFavoriteId) ||
+            normalizedFavoriteId.contains(normalizedStoryTitle)) {
           resolved.add(story);
           break;
         }
@@ -960,7 +1050,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     return uniqueById.values.toList();
   }
 
-  String _normalizeStoryId(String id) => id.trim().toLowerCase();
+  String _normalizeStoryId(String id) =>
+      id.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
 
   Widget _buildEmptyState({
     required String emoji,
@@ -979,12 +1070,6 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const BuddyCompanion(
-              state: BuddyState.idle,
-              size: 80,
-              showSpeechBubble: false,
-            ),
-            const SizedBox(height: AppSpacing.md),
             Text(emoji, style: const TextStyle(fontSize: 48)),
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -1006,7 +1091,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
             if (authService.isGuest) ...[
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Magaling! To save your stories forever,\ncreate an account! 🌟',
+                'To save your stories forever,\ncreate an account! 🌟',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: KuwentoColors.pastelBlue,

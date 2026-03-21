@@ -38,10 +38,11 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   @override
   void initState() {
     super.initState();
-    
+
     // Confetti controller
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 3));
+
     // Scale animation for dialog
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 400),
@@ -51,7 +52,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
       parent: _scaleController,
       curve: Curves.elasticOut,
     );
-    
+
     // Star animation
     _starController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -61,7 +62,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
       parent: _starController,
       curve: Curves.easeOutBack,
     );
-    
+
     // Start animations
     _scaleController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -91,7 +92,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             color: Colors.black.withValues(alpha: 0.75),
           ),
         ),
-        
+
         // Confetti from top center
         Align(
           alignment: Alignment.topCenter,
@@ -115,7 +116,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             createParticlePath: (size) => _drawStar(size),
           ),
         ),
-        
+
         // Confetti from left
         Align(
           alignment: Alignment.topLeft,
@@ -135,7 +136,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             ],
           ),
         ),
-        
+
         // Confetti from right
         Align(
           alignment: Alignment.topRight,
@@ -155,7 +156,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             ],
           ),
         ),
-        
+
         // Main celebration dialog
         Center(
           child: ScaleTransition(
@@ -183,29 +184,30 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                     size: 100,
                     showSpeechBubble: false,
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.md),
-                  
+
                   // Title
                   Text(
                     'Magaling! 🎉',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: KuwentoColors.buddyHappy,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: KuwentoColors.buddyHappy,
+                        ),
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.xs),
-                  
+
                   Text(
                     'Story Complete!',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                    ),
+                          color:
+                              isDark ? Colors.white : KuwentoColors.textPrimary,
+                        ),
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.lg),
-                  
+
                   // Stars earned with animation
                   AnimatedBuilder(
                     animation: _starAnimation,
@@ -215,12 +217,14 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                         children: List.generate(3, (index) {
                           final isEarned = index < widget.starsEarned;
                           final delay = index * 0.2;
-                          final animValue = (_starAnimation.value - delay).clamp(0.0, 1.0);
-                          
+                          final animValue =
+                              (_starAnimation.value - delay).clamp(0.0, 1.0);
+
                           return Transform.scale(
                             scale: isEarned ? animValue : 1.0,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               child: Icon(
                                 isEarned ? Icons.star : Icons.star_border,
                                 color: KuwentoColors.buddyThinking,
@@ -232,9 +236,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       );
                     },
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.md),
-                  
+
                   // Comprehension score
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -256,17 +260,18 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                         const SizedBox(width: AppSpacing.xs),
                         Text(
                           'Comprehension: ${widget.comprehensionScore.toStringAsFixed(0)}%',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: KuwentoColors.pastelBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: KuwentoColors.pastelBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.xl),
-                  
+
                   // Action buttons
                   Row(
                     children: [
@@ -286,7 +291,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: widget.onActivity,
-                          icon: const Icon(Icons.extension, size: 18, color: Colors.white),
+                          icon: const Icon(Icons.extension,
+                              size: 18, color: Colors.white),
                           label: const Text(
                             'Activity',
                             style: TextStyle(color: Colors.white),
@@ -299,9 +305,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.sm),
-                  
+
                   SizedBox(
                     width: double.infinity,
                     child: TextButton(
@@ -309,7 +315,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       child: Text(
                         'Back to Library',
                         style: TextStyle(
-                          color: isDark ? Colors.white54 : KuwentoColors.textSecondary,
+                          color: isDark
+                              ? Colors.white54
+                              : KuwentoColors.textSecondary,
                         ),
                       ),
                     ),
@@ -328,11 +336,11 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
     final center = size.width / 2;
     final outerRadius = size.width / 2;
     final innerRadius = size.width / 4;
-    
+
     for (int i = 0; i < 5; i++) {
       final outerAngle = (i * 72 - 90) * math.pi / 180;
       final innerAngle = ((i * 72) + 36 - 90) * math.pi / 180;
-      
+
       if (i == 0) {
         path.moveTo(
           center + outerRadius * math.cos(outerAngle),
@@ -344,13 +352,13 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
           center + outerRadius * math.sin(outerAngle),
         );
       }
-      
+
       path.lineTo(
         center + innerRadius * math.cos(innerAngle),
         center + innerRadius * math.sin(innerAngle),
       );
     }
-    
+
     path.close();
     return path;
   }

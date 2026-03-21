@@ -23,8 +23,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   List<Widget> _buildFloatingParticles(bool isDark) {
     final particleColor = isDark
-        ? Colors.white.withOpacity(0.09)
-        : KuwentoColors.pastelBlueDark.withOpacity(0.1);
+        ? Colors.white.withValues(alpha: 0.09)
+        : KuwentoColors.pastelBlueDark.withValues(alpha: 0.1);
 
     final positions = <Map<String, double>>[
       {'top': 130, 'left': 52, 'size': 7},
@@ -140,8 +140,8 @@ class _SplashScreenState extends State<SplashScreen>
           ];
 
     final glowColor = isDark
-        ? KuwentoColors.pastelBlueLight.withOpacity(0.45)
-        : KuwentoColors.pastelBlue.withOpacity(0.36);
+        ? KuwentoColors.pastelBlueLight.withValues(alpha: 0.45)
+        : KuwentoColors.pastelBlue.withValues(alpha: 0.36);
 
     return Scaffold(
       body: Stack(
@@ -171,7 +171,7 @@ class _SplashScreenState extends State<SplashScreen>
                       (isDark
                               ? KuwentoColors.pastelBlueLight
                               : KuwentoColors.skyBlue)
-                          .withOpacity(0.28),
+                          .withValues(alpha: 0.28),
                       Colors.transparent,
                     ],
                   ),
@@ -193,7 +193,7 @@ class _SplashScreenState extends State<SplashScreen>
                       (isDark
                               ? KuwentoColors.softCoral
                               : KuwentoColors.pastelBlueLight)
-                          .withOpacity(0.2),
+                          .withValues(alpha: 0.2),
                       Colors.transparent,
                     ],
                   ),
@@ -232,12 +232,12 @@ class _SplashScreenState extends State<SplashScreen>
                               end: Alignment.bottomRight,
                               colors: isDark
                                   ? [
-                                      Colors.white.withOpacity(0.08),
-                                      Colors.white.withOpacity(0.03),
+                                      Colors.white.withValues(alpha: 0.08),
+                                      Colors.white.withValues(alpha: 0.03),
                                     ]
                                   : [
                                       Colors.white,
-                                      Colors.white.withOpacity(0.92),
+                                      Colors.white.withValues(alpha: 0.92),
                                     ],
                             ),
                             boxShadow: [
@@ -247,17 +247,15 @@ class _SplashScreenState extends State<SplashScreen>
                                 spreadRadius: 1,
                               ),
                               BoxShadow(
-                                color: Colors.black.withOpacity(
-                                  isDark ? 0.35 : 0.12,
-                                ),
+                                color: Colors.black
+                                    .withValues(alpha: isDark ? 0.35 : 0.12),
                                 blurRadius: 22,
                                 offset: const Offset(0, 14),
                               ),
                             ],
                             border: Border.all(
-                              color: Colors.white.withOpacity(
-                                isDark ? 0.12 : 0.36,
-                              ),
+                              color: Colors.white
+                                  .withValues(alpha: isDark ? 0.12 : 0.36),
                               width: 1.2,
                             ),
                           ),
@@ -290,9 +288,10 @@ class _SplashScreenState extends State<SplashScreen>
                   child: SlideTransition(
                     position: _textSlide,
                     child: Text(
-                      'KuwentoBuddy',
+                      'Kuwento Buddy',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.9),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.9),
                         letterSpacing: 0.8,
                       ),
                     ),
@@ -318,15 +317,15 @@ class _StoryPatternPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
       ..color = isDark
-          ? Colors.white.withOpacity(0.08)
-          : KuwentoColors.pastelBlueDark.withOpacity(0.1);
+          ? Colors.white.withValues(alpha: 0.08)
+          : KuwentoColors.pastelBlueDark.withValues(alpha: 0.1);
 
     final accentPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0
       ..color = isDark
-          ? Colors.white.withOpacity(0.06)
-          : KuwentoColors.textSecondary.withOpacity(0.08);
+          ? Colors.white.withValues(alpha: 0.06)
+          : KuwentoColors.textSecondary.withValues(alpha: 0.08);
 
     // Open-book inspired arc near bottom left.
     final bookArc = Path()

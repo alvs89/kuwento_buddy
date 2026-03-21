@@ -28,7 +28,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
 
   StoryModel? _story;
   List<_SequenceEvent> _events = [];
-  List<int> _selectedOrder = [];
+  final List<int> _selectedOrder = [];
   bool _isCompleted = false;
   bool _isCorrect = false;
   BuddyState _buddyState = BuddyState.idle;
@@ -172,23 +172,11 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
       updatedAt: now,
     );
 
-    final latestUser = authService.currentUser;
-    if (latestUser == null) return;
+    final wasAlreadyCompleted = existingProgress?.isCompleted == true;
 
-    final updatedProgress =
-        Map<String, StoryProgress>.from(latestUser.storyProgress);
-    updatedProgress[story.id] = completedProgress;
-    final wasAlreadyCompleted =
-        latestUser.storyProgress[story.id]?.isCompleted == true;
-
-    await authService.updateUser(
-      latestUser.copyWith(
-        storyProgress: updatedProgress,
-        storiesCompleted: wasAlreadyCompleted
-            ? latestUser.storiesCompleted
-            : latestUser.storiesCompleted + 1,
-        updatedAt: now,
-      ),
+    await authService.saveStoryProgress(
+      completedProgress,
+      completedIncrement: !wasAlreadyCompleted,
     );
   }
 

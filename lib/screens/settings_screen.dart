@@ -250,6 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ttsService = context.watch<TTSService>();
     _ensureSpeedInitialized(authService, ttsService);
     final user = authService.currentUser;
+    final photoUrl = user?.photoUrl?.trim();
 
     return Scaffold(
       appBar: AppBar(
@@ -291,10 +292,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               KuwentoColors.pastelBlue.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: user?.photoUrl != null
+                        child: photoUrl != null && photoUrl.isNotEmpty
                             ? ClipOval(
                                 child: Image.network(
-                                  user!.photoUrl!,
+                                  photoUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => const Icon(
                                     Icons.person,
@@ -900,10 +901,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Positioned(
             right: AppSpacing.md,
             bottom: AppSpacing.md + bottomInset,
-            child: const BuddyCompanion(
-              state: BuddyState.happy,
-              size: 72,
-              showSpeechBubble: false,
+            child: Builder(
+              builder: (context) {
+                return Transform.translate(
+                  offset: const Offset(0, -18),
+                  child: BuddyCompanion(
+                    state: BuddyState.encouraging,
+                    size: 72,
+                    showSpeechBubble: true,
+                    enableTapSpeechBubble: true,
+                    message:
+                        'You can adjust reading preferences here to make stories easier and more fun.',
+                    speechTitle: 'Did You Know?',
+                    bodyColor: KuwentoColors.pastelBlue,
+                  ),
+                );
+              },
             ),
           ),
         ],

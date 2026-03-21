@@ -16,6 +16,7 @@ class StoryProgress {
   final DateTime startedAt;
   final DateTime? completedAt;
   final DateTime updatedAt;
+  final int hintAttemptsUsed;
 
   const StoryProgress({
     required this.storyId,
@@ -31,6 +32,7 @@ class StoryProgress {
     required this.startedAt,
     this.completedAt,
     required this.updatedAt,
+    this.hintAttemptsUsed = 0,
   });
 
   double get progressPercent =>
@@ -61,6 +63,7 @@ class StoryProgress {
             ? _parseDateTime(json['completedAt'])
             : null,
         updatedAt: _parseDateTime(json['updatedAt']),
+        hintAttemptsUsed: (json['hintAttemptsUsed'] as int?) ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -77,6 +80,7 @@ class StoryProgress {
         'startedAt': startedAt.toIso8601String(),
         'completedAt': completedAt?.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
+        'hintAttemptsUsed': hintAttemptsUsed,
       };
 
   StoryProgress copyWith({
@@ -93,6 +97,7 @@ class StoryProgress {
     DateTime? startedAt,
     DateTime? completedAt,
     DateTime? updatedAt,
+    int? hintAttemptsUsed,
   }) =>
       StoryProgress(
         storyId: storyId ?? this.storyId,
@@ -108,6 +113,7 @@ class StoryProgress {
         startedAt: startedAt ?? this.startedAt,
         completedAt: completedAt ?? this.completedAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        hintAttemptsUsed: hintAttemptsUsed ?? this.hintAttemptsUsed,
       );
 }
 
@@ -119,14 +125,12 @@ DateTime _parseDateTime(dynamic value) {
 
 /// User preferences
 class UserPreferences {
-  final String voiceGender; // female only
   final String language; // 'en' or 'fil'
   final double voiceSpeed;
   final bool enableTTS;
   final bool enableAnimations;
 
   const UserPreferences({
-    this.voiceGender = 'female',
     this.language = 'en',
     this.voiceSpeed = 1.0,
     this.enableTTS = true,
@@ -135,7 +139,6 @@ class UserPreferences {
 
   factory UserPreferences.fromJson(Map<String, dynamic> json) =>
       UserPreferences(
-        voiceGender: json['voiceGender'] as String? ?? 'female',
         language: json['language'] as String? ?? 'en',
         voiceSpeed: (json['voiceSpeed'] as num?)?.toDouble() ?? 1.0,
         enableTTS: json['enableTTS'] as bool? ?? true,
@@ -143,7 +146,6 @@ class UserPreferences {
       );
 
   Map<String, dynamic> toJson() => {
-        'voiceGender': voiceGender,
         'language': language,
         'voiceSpeed': voiceSpeed,
         'enableTTS': enableTTS,
@@ -151,14 +153,12 @@ class UserPreferences {
       };
 
   UserPreferences copyWith({
-    String? voiceGender,
     String? language,
     double? voiceSpeed,
     bool? enableTTS,
     bool? enableAnimations,
   }) =>
       UserPreferences(
-        voiceGender: voiceGender ?? this.voiceGender,
         language: language ?? this.language,
         voiceSpeed: voiceSpeed ?? this.voiceSpeed,
         enableTTS: enableTTS ?? this.enableTTS,
@@ -213,7 +213,9 @@ class UserModel {
         photoUrl: json['photoUrl'] as String?,
         isGuest: json['isGuest'] as bool? ?? false,
         totalStars: json['totalStars'] as int? ?? 0,
-        storiesCompleted: json['storiesCompleted'] as int? ?? 0,
+        storiesCompleted: json['completedCount'] as int? ??
+            json['storiesCompleted'] as int? ??
+            0,
         favoriteStoryIds: List<String>.from(json['favoriteStoryIds'] ?? []),
         storyProgress: (json['storyProgress'] as Map<String, dynamic>?)?.map(
               (k, v) => MapEntry(

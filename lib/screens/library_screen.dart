@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
-import 'package:kuwentobuddy/services/toast_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/story_card.dart';
 
@@ -20,7 +19,6 @@ class LibraryScreen extends StatefulWidget {
 
 class _LibraryScreenState extends State<LibraryScreen> {
   final StoryService _storyService = StoryService();
-  final ToastService _toastService = ToastService();
   final Random _random = Random();
   StoryModel? _featuredStory;
   StoryLevel? _selectedLevel; // null == all levels
@@ -114,10 +112,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             Text(
                               'Ready to Read? 📚',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
                               style: Theme.of(context)
                                   .textTheme
-                                  .titleMedium
+                                  .titleSmall
                                   ?.copyWith(
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: isDark
                                         ? Colors.white
@@ -220,133 +222,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                 ),
 
-              // Level selector (replaces chip layout)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.lg,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text('📊', style: TextStyle(fontSize: 24)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Browse by Level',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark
-                                        ? Colors.white
-                                        : KuwentoColors.textPrimary,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? KuwentoColors.cardDark : Colors.white,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(
-                            color:
-                                KuwentoColors.pastelBlue.withValues(alpha: 0.3),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<StoryLevel?>(
-                            value: _selectedLevel,
-                            isExpanded: true,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            dropdownColor:
-                                isDark ? KuwentoColors.cardDark : Colors.white,
-                            items: [
-                              DropdownMenuItem<StoryLevel?>(
-                                value: null,
-                                child: Row(
-                                  children: [
-                                    const Text('🧭',
-                                        style: TextStyle(fontSize: 20)),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      'All Levels',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? Colors.white
-                                                : KuwentoColors.textPrimary,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ...StoryLevel.values.map((level) {
-                                final levelName = level.name[0].toUpperCase() +
-                                    level.name.substring(1);
-                                final emoji = switch (level) {
-                                  StoryLevel.beginner => '🌱',
-                                  StoryLevel.intermediate => '🌿',
-                                  StoryLevel.advanced => '🌳',
-                                };
-
-                                return DropdownMenuItem<StoryLevel?>(
-                                  value: level,
-                                  child: Row(
-                                    children: [
-                                      Text(emoji,
-                                          style: const TextStyle(fontSize: 20)),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        '$levelName stories',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : KuwentoColors.textPrimary,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              })
-                            ],
-                            onChanged: (level) {
-                              setState(() {
-                                _selectedLevel = level;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
               // Featured Story
               if (featuredStory != null)
                 SliverToBoxAdapter(
@@ -397,6 +272,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       onSeeAll: () => context.push(
                         '/stories/level/${_selectedLevel?.name ?? 'all'}',
                       ),
+                      titleAddon: _buildLevelDropdown(context, isDark),
                     ),
                   ),
                 )
@@ -492,5 +368,86 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   void _navigateToStory(StoryModel story) {
     context.push('/story/${story.id}');
+  }
+
+  Widget _buildLevelDropdown(BuildContext context, bool isDark) {
+    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : KuwentoColors.textPrimary,
+        );
+
+    return PopupMenuButton<StoryLevel?>(
+      tooltip: 'Select level',
+      color: isDark ? KuwentoColors.cardDark : Colors.white,
+      iconSize: 28,
+      constraints: const BoxConstraints(minWidth: 0),
+      icon: Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
+      ),
+      onSelected: (level) {
+        setState(() {
+          _selectedLevel = level;
+        });
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem<StoryLevel?>(
+          value: null,
+          child: Row(
+            children: [
+              const Text('🧭'),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'All Levels',
+                  style: textStyle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...StoryLevel.values.map(
+          (level) => PopupMenuItem<StoryLevel?>(
+            value: level,
+            child: Row(
+              children: [
+                Text(_levelEmoji(level)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    _levelDisplay(level),
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _levelDisplay(StoryLevel level) {
+    switch (level) {
+      case StoryLevel.beginner:
+        return 'Beginner';
+      case StoryLevel.intermediate:
+        return 'Intermediate';
+      case StoryLevel.advanced:
+        return 'Advanced';
+    }
+  }
+
+  String _levelEmoji(StoryLevel level) {
+    switch (level) {
+      case StoryLevel.beginner:
+        return '🌱';
+      case StoryLevel.intermediate:
+        return '🌿';
+      case StoryLevel.advanced:
+        return '🌳';
+    }
   }
 }

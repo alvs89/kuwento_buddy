@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
   final ToastService _toastService = ToastService();
   bool _isLoading = false;
-  bool _floatUp = true;
   static const String _googleLogoAsset = 'assets/icons/google_logo.svg';
 
   static const Color _deepNavy = Color(0xFF1A2B3C);
@@ -69,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final user = await _authService.continueAsGuest();
+      await _authService.continueAsGuest();
       if (mounted) {
         _toastService.showInfo('Welcome! Start reading right away! 📚');
         context.go('/');
@@ -92,225 +89,191 @@ class _LoginScreenState extends State<LoginScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final h = constraints.maxHeight;
-            final isCompact = h < 740;
+            final isCompact = h < 700;
             final mascotSize = isCompact ? 112.0 : 136.0;
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: Column(
-                    children: [
-                      SizedBox(height: isCompact ? 8 : 18),
-                      _buildGlassSpeechBubble(),
-                      SizedBox(height: isCompact ? 10 : AppSpacing.md),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(
-                          begin: _floatUp ? -5 : 5,
-                          end: _floatUp ? 5 : -5,
+            // Use Stack as root to ensure overlay visibility
+            return Stack(
+              children: [
+                // Main scrollable content
+                Positioned.fill(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.md,
                         ),
-                        duration: const Duration(milliseconds: 3200),
-                        curve: Curves.easeInOut,
-                        onEnd: () {
-                          if (!mounted) return;
-                          setState(() => _floatUp = !_floatUp);
-                        },
-                        builder: (context, value, child) {
-                          final scale = 1 + (value.abs() / 130);
-                          return Transform.translate(
-                            offset: Offset(0, value),
-                            child: Transform.scale(
-                              scale: scale,
-                              child: child,
+                        child: Column(
+                          children: [
+                            SizedBox(height: isCompact ? 8 : 18),
+                            SizedBox(height: isCompact ? 10 : AppSpacing.md),
+                            Transform.translate(
+                              offset: const Offset(0, -26),
+                              child: BuddyCompanion(
+                                state: BuddyState.waving,
+                                showSpeechBubble: false,
+                                disableHighlightEffects: true,
+                                size: mascotSize,
+                              ),
                             ),
-                          );
-                        },
-                        child: BuddyCompanion(
-                          state: BuddyState.waving,
-                          showSpeechBubble: false,
-                          size: mascotSize,
-                        ),
-                      ),
-                      SizedBox(height: isCompact ? 8 : 14),
-                      Align(
-                        alignment: Alignment.center,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 560),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
+                            SizedBox(height: isCompact ? 16 : 24),
+                            Align(
                               alignment: Alignment.center,
-                              child: Text(
-                                'KuwentoBuddy',
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.visible,
-                                style: GoogleFonts.poppins(
-                                  fontSize: size.width < 360 ? 30 : 38,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: 0.4,
-                                  shadows: [
-                                    Shadow(
-                                      color: KuwentoColors.pastelBlue
-                                          .withValues(alpha: 0.5),
-                                      blurRadius: 18,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 560),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Kuwento Buddy',
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.visible,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: size.width < 360 ? 30 : 38,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        letterSpacing: 0.4,
+                                        shadows: [
+                                          Shadow(
+                                            color: KuwentoColors.pastelBlue
+                                                .withValues(alpha: 0.5),
+                                            blurRadius: 18,
+                                          ),
+                                          const Shadow(
+                                            color: Colors.black54,
+                                            blurRadius: 8,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    const Shadow(
-                                      color: Colors.black54,
-                                      blurRadius: 8,
-                                      offset: Offset(0, 3),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Align(
-                        alignment: Alignment.center,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 560),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
+                            const SizedBox(height: AppSpacing.sm),
+                            Align(
                               alignment: Alignment.center,
-                              child: Text(
-                                isSignUpFlow
-                                    ? 'Create your account and keep stories safe'
-                                    : 'Your interactive reading companion',
-                                style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.9),
-                                          fontWeight: FontWeight.w500,
-                                        ) ??
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 560),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      isSignUpFlow
+                                          ? 'Create your account and keep stories safe'
+                                          : 'Your interactive reading companion',
+                                      style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge
+                                              ?.copyWith(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.9),
+                                                fontWeight: FontWeight.w500,
+                                              ) ??
+                                          const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.visible,
                                     ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.visible,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: isCompact ? 14 : 22),
-                      _buildPrimaryReadingButton(),
-                      const SizedBox(height: AppSpacing.md),
-                      _buildGoogleButton(isSignUpFlow),
-                      const SizedBox(height: AppSpacing.sm),
-                      Align(
-                        alignment: Alignment.center,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 560),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
+                            SizedBox(height: isCompact ? 14 : 22),
+                            _buildPrimaryReadingButton(),
+                            const SizedBox(height: AppSpacing.md),
+                            _buildGoogleButton(isSignUpFlow),
+                            const SizedBox(height: AppSpacing.sm),
+                            Align(
                               alignment: Alignment.center,
-                              child: Text(
-                                'Sign in to sync progress, or start instantly as guest',
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.visible,
-                                style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.78),
-                                          fontWeight: FontWeight.w500,
-                                        ) ??
-                                    const TextStyle(color: Colors.white70),
-                                textAlign: TextAlign.center,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 560),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Sign in to sync progress, or start instantly as guest',
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.visible,
+                                      style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.78),
+                                                fontWeight: FontWeight.w500,
+                                              ) ??
+                                          const TextStyle(
+                                              color: Colors.white70),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            if (_isLoading) ...[
+                              const SizedBox(height: AppSpacing.md),
+                              const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            SizedBox(height: isCompact ? 12 : 18),
+                            Material(
+                              elevation: 4.0,
+                              color: _deepNavyLighter,
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.lg),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                  ),
+                                ),
+                                child: _buildFeatureList(),
+                              ),
+                            ),
+                            SizedBox(height: isCompact ? 8 : 16),
+                          ],
                         ),
                       ),
-                      if (_isLoading) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.4,
-                            valueColor: AlwaysStoppedAnimation(
-                              Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                      SizedBox(height: isCompact ? 12 : 18),
-                      Material(
-                        elevation: 4.0,
-                        color: _deepNavyLighter,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: _buildFeatureList(),
-                        ),
-                      ),
-                      SizedBox(height: isCompact ? 8 : 16),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                // The floating Buddy overlay is handled by router overlay, nothing else needed here.
+              ],
             );
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGlassSpeechBubble() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.38),
-            ),
-          ),
-          child: Text(
-            'Kumusta! Ready to read and learn?',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-            textAlign: TextAlign.center,
-          ),
         ),
       ),
     );
@@ -368,6 +331,16 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       child: OutlinedButton(
         onPressed: _isLoading ? null : _handleGoogleSignIn,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF202124),
+          side: const BorderSide(color: Color(0xFFDADCE0), width: 1.1),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          alignment: Alignment.center,
+        ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
@@ -398,16 +371,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-        ),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF202124),
-          side: const BorderSide(color: Color(0xFFDADCE0), width: 1.1),
-          shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          alignment: Alignment.center,
         ),
       ),
     );

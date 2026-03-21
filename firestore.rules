@@ -16,13 +16,11 @@ service cloud.firestore {
     function validPreferences(pref) {
       return pref is map
         && pref.keys().hasOnly([
-          'voiceGender',
           'language',
           'voiceSpeed',
           'enableTTS',
           'enableAnimations',
         ])
-        && (!('voiceGender' in pref) || pref.voiceGender is string)
         && (!('language' in pref) || pref.language is string)
         && (!('voiceSpeed' in pref) || isNumeric(pref.voiceSpeed))
         && (!('enableTTS' in pref) || pref.enableTTS is bool)
@@ -35,6 +33,7 @@ service cloud.firestore {
         'email',
         'photoUrl',
         'totalStars',
+        // Legacy field accepted temporarily to avoid update failures on older docs.
         'storiesCompleted',
         'progressCount',
         'favoritesCount',
@@ -80,6 +79,8 @@ service cloud.firestore {
         'updatedAt',
         'preferences',
         'schemaVersion',
+        // Allow deleting legacy field from existing docs.
+        'storiesCompleted',
         'favoriteStoryIds',
         'storyProgress',
       ]) && validUserDoc();
@@ -100,6 +101,7 @@ service cloud.firestore {
         'totalSegments',
         'skillCorrect',
         'skillTotal',
+        'hintAttemptsUsed',
         'startedAt',
         'completedAt',
         'updatedAt',
@@ -123,6 +125,7 @@ service cloud.firestore {
       && (!('totalSegments' in request.resource.data) || request.resource.data.totalSegments is int)
       && (!('skillCorrect' in request.resource.data) || request.resource.data.skillCorrect is map)
       && (!('skillTotal' in request.resource.data) || request.resource.data.skillTotal is map)
+      && (!('hintAttemptsUsed' in request.resource.data) || request.resource.data.hintAttemptsUsed is int)
       && (!('startedAt' in request.resource.data) || request.resource.data.startedAt is timestamp)
       && (!('completedAt' in request.resource.data) || isTimestampOrNull(request.resource.data.completedAt))
       && ('updatedAt' in request.resource.data && request.resource.data.updatedAt is timestamp);
@@ -143,6 +146,7 @@ service cloud.firestore {
         'totalSegments',
         'skillCorrect',
         'skillTotal',
+        'hintAttemptsUsed',
         'startedAt',
         'completedAt',
         'updatedAt',
@@ -173,11 +177,23 @@ service cloud.firestore {
         'storyId',
         'storyTitle',
         'score',
+        'correctAnswers',
+        'totalQuestions',
+        'starsEarned',
+        'totalSegments',
+        'skillCorrect',
+        'skillTotal',
         'completedAt',
       ])
       && request.resource.data.storyId == storyId
       && (!('storyTitle' in request.resource.data) || request.resource.data.storyTitle is string)
-      && isNumeric(request.resource.data.score)
+      && (!('score' in request.resource.data) || isNumeric(request.resource.data.score))
+      && (!('correctAnswers' in request.resource.data) || request.resource.data.correctAnswers is int)
+      && (!('totalQuestions' in request.resource.data) || request.resource.data.totalQuestions is int)
+      && (!('starsEarned' in request.resource.data) || request.resource.data.starsEarned is int)
+      && (!('totalSegments' in request.resource.data) || request.resource.data.totalSegments is int)
+      && (!('skillCorrect' in request.resource.data) || request.resource.data.skillCorrect is map)
+      && (!('skillTotal' in request.resource.data) || request.resource.data.skillTotal is map)
       && request.resource.data.completedAt is timestamp;
     }
 
@@ -186,6 +202,12 @@ service cloud.firestore {
         'storyId',
         'storyTitle',
         'score',
+        'correctAnswers',
+        'totalQuestions',
+        'starsEarned',
+        'totalSegments',
+        'skillCorrect',
+        'skillTotal',
         'completedAt',
       ]) && validCompletedDoc(storyId);
     }

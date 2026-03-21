@@ -172,8 +172,6 @@ class FeaturedStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -304,6 +302,7 @@ class StoryRow extends StatelessWidget {
   final List<StoryModel> stories;
   final void Function(StoryModel story)? onStoryTap;
   final VoidCallback? onSeeAll;
+  final Widget? titleAddon;
 
   const StoryRow({
     super.key,
@@ -312,6 +311,7 @@ class StoryRow extends StatelessWidget {
     required this.stories,
     this.onStoryTap,
     this.onSeeAll,
+    this.titleAddon,
   });
 
   @override
@@ -330,16 +330,36 @@ class StoryRow extends StatelessWidget {
                 const SizedBox(width: 8),
               ],
               Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color:
-                            isDark ? Colors.white : KuwentoColors.textPrimary,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                            ),
                       ),
+                    ),
+                    if (titleAddon != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 40),
+                        child: titleAddon!,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: onSeeAll,
                 child: Text(
                   'See All',

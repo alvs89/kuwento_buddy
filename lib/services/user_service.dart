@@ -41,7 +41,6 @@ class UserService {
         'email': email,
         'photoUrl': photoUrl,
         'totalStars': 0,
-        'storiesCompleted': 0,
         'progressCount': 0,
         'favoritesCount': 0,
         'completedCount': 0,
@@ -54,13 +53,17 @@ class UserService {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } else {
-      await docRef.set({
-        'displayName': displayName ?? doc.data()?['displayName'],
-        'email': email ?? doc.data()?['email'],
-        'photoUrl': photoUrl ?? doc.data()?['photoUrl'],
-        'schemaVersion': 2,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final existingData = Map<String, dynamic>.from(doc.data() ?? {});
+      final canonical = _buildCanonicalUserDoc(
+        existingData: existingData,
+        displayName: displayName,
+        email: email,
+        photoUrl: photoUrl,
+      );
+
+      // Overwrite document with canonical schema so unknown legacy keys
+      // cannot keep violating Firestore rules on every update.
+      await docRef.set(canonical);
     }
 
     final hydrated = await getUser(uid);
@@ -84,69 +87,109 @@ class UserService {
       if (!userDoc.exists) return null;
 
       final baseData = Map<String, dynamic>.from(userDoc.data() ?? {});
+      final normalizedPrefs = _sanitizePreferencesMap(baseData['preferences']);
+      final legacyFixes = _legacyUserFieldFixes(baseData);
+      if (normalizedPrefs != null || legacyFixes.isNotEmpty) {
+        await _userDoc(uid).set({
+          if (normalizedPrefs != null) 'preferences': normalizedPrefs,
+          ...legacyFixes,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        if (normalizedPrefs != null) {
+          baseData['preferences'] = normalizedPrefs;
+        }
+      }
+
       final progressSnap = await _progressCol(uid).get();
       final favoritesSnap = await _favoritesCol(uid).get();
       final completedSnap = await _completedCol(uid).get();
 
       final subProgress = <String, StoryProgress>{};
       for (final doc in progressSnap.docs) {
-        final data = doc.data();
-        final appStoryId = _resolveAppStoryId(
-          firestoreDocId: doc.id,
-          firestoreStoryIdentifier: data['storyId'] as String?,
-          firestoreStoryTitle: data['storyTitle'] as String?,
-        );
-        final progress = StoryProgress(
-          storyId: appStoryId,
-          storyTitle: _resolveStoryTitle(
-            appStoryId,
-            fallback: data['storyTitle'] as String? ?? doc.id,
-          ),
-          currentSegmentIndex: data['currentSegmentIndex'] as int? ??
-              data['lastPage'] as int? ??
-              0,
-          totalSegments: data['totalSegments'] as int? ?? 0,
-          isCompleted: data['isCompleted'] as bool? ??
-              data['completed'] as bool? ??
-              false,
-          correctAnswers: data['correctAnswers'] as int? ?? 0,
-          totalQuestions: data['totalQuestions'] as int? ?? 0,
-          starsEarned: data['starsEarned'] as int? ?? 0,
-          skillCorrect: Map<String, int>.from(data['skillCorrect'] ?? {}),
-          skillTotal: Map<String, int>.from(data['skillTotal'] ?? {}),
-          startedAt: _asDateTime(data['startedAt']) ?? DateTime.now(),
-          completedAt: _asDateTime(data['completedAt']),
-          updatedAt: _asDateTime(data['updatedAt']) ?? DateTime.now(),
-        );
-        subProgress[progress.storyId] = progress;
+        try {
+          final data = doc.data();
+
+          // FIXED: Parse appStoryId FIRST (fastest match)
+          String appStoryId;
+          if (data['appStoryId'] is String) {
+            appStoryId = (data['appStoryId'] as String).trim();
+            debugPrint(
+                'UserService.getUser: Found appStoryId=$appStoryId in ${doc.id}');
+          } else {
+            appStoryId = _resolveAppStoryId(
+              firestoreDocId: doc.id,
+              firestoreStoryIdentifier: data['storyId'] as String?,
+              firestoreStoryTitle: data['storyTitle'] as String?,
+            );
+          }
+
+          final progress = StoryProgress(
+            storyId: appStoryId,
+            storyTitle: _resolveStoryTitle(
+              appStoryId,
+              fallback: data['storyTitle'] as String? ?? doc.id,
+            ),
+            currentSegmentIndex: _asInt(data['currentSegmentIndex']) ??
+                _asInt(data['lastPage']) ??
+                0,
+            totalSegments: _asInt(data['totalSegments']) ?? 0,
+            isCompleted: data['isCompleted'] as bool? ??
+                data['completed'] as bool? ??
+                false,
+            correctAnswers: _asInt(data['correctAnswers']) ?? 0,
+            totalQuestions: _asInt(data['totalQuestions']) ?? 0,
+            starsEarned: _asInt(data['starsEarned']) ?? 0,
+            skillCorrect: _asStringIntMap(data['skillCorrect']),
+            skillTotal: _asStringIntMap(data['skillTotal']),
+            startedAt: _asDateTime(data['startedAt']) ?? DateTime.now(),
+            completedAt: _asDateTime(data['completedAt']),
+            updatedAt: _asDateTime(data['updatedAt']) ?? DateTime.now(),
+            hintAttemptsUsed: _asInt(data['hintAttemptsUsed']) ?? 0,
+          );
+          subProgress[progress.storyId] = progress;
+        } catch (e) {
+          debugPrint('Skipping malformed progress doc ${doc.id}: $e');
+        }
       }
 
       // Keep completed stories visible to UI compatibility consumers even when
       // canonical storage is in completedStories subcollection.
       for (final doc in completedSnap.docs) {
-        final data = doc.data();
-        final appStoryId = _resolveAppStoryId(
-          firestoreDocId: doc.id,
-          firestoreStoryIdentifier: data['storyId'] as String?,
-          firestoreStoryTitle: data['storyTitle'] as String?,
-        );
+        try {
+          final data = doc.data();
+          final appStoryId = _resolveAppStoryId(
+            firestoreDocId: doc.id,
+            firestoreStoryIdentifier: data['storyId'] as String?,
+            firestoreStoryTitle: data['storyTitle'] as String?,
+          );
 
-        if (subProgress.containsKey(appStoryId)) continue;
+          final startedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
+          final completedAt =
+              _asDateTime(data['completedAt']) ?? DateTime.now();
 
-        final startedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
-        final completedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
-
-        subProgress[appStoryId] = StoryProgress(
-          storyId: appStoryId,
-          storyTitle: _resolveStoryTitle(
-            appStoryId,
-            fallback: data['storyTitle'] as String?,
-          ),
-          isCompleted: true,
-          startedAt: startedAt,
-          completedAt: completedAt,
-          updatedAt: completedAt,
-        );
+          // Completed state must win over any lingering in-progress doc.
+          subProgress[appStoryId] = StoryProgress(
+            storyId: appStoryId,
+            storyTitle: _resolveStoryTitle(
+              appStoryId,
+              fallback: data['storyTitle'] as String?,
+            ),
+            currentSegmentIndex: (_asInt(data['totalSegments']) ?? 1) - 1,
+            totalSegments: _asInt(data['totalSegments']) ?? 0,
+            isCompleted: true,
+            correctAnswers: _asInt(data['correctAnswers']) ?? 0,
+            totalQuestions: _asInt(data['totalQuestions']) ?? 0,
+            starsEarned: _asInt(data['starsEarned']) ?? 0,
+            skillCorrect: _asStringIntMap(data['skillCorrect']),
+            skillTotal: _asStringIntMap(data['skillTotal']),
+            startedAt: startedAt,
+            completedAt: completedAt,
+            updatedAt: completedAt,
+            hintAttemptsUsed: _asInt(data['hintAttemptsUsed']) ?? 0,
+          );
+        } catch (e) {
+          debugPrint('Skipping malformed completed doc ${doc.id}: $e');
+        }
       }
 
       final subFavorites = favoritesSnap.docs
@@ -211,59 +254,87 @@ class UserService {
 
       final canonicalProgress = <String, StoryProgress>{};
       for (final doc in canonicalProgressSnap.docs) {
-        final data = doc.data();
-        final appStoryId = _resolveAppStoryId(
-          firestoreDocId: doc.id,
-          firestoreStoryIdentifier: data['storyId'] as String?,
-          firestoreStoryTitle: data['storyTitle'] as String?,
-        );
+        try {
+          final data = doc.data();
+          final appStoryId = _resolveAppStoryId(
+            firestoreDocId: doc.id,
+            firestoreStoryIdentifier: data['storyId'] as String?,
+            firestoreStoryTitle: data['storyTitle'] as String?,
+          );
 
-        canonicalProgress[appStoryId] = StoryProgress(
-          storyId: appStoryId,
-          storyTitle: _resolveStoryTitle(
-            appStoryId,
-            fallback: data['storyTitle'] as String?,
-          ),
-          currentSegmentIndex: data['currentSegmentIndex'] as int? ??
-              data['lastPage'] as int? ??
-              0,
-          totalSegments: data['totalSegments'] as int? ?? 0,
-          isCompleted: false,
-          correctAnswers: data['correctAnswers'] as int? ?? 0,
-          totalQuestions: data['totalQuestions'] as int? ?? 0,
-          starsEarned: data['starsEarned'] as int? ?? 0,
-          skillCorrect: Map<String, int>.from(data['skillCorrect'] ?? {}),
-          skillTotal: Map<String, int>.from(data['skillTotal'] ?? {}),
-          startedAt: _asDateTime(data['startedAt']) ?? DateTime.now(),
-          completedAt: null,
-          updatedAt: _asDateTime(data['updatedAt']) ?? DateTime.now(),
-        );
+          canonicalProgress[appStoryId] = StoryProgress(
+            storyId: appStoryId,
+            storyTitle: _resolveStoryTitle(
+              appStoryId,
+              fallback: data['storyTitle'] as String?,
+            ),
+            currentSegmentIndex: _asInt(data['currentSegmentIndex']) ??
+                _asInt(data['lastPage']) ??
+                0,
+            totalSegments: _asInt(data['totalSegments']) ?? 0,
+            isCompleted: data['isCompleted'] as bool? ??
+                data['completed'] as bool? ??
+                false,
+            correctAnswers: _asInt(data['correctAnswers']) ?? 0,
+            totalQuestions: _asInt(data['totalQuestions']) ?? 0,
+            starsEarned: _asInt(data['starsEarned']) ?? 0,
+            skillCorrect: _asStringIntMap(data['skillCorrect']),
+            skillTotal: _asStringIntMap(data['skillTotal']),
+            startedAt: _asDateTime(data['startedAt']) ?? DateTime.now(),
+            completedAt: _asDateTime(data['completedAt']),
+            updatedAt: _asDateTime(data['updatedAt']) ?? DateTime.now(),
+            hintAttemptsUsed: _asInt(data['hintAttemptsUsed']) ?? 0,
+          );
+        } catch (e) {
+          debugPrint('Skipping malformed canonical progress doc ${doc.id}: $e');
+        }
       }
 
       // Include completed stories from canonical completedStories for
       // compatibility with existing UI logic in Completed tab.
       for (final doc in canonicalCompletedSnap.docs) {
-        final data = doc.data();
-        final appStoryId = _resolveAppStoryId(
-          firestoreDocId: doc.id,
-          firestoreStoryIdentifier: data['storyId'] as String?,
-          firestoreStoryTitle: data['storyTitle'] as String?,
-        );
+        try {
+          final data = doc.data();
+          final appStoryId = _resolveAppStoryId(
+            firestoreDocId: doc.id,
+            firestoreStoryIdentifier: data['storyId'] as String?,
+            firestoreStoryTitle: data['storyTitle'] as String?,
+          );
 
-        if (canonicalProgress.containsKey(appStoryId)) continue;
-
-        final completedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
-        canonicalProgress[appStoryId] = StoryProgress(
-          storyId: appStoryId,
-          storyTitle: _resolveStoryTitle(
-            appStoryId,
-            fallback: data['storyTitle'] as String?,
-          ),
-          isCompleted: true,
-          startedAt: completedAt,
-          completedAt: completedAt,
-          updatedAt: completedAt,
-        );
+          final completedAt =
+              _asDateTime(data['completedAt']) ?? DateTime.now();
+          final existing = canonicalProgress[appStoryId];
+          // If the user has already reopened this story, keep the newer
+          // in-progress write instead of forcing it back to Completed.
+          if (existing != null &&
+              !existing.isCompleted &&
+              existing.updatedAt.isAfter(completedAt)) {
+            continue;
+          }
+          // Completed state must win over any lingering in-progress doc.
+          canonicalProgress[appStoryId] = StoryProgress(
+            storyId: appStoryId,
+            storyTitle: _resolveStoryTitle(
+              appStoryId,
+              fallback: data['storyTitle'] as String?,
+            ),
+            currentSegmentIndex: (_asInt(data['totalSegments']) ?? 1) - 1,
+            totalSegments: _asInt(data['totalSegments']) ?? 0,
+            isCompleted: true,
+            correctAnswers: _asInt(data['correctAnswers']) ?? 0,
+            totalQuestions: _asInt(data['totalQuestions']) ?? 0,
+            starsEarned: _asInt(data['starsEarned']) ?? 0,
+            skillCorrect: _asStringIntMap(data['skillCorrect']),
+            skillTotal: _asStringIntMap(data['skillTotal']),
+            startedAt: completedAt,
+            completedAt: completedAt,
+            updatedAt: completedAt,
+            hintAttemptsUsed: _asInt(data['hintAttemptsUsed']) ?? 0,
+          );
+        } catch (e) {
+          debugPrint(
+              'Skipping malformed canonical completed doc ${doc.id}: $e');
+        }
       }
 
       final canonicalFavorites = canonicalFavoritesSnap.docs
@@ -279,6 +350,7 @@ class UserService {
       return UserModel.fromJson({
         ...baseData,
         'id': uid,
+        'completedCount': canonicalCompletedSnap.docs.length,
         'storyProgress':
             canonicalProgress.map((k, v) => MapEntry(k, v.toJson())),
         'favoriteStoryIds': canonicalFavorites,
@@ -297,7 +369,6 @@ class UserService {
         'email': user.email,
         'photoUrl': user.photoUrl,
         'totalStars': user.totalStars,
-        'storiesCompleted': user.storiesCompleted,
         'preferences': user.preferences.toJson(),
         'schemaVersion': 2,
         'createdAt': Timestamp.fromDate(user.createdAt),
@@ -334,6 +405,12 @@ class UserService {
               fallback: entry.value.storyTitle,
             ),
             'score': entry.value.comprehensionScore,
+            'correctAnswers': entry.value.correctAnswers,
+            'totalQuestions': entry.value.totalQuestions,
+            'starsEarned': entry.value.starsEarned,
+            'totalSegments': entry.value.totalSegments,
+            'skillCorrect': entry.value.skillCorrect,
+            'skillTotal': entry.value.skillTotal,
             'completedAt': entry.value.completedAt != null
                 ? Timestamp.fromDate(entry.value.completedAt!)
                 : FieldValue.serverTimestamp(),
@@ -350,7 +427,10 @@ class UserService {
 
   /// Update story progress
   Future<void> updateStoryProgress(
-      String userId, StoryProgress progress) async {
+    String userId,
+    StoryProgress progress, {
+    bool clearCompletedVariants = false,
+  }) async {
     try {
       await _userDoc(userId).set({
         'schemaVersion': 2,
@@ -370,18 +450,20 @@ class UserService {
             fallback: progress.storyTitle,
           ),
           'score': progress.comprehensionScore,
+          'correctAnswers': progress.correctAnswers,
+          'totalQuestions': progress.totalQuestions,
+          'starsEarned': progress.starsEarned,
+          'totalSegments': progress.totalSegments,
+          'skillCorrect': progress.skillCorrect,
+          'skillTotal': progress.skillTotal,
           'completedAt': progress.completedAt != null
               ? Timestamp.fromDate(progress.completedAt!)
               : FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
-        await _deleteProgressDoc(
-          userId,
-          appStoryId: progress.storyId,
-          fallbackTitle: progress.storyTitle,
-        );
+        await _deleteAllProgressDocsForStory(userId, progress.storyId);
       } else {
-        await _writeStoryProgress(userId, progress);
+        await _upsertInProgressAndClearAllCompleted(userId, progress);
       }
 
       await _syncUserCountsFromSubcollections(userId);
@@ -407,10 +489,7 @@ class UserService {
   /// Increment stories completed
   Future<void> incrementStoriesCompleted(String userId) async {
     try {
-      await _userDoc(userId).set({
-        'storiesCompleted': FieldValue.increment(1),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      await _syncUserCountsFromSubcollections(userId);
     } catch (e) {
       debugPrint('Error incrementing stories completed: $e');
       rethrow;
@@ -491,6 +570,12 @@ class UserService {
               fallback: entry.value.storyTitle,
             ),
             'score': entry.value.comprehensionScore,
+            'correctAnswers': entry.value.correctAnswers,
+            'totalQuestions': entry.value.totalQuestions,
+            'starsEarned': entry.value.starsEarned,
+            'totalSegments': entry.value.totalSegments,
+            'skillCorrect': entry.value.skillCorrect,
+            'skillTotal': entry.value.skillTotal,
             'completedAt': entry.value.completedAt != null
                 ? Timestamp.fromDate(entry.value.completedAt!)
                 : FieldValue.serverTimestamp(),
@@ -511,8 +596,9 @@ class UserService {
         updates['totalStars'] = FieldValue.increment(guestStars);
       }
       if (guestStoriesCompleted > 0) {
-        updates['storiesCompleted'] =
-            FieldValue.increment(guestStoriesCompleted);
+        debugPrint(
+          'Ignoring legacy guest storiesCompleted counter ($guestStoriesCompleted); completedStories documents are canonical.',
+        );
       }
       if (guestFavorites.isNotEmpty) {
         for (final storyId in guestFavorites.toSet()) {
@@ -548,11 +634,6 @@ class UserService {
 
   Future<void> _writeStoryProgress(
       String userId, StoryProgress progress) async {
-    // Don't write stories that haven't been read yet (currentSegmentIndex = 0)
-    if (progress.currentSegmentIndex == 0) {
-      return;
-    }
-
     final storyKey = _storyKeyForFirestore(
       appStoryId: progress.storyId,
       fallbackTitle: progress.storyTitle,
@@ -562,7 +643,11 @@ class UserService {
       fallback: progress.storyTitle,
     );
 
+    debugPrint(
+        'UserService: Saving progress uid=$userId storyId=${progress.storyId} key=$storyKey resolvedTitle=$resolvedTitle');
+
     await _progressCol(userId).doc(storyKey).set({
+      'appStoryId': progress.storyId, // FIXED: Canonical app story ID
       'storyId': storyKey,
       if (resolvedTitle != null) 'storyTitle': resolvedTitle,
       'currentSegmentIndex': progress.currentSegmentIndex,
@@ -574,10 +659,67 @@ class UserService {
       'totalSegments': progress.totalSegments,
       'skillCorrect': progress.skillCorrect,
       'skillTotal': progress.skillTotal,
+      'hintAttemptsUsed': progress.hintAttemptsUsed,
       'startedAt': Timestamp.fromDate(progress.startedAt),
       'completedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<void> _upsertInProgressAndClearAllCompleted(
+    String userId,
+    StoryProgress progress,
+  ) async {
+    final storyKey = _storyKeyForFirestore(
+      appStoryId: progress.storyId,
+      fallbackTitle: progress.storyTitle,
+    );
+    final resolvedTitle = _resolveStoryTitle(
+      progress.storyId,
+      fallback: progress.storyTitle,
+    );
+
+    final completedSnap = await _completedCol(userId).get();
+    final writes = _firestore.batch();
+
+    writes.set(
+      _progressCol(userId).doc(storyKey),
+      {
+        'storyId': storyKey,
+        if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+        'currentSegmentIndex': progress.currentSegmentIndex,
+        'comprehensionScore': progress.comprehensionScore,
+        'isCompleted': false,
+        'correctAnswers': progress.correctAnswers,
+        'totalQuestions': progress.totalQuestions,
+        'starsEarned': progress.starsEarned,
+        'totalSegments': progress.totalSegments,
+        'skillCorrect': progress.skillCorrect,
+        'skillTotal': progress.skillTotal,
+        'hintAttemptsUsed': progress.hintAttemptsUsed,
+        'startedAt': Timestamp.fromDate(progress.startedAt),
+        'completedAt': null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+
+    for (final doc in completedSnap.docs) {
+      final data = doc.data();
+      final resolvedId = _resolveAppStoryId(
+        firestoreDocId: doc.id,
+        firestoreStoryIdentifier: data['storyId'] as String?,
+        firestoreStoryTitle: data['storyTitle'] as String?,
+      );
+
+      if (resolvedId == progress.storyId ||
+          doc.id == storyKey ||
+          doc.id == progress.storyId) {
+        writes.delete(doc.reference);
+      }
+    }
+
+    await writes.commit();
   }
 
   Future<void> _deleteProgressDoc(
@@ -595,6 +737,31 @@ class UserService {
     // Backward compatibility: clean legacy ID-keyed docs if any remain.
     if (storyKey != appStoryId) {
       await _progressCol(userId).doc(appStoryId).delete();
+    }
+  }
+
+  Future<void> _deleteAllProgressDocsForStory(
+      String userId, String appStoryId) async {
+    final progressSnap = await _progressCol(userId).get();
+    final writes = _firestore.batch();
+    var hasWrites = false;
+
+    for (final doc in progressSnap.docs) {
+      final data = doc.data();
+      final resolvedId = _resolveAppStoryId(
+        firestoreDocId: doc.id,
+        firestoreStoryIdentifier: data['storyId'] as String?,
+        firestoreStoryTitle: data['storyTitle'] as String?,
+      );
+
+      if (resolvedId == appStoryId) {
+        writes.delete(doc.reference);
+        hasWrites = true;
+      }
+    }
+
+    if (hasWrites) {
+      await writes.commit();
     }
   }
 
@@ -672,10 +839,23 @@ class UserService {
       if (byId != null) return byId.id;
 
       final byTitle = _storyService.getAllStories().where(
-            (story) =>
-                story.title.trim().toLowerCase() == candidate.toLowerCase(),
+            (story) => _normalizeKey(story.title) == _normalizeKey(candidate),
           );
       if (byTitle.isNotEmpty) return byTitle.first.id;
+
+      final normalizedCandidate = _normalizeKey(candidate);
+      if (normalizedCandidate.isNotEmpty) {
+        for (final story in _storyService.getAllStories()) {
+          final normalizedStoryId = _normalizeKey(story.id);
+          final normalizedStoryTitle = _normalizeKey(story.title);
+          if (normalizedStoryId.contains(normalizedCandidate) ||
+              normalizedCandidate.contains(normalizedStoryId) ||
+              normalizedStoryTitle.contains(normalizedCandidate) ||
+              normalizedCandidate.contains(normalizedStoryTitle)) {
+            return story.id;
+          }
+        }
+      }
     }
 
     return firestoreStoryIdentifier?.trim().isNotEmpty == true
@@ -695,6 +875,156 @@ class UserService {
       return trimmedFallback;
     }
     return null;
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  Map<String, int> _asStringIntMap(dynamic value) {
+    if (value is! Map) return const <String, int>{};
+    final result = <String, int>{};
+    value.forEach((key, rawValue) {
+      final parsed = _asInt(rawValue);
+      if (parsed != null) {
+        result[key.toString()] = parsed;
+      }
+    });
+    return result;
+  }
+
+  String _normalizeKey(String value) {
+    final lower = value.trim().toLowerCase();
+    return lower.replaceAll(RegExp(r'[^a-z0-9]+'), '');
+  }
+
+  Map<String, dynamic>? _sanitizePreferencesMap(dynamic rawPreferences) {
+    if (rawPreferences is! Map) return null;
+    final source = Map<String, dynamic>.from(rawPreferences);
+    final sanitized = <String, dynamic>{};
+
+    if (source['language'] is String) {
+      sanitized['language'] = source['language'];
+    }
+
+    if (source['voiceSpeed'] is num) {
+      sanitized['voiceSpeed'] = (source['voiceSpeed'] as num).toDouble();
+    }
+
+    if (source['enableTTS'] is bool) {
+      sanitized['enableTTS'] = source['enableTTS'];
+    }
+
+    if (source['enableAnimations'] is bool) {
+      sanitized['enableAnimations'] = source['enableAnimations'];
+    }
+
+    if (mapEquals(source, sanitized)) return null;
+    return sanitized;
+  }
+
+  List<String> _asStringList(dynamic value) {
+    if (value is! List) return const <String>[];
+    return value
+        .map((e) => e?.toString() ?? '')
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
+  Map<String, dynamic> _buildCanonicalUserDoc({
+    required Map<String, dynamic> existingData,
+    String? displayName,
+    String? email,
+    String? photoUrl,
+  }) {
+    final normalizedPrefs =
+        _sanitizePreferencesMap(existingData['preferences']) ??
+            (existingData['preferences'] is Map
+                ? Map<String, dynamic>.from(existingData['preferences'])
+                : const UserPreferences().toJson());
+
+    final createdAt = existingData['createdAt'];
+
+    return <String, dynamic>{
+      'displayName':
+          displayName ?? _asNullableString(existingData['displayName']),
+      'email': email ?? _asNullableString(existingData['email']),
+      'photoUrl': photoUrl ?? _asNullableString(existingData['photoUrl']),
+      'totalStars': _asInt(existingData['totalStars']) ?? 0,
+      'progressCount': _asInt(existingData['progressCount']) ?? 0,
+      'favoritesCount': _asInt(existingData['favoritesCount']) ?? 0,
+      'completedCount': _asInt(existingData['completedCount']) ?? 0,
+      'favoriteStoryIds': _asStringList(existingData['favoriteStoryIds']),
+      'storyProgress': existingData['storyProgress'] is Map
+          ? Map<String, dynamic>.from(existingData['storyProgress'])
+          : <String, dynamic>{},
+      'preferences': normalizedPrefs,
+      'schemaVersion': 2,
+      'isGuest':
+          existingData['isGuest'] is bool ? existingData['isGuest'] : false,
+      if (createdAt is Timestamp) 'createdAt': createdAt,
+      if (createdAt is! Timestamp) 'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  String? _asNullableString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    final stringified = value.toString();
+    return stringified.isEmpty ? null : stringified;
+  }
+
+  Map<String, dynamic> _legacyUserFieldFixes(Map<String, dynamic> data) {
+    final fixes = <String, dynamic>{};
+
+    final createdAt = data['createdAt'];
+    if (createdAt != null && createdAt is! Timestamp) {
+      fixes['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    final totalStars = _asInt(data['totalStars']);
+    if (data['totalStars'] != null && data['totalStars'] is! int) {
+      fixes['totalStars'] = totalStars ?? 0;
+    }
+
+    final progressCount = _asInt(data['progressCount']);
+    if (data['progressCount'] != null && data['progressCount'] is! int) {
+      fixes['progressCount'] = progressCount ?? 0;
+    }
+
+    final favoritesCount = _asInt(data['favoritesCount']);
+    if (data['favoritesCount'] != null && data['favoritesCount'] is! int) {
+      fixes['favoritesCount'] = favoritesCount ?? 0;
+    }
+
+    final completedCount = _asInt(data['completedCount']);
+    if (data['completedCount'] != null && data['completedCount'] is! int) {
+      fixes['completedCount'] = completedCount ?? 0;
+    }
+
+    if (data['isGuest'] != null && data['isGuest'] is! bool) {
+      fixes['isGuest'] = false;
+    }
+
+    if (data['displayName'] != null &&
+        data['displayName'] is! String &&
+        data['displayName'].toString().isNotEmpty) {
+      fixes['displayName'] = data['displayName'].toString();
+    }
+
+    if (data['email'] != null && data['email'] is! String) {
+      fixes['email'] = data['email'].toString();
+    }
+
+    if (data['photoUrl'] != null && data['photoUrl'] is! String) {
+      fixes['photoUrl'] = data['photoUrl'].toString();
+    }
+
+    return fixes;
   }
 
   Future<void> _backfillStoryTitlesIfNeeded({
@@ -732,6 +1062,12 @@ class UserService {
                 'storyId': storyKey,
                 if (resolvedTitle != null) 'storyTitle': resolvedTitle,
                 'score': legacy.comprehensionScore,
+                'correctAnswers': legacy.correctAnswers,
+                'totalQuestions': legacy.totalQuestions,
+                'starsEarned': legacy.starsEarned,
+                'totalSegments': legacy.totalSegments,
+                'skillCorrect': legacy.skillCorrect,
+                'skillTotal': legacy.skillTotal,
                 'completedAt': legacy.completedAt != null
                     ? Timestamp.fromDate(legacy.completedAt!)
                     : FieldValue.serverTimestamp(),
@@ -825,6 +1161,12 @@ class UserService {
               'storyId': storyKey,
               if (resolvedTitle != null) 'storyTitle': resolvedTitle,
               'score': (data['comprehensionScore'] as num?)?.toDouble() ?? 0,
+              'correctAnswers': _asInt(data['correctAnswers']) ?? 0,
+              'totalQuestions': _asInt(data['totalQuestions']) ?? 0,
+              'starsEarned': _asInt(data['starsEarned']) ?? 0,
+              'totalSegments': _asInt(data['totalSegments']) ?? 0,
+              'skillCorrect': _asStringIntMap(data['skillCorrect']),
+              'skillTotal': _asStringIntMap(data['skillTotal']),
               'completedAt': Timestamp.fromDate(completedAt),
             },
             SetOptions(merge: true));
@@ -982,7 +1324,8 @@ class UserService {
       var hasWrites = false;
 
       for (final doc in progressSnap.docs) {
-        final currentSegmentIndex = doc.data()['currentSegmentIndex'] as int? ?? 0;
+        final currentSegmentIndex =
+            _asInt(doc.data()['currentSegmentIndex']) ?? 0;
         // Delete stories that were never actually read (currentSegmentIndex = 0)
         if (currentSegmentIndex == 0) {
           writes.delete(doc.reference);

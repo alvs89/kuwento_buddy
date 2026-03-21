@@ -69,7 +69,7 @@ class TranslationService {
 
       final translated = buffer.toString();
 
-      if (translated == null || translated.trim().isEmpty) {
+      if (translated.trim().isEmpty) {
         return text;
       }
 
