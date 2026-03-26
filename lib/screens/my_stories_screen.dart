@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
@@ -21,6 +23,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   late TabController _tabController;
   final StoryService _storyService = StoryService();
   int _selectedTabIndex = 0;
+  List<MapEntry<StoryModel, StoryProgress>> _cachedProgressEntries = [];
 
   @override
   void initState() {
@@ -491,21 +494,80 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   }
 
   Widget _buildInProgressTab(UserModel? user) {
+    final auth = context.watch<AuthService>();
+    final firebaseUid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = auth.currentUser?.id ?? firebaseUid;
+    final cachedFromUser = _resolvedStoryProgressEntries(user);
+    final baseFallback =
+        _dedupeByStoryId([..._cachedProgressEntries, ...cachedFromUser]);
+
+    // Stream progress directly from Firestore whenever we have a Firebase user id.
+    if (uid != null) {
+      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('storyProgress')
+            .snapshots(),
+        builder: (context, snapshot) {
+          // Use cached data to avoid UI flicker while listening.
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null) {
+            return _buildInProgressContent(baseFallback);
+          }
+          if (snapshot.hasError) {
+            return _buildInProgressContent(baseFallback);
+          }
+
+          final progressEntries =
+              _mapProgressDocsToEntries(snapshot.data?.docs ?? []);
+
+          final merged = [
+            ...progressEntries,
+            ..._cachedProgressEntries,
+            ...cachedFromUser,
+          ];
+          final deduped = _dedupeByStoryId(merged);
+          _cachedProgressEntries = deduped;
+
+          if (deduped.isNotEmpty) {
+            return _buildInProgressContent(deduped);
+          }
+
+          // Final fallback: one-time fetch in case snapshots haven't emitted yet.
+          return FutureBuilder<List<MapEntry<StoryModel, StoryProgress>>>(
+            future: _fetchProgressOnce(uid),
+            builder: (context, futureSnap) {
+              if (futureSnap.connectionState == ConnectionState.waiting) {
+                return _buildInProgressContent(baseFallback);
+              }
+              final once = futureSnap.data ?? const [];
+              final mergedOnce = _dedupeByStoryId([
+                ...once,
+                ..._cachedProgressEntries,
+                ...cachedFromUser
+              ]);
+              _cachedProgressEntries = mergedOnce;
+              return _buildInProgressContent(mergedOnce);
+            },
+          );
+        },
+      );
+    }
+
+    // Guest or fallback to cached user snapshot.
+    _cachedProgressEntries = baseFallback;
+    return _buildInProgressContent(baseFallback);
+  }
+
+  Widget _buildInProgressContent(
+      List<MapEntry<StoryModel, StoryProgress>> entries) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final storyProgressEntries = _resolvedStoryProgressEntries(user);
-
-    // Dynamic categorization: at least one segment done, but not fully completed.
-    debugPrint(
-        'MyStoriesScreen: Processing ${storyProgressEntries.length} raw entries');
-    final rawNonCompleted = storyProgressEntries
-        .where((entry) => !_isStoryCompleted(entry.value, entry.key))
-        .length;
-    debugPrint('MyStoriesScreen: Found $rawNonCompleted non-completed entries');
-
-    final inProgress = storyProgressEntries
+    final inProgress = entries
         .where((entry) => _isStoryInProgress(entry.value, entry.key))
         .toList()
       ..sort((a, b) => b.value.updatedAt.compareTo(a.value.updatedAt));
+
     debugPrint(
         'MyStoriesScreen: In Progress tab will show ${inProgress.length} cards');
 
@@ -948,12 +1010,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   }
 
   bool _isStoryInProgress(StoryProgress progress, StoryModel story) {
-    // FIX: Show even index=0 if recent (24h) OR index>0, !completed
-    final now = DateTime.now();
-    final isRecentSoftStart = progress.currentSegmentIndex == 0 &&
-        progress.updatedAt.isAfter(now.subtract(const Duration(hours: 24)));
-    return !progress.isCompleted &&
-        (progress.currentSegmentIndex > 0 || isRecentSoftStart);
+    // Treat any non-completed story as in-progress, even if still on segment 0.
+    // This keeps "opened but not yet advanced" stories visible for resume.
+    return !progress.isCompleted;
   }
 
   List<MapEntry<StoryModel, StoryProgress>> _resolvedStoryProgressEntries(
@@ -965,8 +1024,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       final progress = entry.value;
       final story = _resolveStoryById(entry.key) ??
           _resolveStoryById(progress.storyId) ??
-          _resolveStoryById(progress.storyTitle ?? '');
-      if (story == null) continue;
+          _resolveStoryById(progress.storyTitle ?? '') ??
+          _placeholderStory(progress.storyId, progress.storyTitle);
 
       final candidate = MapEntry(story, progress);
       final existing = byStoryId[story.id];
@@ -978,6 +1037,74 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     }
 
     return byStoryId.values.toList();
+  }
+
+  List<MapEntry<StoryModel, StoryProgress>> _mapProgressDocsToEntries(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    final entries = <MapEntry<StoryModel, StoryProgress>>[];
+
+      for (final doc in docs) {
+        final data = doc.data();
+        final appStoryId =
+            (data['appStoryId'] as String?) ?? (data['storyId'] as String?) ?? doc.id;
+        final story = _resolveStoryById(appStoryId) ??
+            _resolveStoryById(data['storyTitle'] as String? ?? '') ??
+            _resolveStoryById(doc.id) ??
+            _placeholderStory(appStoryId, data['storyTitle'] as String?);
+
+      final progress = StoryProgress(
+        storyId: appStoryId,
+        storyTitle: data['storyTitle'] as String? ?? story.title,
+        currentSegmentIndex:
+            _asInt(data['currentSegmentIndex']) ?? _asInt(data['lastPage']) ?? 0,
+        totalSegments: _asInt(data['totalSegments']) ?? story.segments.length,
+        isCompleted: data['isCompleted'] as bool? ??
+            data['completed'] as bool? ??
+            false,
+        correctAnswers: _asInt(data['correctAnswers']) ?? 0,
+        totalQuestions: _asInt(data['totalQuestions']) ?? 0,
+        starsEarned: _asInt(data['starsEarned']) ?? 0,
+        skillCorrect: _asStringIntMap(data['skillCorrect']),
+        skillTotal: _asStringIntMap(data['skillTotal']),
+        startedAt: _asDateTime(data['startedAt']) ?? DateTime.now(),
+        completedAt: _asDateTime(data['completedAt']),
+        updatedAt: _asDateTime(data['updatedAt']) ?? DateTime.now(),
+        hintAttemptsUsed: _asInt(data['hintAttemptsUsed']) ?? 0,
+      );
+
+      entries.add(MapEntry(story, progress));
+    }
+
+    return entries;
+  }
+
+  Future<List<MapEntry<StoryModel, StoryProgress>>> _fetchProgressOnce(
+      String uid) async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('storyProgress')
+          .get();
+      return _mapProgressDocsToEntries(snap.docs);
+    } catch (e) {
+      debugPrint('MyStoriesScreen: one-time progress fetch failed: $e');
+      return const [];
+    }
+  }
+
+  List<MapEntry<StoryModel, StoryProgress>> _dedupeByStoryId(
+      List<MapEntry<StoryModel, StoryProgress>> entries) {
+    final byId = <String, MapEntry<StoryModel, StoryProgress>>{};
+    for (final entry in entries) {
+      final key = _normalizeStoryId(entry.key.id);
+      final existing = byId[key];
+      if (existing == null ||
+          entry.value.updatedAt.isAfter(existing.value.updatedAt)) {
+        byId[key] = entry;
+      }
+    }
+    return byId.values.toList();
   }
 
   bool _shouldReplaceProgress(StoryProgress existing, StoryProgress candidate) {
@@ -1019,6 +1146,53 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       }
     }
 
+    return null;
+  }
+
+  StoryModel _placeholderStory(String id, String? title) {
+    return StoryModel(
+      id: id,
+      title: title?.trim().isNotEmpty == true ? title!.trim() : id,
+      author: 'Kuwento Buddy',
+      coverImage: '',
+      description: '',
+      level: StoryLevel.beginner,
+      categories: const [StoryCategory.quickReads],
+      segments: const [],
+      estimatedMinutes: 1,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  Map<String, int> _asStringIntMap(dynamic value) {
+    if (value is! Map) return const <String, int>{};
+    final result = <String, int>{};
+    value.forEach((key, rawValue) {
+      final parsed = _asInt(rawValue);
+      if (parsed != null) {
+        result[key.toString()] = parsed;
+      }
+    });
+    return result;
+  }
+
+  DateTime? _asDateTime(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        return null;
+      }
+    }
     return null;
   }
 

@@ -163,15 +163,24 @@ class StoryCard extends StatelessWidget {
 class FeaturedStoryCard extends StatelessWidget {
   final StoryModel story;
   final VoidCallback? onTap;
+  final bool enableHero;
 
   const FeaturedStoryCard({
     super.key,
     required this.story,
     this.onTap,
+    this.enableHero = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    Widget _cover() => Image.asset(
+          story.coverImage,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stack) =>
+              Container(color: KuwentoColors.deepTeal),
+        );
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -191,16 +200,12 @@ class FeaturedStoryCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Hero(
-              tag: 'story_cover_${story.id}',
-              child: Image.asset(
-                story.coverImage,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stack) => Container(
-                  color: KuwentoColors.deepTeal,
-                ),
-              ),
-            ),
+            enableHero
+                ? Hero(
+                    tag: 'story_cover_${story.id}',
+                    child: _cover(),
+                  )
+                : _cover(),
             // Gradient overlay
             Container(
               decoration: BoxDecoration(
@@ -294,6 +299,14 @@ class FeaturedStoryCard extends StatelessWidget {
     );
   }
 }
+
+Widget _coverImageBuilder(StoryModel story) => Image.asset(
+      story.coverImage,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stack) => Container(
+        color: KuwentoColors.deepTeal,
+      ),
+    );
 
 /// Horizontal scrolling story row - like Spotify playlists
 class StoryRow extends StatelessWidget {

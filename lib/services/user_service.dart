@@ -155,11 +155,12 @@ class UserService {
             debugPrint(
                 'UserService.getUser: Found appStoryId=$appStoryId in ${doc.id}');
           } else {
-            appStoryId = _resolveAppStoryId(
-              firestoreDocId: doc.id,
-              firestoreStoryIdentifier: data['storyId'] as String?,
-              firestoreStoryTitle: data['storyTitle'] as String?,
-            );
+          appStoryId = _resolveAppStoryId(
+            firestoreDocId: doc.id,
+            firestoreStoryIdentifier: data['storyId'] as String?,
+            firestoreStoryTitle: data['storyTitle'] as String?,
+            firestoreAppStoryId: data['appStoryId'] as String?,
+          );
           }
 
           final progress = StoryProgress(
@@ -204,6 +205,7 @@ class UserService {
             firestoreDocId: doc.id,
             firestoreStoryIdentifier: data['storyId'] as String?,
             firestoreStoryTitle: data['storyTitle'] as String?,
+            firestoreAppStoryId: data['appStoryId'] as String?,
           );
 
           final startedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
@@ -242,6 +244,7 @@ class UserService {
                 firestoreDocId: d.id,
                 firestoreStoryIdentifier: d.data()['storyId'] as String?,
                 firestoreStoryTitle: d.data()['storyTitle'] as String?,
+                firestoreAppStoryId: d.data()['appStoryId'] as String?,
               ).trim())
           .where((id) => id.isNotEmpty)
           .toSet()
@@ -316,6 +319,7 @@ class UserService {
             firestoreDocId: doc.id,
             firestoreStoryIdentifier: data['storyId'] as String?,
             firestoreStoryTitle: data['storyTitle'] as String?,
+            firestoreAppStoryId: data['appStoryId'] as String?,
           );
 
           canonicalProgress[appStoryId] = StoryProgress(
@@ -358,6 +362,7 @@ class UserService {
             firestoreDocId: doc.id,
             firestoreStoryIdentifier: data['storyId'] as String?,
             firestoreStoryTitle: data['storyTitle'] as String?,
+            firestoreAppStoryId: data['appStoryId'] as String?,
           );
 
           final completedAt =
@@ -407,12 +412,13 @@ class UserService {
                 firestoreDocId: d.id,
                 firestoreStoryIdentifier: d.data()['storyId'] as String?,
                 firestoreStoryTitle: d.data()['storyTitle'] as String?,
+                firestoreAppStoryId: d.data()['appStoryId'] as String?,
               ).trim())
           .where((id) => id.isNotEmpty)
           .toSet()
           .toList();
 
-      return UserModel.fromJson({
+      final userModel = UserModel.fromJson({
         ...baseData,
         'id': uid,
         'completedCount': canonicalCompletedSnap.docs.length,
@@ -420,6 +426,15 @@ class UserService {
             canonicalProgress.map((k, v) => MapEntry(k, v.toJson())),
         'favoriteStoryIds': canonicalFavorites,
       });
+
+      // Ensure subcollections mirror the resolved model so console shows favorites and completed docs.
+      await _mirrorCollectionsFromUserModel(
+        userId: uid,
+        storyProgress: canonicalProgress,
+        favoriteIds: canonicalFavorites,
+      );
+
+      return userModel;
     } catch (e) {
       debugPrint('Error getting user: $e');
 
@@ -781,6 +796,8 @@ class UserService {
       appStoryId: progress.storyId,
       fallbackTitle: progress.storyTitle,
     );
+    debugPrint(
+        'UserService: Upserting story progress for user $userId, story key $storyKey, segment ${progress.currentSegmentIndex}');
 
     final resolvedTitle = _resolveStoryTitle(
       progress.storyId,
@@ -794,6 +811,7 @@ class UserService {
     writes.set(
       _progressCol(userId).doc(storyKey),
       {
+        'appStoryId': progress.storyId, // canonical app story id for fast resolution
         'storyId': storyKey,
         if (resolvedTitle != null) 'storyTitle': resolvedTitle,
         'currentSegmentIndex': progress.currentSegmentIndex,
@@ -820,6 +838,7 @@ class UserService {
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
+        firestoreAppStoryId: data['appStoryId'] as String?,
       );
 
       if (resolvedId == progress.storyId ||
@@ -866,6 +885,7 @@ class UserService {
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
+        firestoreAppStoryId: data['appStoryId'] as String?,
       );
 
       if (resolvedId == appStoryId) {
@@ -947,8 +967,10 @@ class UserService {
     required String firestoreDocId,
     String? firestoreStoryIdentifier,
     String? firestoreStoryTitle,
+    String? firestoreAppStoryId,
   }) {
     final candidates = <String>[
+      firestoreAppStoryId ?? '',
       firestoreStoryIdentifier ?? '',
       firestoreDocId,
       firestoreStoryTitle ?? '',
@@ -1073,6 +1095,91 @@ class UserService {
         .map((e) => e?.toString() ?? '')
         .where((e) => e.isNotEmpty)
         .toList();
+  }
+
+  /// Mirror favorites and completed progress into their canonical subcollections.
+  Future<void> _mirrorCollectionsFromUserModel({
+    required String userId,
+    required Map<String, StoryProgress> storyProgress,
+    required List<String> favoriteIds,
+  }) async {
+    final batch = _firestore.batch();
+    var hasWrites = false;
+
+    for (final id in favoriteIds.toSet()) {
+      final storyKey = _storyKeyForFirestore(appStoryId: id);
+      final resolvedTitle = _resolveStoryTitle(id);
+      batch.set(
+        _favoritesCol(userId).doc(storyKey),
+        {
+          'storyId': storyKey,
+          'storyTitle': resolvedTitle ?? storyKey,
+          'addedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      hasWrites = true;
+    }
+
+    for (final entry in storyProgress.entries) {
+      final progress = entry.value;
+      final storyKey = _storyKeyForFirestore(
+        appStoryId: progress.storyId,
+        fallbackTitle: progress.storyTitle,
+      );
+      final resolvedTitle =
+          _resolveStoryTitle(progress.storyId, fallback: progress.storyTitle);
+
+      if (progress.isCompleted) {
+        batch.set(
+          _completedCol(userId).doc(storyKey),
+          {
+            'storyId': storyKey,
+            if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+            'score': progress.comprehensionScore,
+            'correctAnswers': progress.correctAnswers,
+            'totalQuestions': progress.totalQuestions,
+            'starsEarned': progress.starsEarned,
+            'totalSegments': progress.totalSegments,
+            'skillCorrect': progress.skillCorrect,
+            'skillTotal': progress.skillTotal,
+            'completedAt': progress.completedAt != null
+                ? Timestamp.fromDate(progress.completedAt!)
+                : FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      } else {
+        batch.set(
+          _progressCol(userId).doc(storyKey),
+          {
+            'appStoryId': progress.storyId,
+            'storyId': storyKey,
+            if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+            'currentSegmentIndex': progress.currentSegmentIndex,
+            'comprehensionScore': progress.comprehensionScore,
+            'isCompleted': false,
+            'correctAnswers': progress.correctAnswers,
+            'totalQuestions': progress.totalQuestions,
+            'starsEarned': progress.starsEarned,
+            'totalSegments': progress.totalSegments,
+            'skillCorrect': progress.skillCorrect,
+            'skillTotal': progress.skillTotal,
+            'hintAttemptsUsed': progress.hintAttemptsUsed,
+            'startedAt': Timestamp.fromDate(progress.startedAt),
+            'completedAt': null,
+            'updatedAt': Timestamp.fromDate(progress.updatedAt),
+          },
+          SetOptions(merge: true),
+        );
+      }
+      hasWrites = true;
+    }
+
+    if (hasWrites) {
+      await batch.commit();
+      await _syncUserCountsFromSubcollections(userId);
+    }
   }
 
   Map<String, dynamic> _buildCanonicalUserDoc({
@@ -1286,6 +1393,7 @@ class UserService {
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
+        firestoreAppStoryId: data['appStoryId'] as String?,
       );
 
       final storyKey = _storyKeyForFirestore(
@@ -1371,6 +1479,7 @@ class UserService {
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
+        firestoreAppStoryId: data['appStoryId'] as String?,
       );
 
       final storyKey = _storyKeyForFirestore(
@@ -1421,6 +1530,7 @@ class UserService {
         firestoreDocId: doc.id,
         firestoreStoryIdentifier: data['storyId'] as String?,
         firestoreStoryTitle: data['storyTitle'] as String?,
+        firestoreAppStoryId: data['appStoryId'] as String?,
       );
 
       final storyKey = _storyKeyForFirestore(
@@ -1512,6 +1622,9 @@ class UserService {
       final writes = _firestore.batch();
       var hasWrites = false;
       var keptCount = 0;
+      var deletedCount = 0;
+      debugPrint(
+          'UserService.cleanup($userId): Starting cleanup of ${progressSnap.docs.length} docs...');
 
       for (final doc in progressSnap.docs) {
         final data = doc.data();
@@ -1525,6 +1638,7 @@ class UserService {
               'UserService.cleanup: Deleting old unstarted doc ${doc.id} (updated: $updatedAt)');
           writes.delete(doc.reference);
           hasWrites = true;
+          deletedCount++;
         } else if (currentSegmentIndex == 0) {
           debugPrint(
               'UserService.cleanup: Keeping recent soft-start ${doc.id} (updated: $updatedAt)');
@@ -1532,13 +1646,12 @@ class UserService {
         }
       }
 
-      debugPrint(
-          'UserService.cleanup($userId): Deleted ${progressSnap.docs.length - keptCount - (hasWrites ? 1 : 0)} unstarted, kept $keptCount recent');
-
       if (hasWrites) {
         await writes.commit();
         await _syncUserCountsFromSubcollections(userId);
       }
+      debugPrint(
+          'UserService.cleanup($userId): Deleted $deletedCount unstarted, kept $keptCount recent soft-starts.');
     } catch (e) {
       debugPrint('Error cleaning up unstarted stories: $e');
     }

@@ -22,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _voiceSpeed = 1.0;
   bool _speedInitialized = false;
   bool _savingVoiceSpeed = false;
+  bool _isSigningOut = false;
 
   static const String _filipinoSample =
       'Mabuti na mayroon tayong Reading Companion.';
@@ -102,10 +103,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _confirmAndSignOut(AuthService authService) async {
+    if (_isSigningOut) return;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final shouldSignOut = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
       builder: (dialogContext) {
         final size = MediaQuery.of(dialogContext).size;
         final compact = size.width < 360;
@@ -237,9 +241,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (shouldSignOut != true || !mounted) return;
 
-    await authService.signOut();
-    if (!mounted) return;
-    context.go('/login');
+    setState(() => _isSigningOut = true);
+    try {
+      await authService.signOut();
+    } catch (e) {
+      debugPrint('Sign out failed: $e');
+    } finally {
+      if (mounted) {
+        // Use root navigator context to exit the shell and land on login immediately.
+        final rootCtx = Navigator.of(context, rootNavigator: true).context;
+        GoRouter.of(rootCtx).go('/login');
+        setState(() => _isSigningOut = false);
+      }
+    }
   }
 
   @override

@@ -212,7 +212,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
             Icons.close,
             color: isDark ? Colors.white : KuwentoColors.textPrimary,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.pop(true), // signal re-read replay
         ),
         title: Text(
           'Put It in Order',
@@ -231,182 +231,202 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
             ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Buddy companion
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: BuddyCompanion(
-              state: _buddyState,
-              message: _buddyMessage,
-              size: 80,
-            ),
-          ),
-
-          // Instructions
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Text(
-              'Tap events in the order they happened in the story',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color:
-                        isDark ? Colors.white70 : KuwentoColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Events list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              itemCount: _events.length,
-              itemBuilder: (context, index) {
-                final event = _events[index];
-                final selectionIndex = _selectedOrder.indexOf(event.id);
-                final isSelected = selectionIndex != -1;
-
-                Color backgroundColor;
-                Color borderColor;
-
-                if (_isCompleted) {
-                  // Show correct/incorrect after completion
-                  final correctIndex = _selectedOrder.indexOf(event.id);
-                  if (correctIndex != -1) {
-                    final isInCorrectPosition =
-                        event.correctOrder == correctIndex;
-                    backgroundColor = isInCorrectPosition
-                        ? KuwentoColors.buddyHappy.withValues(alpha: 0.2)
-                        : KuwentoColors.softCoral.withValues(alpha: 0.2);
-                    borderColor = isInCorrectPosition
-                        ? KuwentoColors.buddyHappy
-                        : KuwentoColors.softCoral;
-                  } else {
-                    backgroundColor = Colors.transparent;
-                    borderColor =
-                        isDark ? Colors.white24 : KuwentoColors.creamDark;
-                  }
-                } else if (isSelected) {
-                  backgroundColor =
-                      KuwentoColors.pastelBlue.withValues(alpha: 0.2);
-                  borderColor = KuwentoColors.pastelBlue;
-                } else {
-                  backgroundColor =
-                      isDark ? KuwentoColors.cardDark : Colors.white;
-                  borderColor =
-                      isDark ? Colors.white24 : KuwentoColors.creamDark;
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: GestureDetector(
-                    onTap: () => _selectEvent(event.id),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(color: borderColor, width: 2),
+          Column(
+            children: [
+              // Instructions
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
+                child: Text(
+                  'Tap events in the order they happened in the story',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? Colors.white70
+                            : KuwentoColors.textSecondary,
                       ),
-                      child: Row(
-                        children: [
-                          // Number badge
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? KuwentoColors.pastelBlue
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isSelected
-                                    ? KuwentoColors.pastelBlue
-                                    : borderColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: isSelected
-                                  ? Text(
-                                      '${selectionIndex + 1}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.touch_app,
-                                      size: 16,
-                                      color: isDark
-                                          ? Colors.white54
-                                          : KuwentoColors.textMuted,
-                                    ),
-                            ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Events list
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: _events.length,
+                  itemBuilder: (context, index) {
+                    final event = _events[index];
+                    final selectionIndex = _selectedOrder.indexOf(event.id);
+                    final isSelected = selectionIndex != -1;
+
+                    Color backgroundColor;
+                    Color borderColor;
+
+                    if (_isCompleted) {
+                      // Show correct/incorrect after completion
+                      final correctIndex = _selectedOrder.indexOf(event.id);
+                      if (correctIndex != -1) {
+                        final isInCorrectPosition =
+                            event.correctOrder == correctIndex;
+                        backgroundColor = isInCorrectPosition
+                            ? KuwentoColors.buddyHappy.withValues(alpha: 0.2)
+                            : KuwentoColors.softCoral.withValues(alpha: 0.2);
+                        borderColor = isInCorrectPosition
+                            ? KuwentoColors.buddyHappy
+                            : KuwentoColors.softCoral;
+                      } else {
+                        backgroundColor = Colors.transparent;
+                        borderColor =
+                            isDark ? Colors.white24 : KuwentoColors.creamDark;
+                      }
+                    } else if (isSelected) {
+                      backgroundColor =
+                          KuwentoColors.pastelBlue.withValues(alpha: 0.2);
+                      borderColor = KuwentoColors.pastelBlue;
+                    } else {
+                      backgroundColor =
+                          isDark ? KuwentoColors.cardDark : Colors.white;
+                      borderColor =
+                          isDark ? Colors.white24 : KuwentoColors.creamDark;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: GestureDetector(
+                        onTap: () => _selectEvent(event.id),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: backgroundColor,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(color: borderColor, width: 2),
                           ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Text(
-                              event.text,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: isDark
-                                        ? Colors.white
-                                        : KuwentoColors.textPrimary,
+                          child: Row(
+                            children: [
+                              // Number badge
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? KuwentoColors.pastelBlue
+                                      : Colors.transparent,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? KuwentoColors.pastelBlue
+                                        : borderColor,
+                                    width: 2,
                                   ),
-                            ),
+                                ),
+                                child: Center(
+                                  child: isSelected
+                                      ? Text(
+                                          '${selectionIndex + 1}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.touch_app,
+                                          size: 16,
+                                          color: isDark
+                                              ? Colors.white54
+                                              : KuwentoColors.textMuted,
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Text(
+                                  event.text,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: isDark
+                                            ? Colors.white
+                                            : KuwentoColors.textPrimary,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    );
+                  },
+                ),
+              ),
+
+              // Bottom action area
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: isDark ? KuwentoColors.cardDark : Colors.white,
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppRadius.xl)),
+                ),
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _isCompleted && _isCorrect
+                            ? ElevatedButton(
+                                onPressed: () => context.go('/'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: KuwentoColors.buddyHappy,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: const Text(
+                                  'Back to Home',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            : OutlinedButton(
+                                onPressed: _resetActivity,
+                                child: Text(
+                                  _isCompleted ? 'Try Again' : 'Reset',
+                                  style: TextStyle(
+                                      color: KuwentoColors.pastelBlue),
+                                ),
+                              ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
 
-          // Bottom action area
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: isDark ? KuwentoColors.cardDark : Colors.white,
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppRadius.xl)),
-            ),
+          // Bottom-right floating buddy with interactive hint bubble
+          Positioned(
+            right: 20,
+            bottom: 100 + AppSpacing.lg,
             child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _isCompleted && _isCorrect
-                        ? ElevatedButton(
-                            onPressed: () => context.go('/'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: KuwentoColors.buddyHappy,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: const Text(
-                              'Back to Home',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        : OutlinedButton(
-                            onPressed: _resetActivity,
-                            child: Text(
-                              _isCompleted ? 'Try Again' : 'Reset',
-                              style: TextStyle(color: KuwentoColors.pastelBlue),
-                            ),
-                          ),
-                  ),
-                ],
+              child: BuddyCompanion(
+                state: _buddyState,
+                message: _buddyMessage,
+                tapMessage: _buddyMessage,
+                enableTapSpeechBubble: true,
+                showSpeechBubble: true,
+                size: 60, // single enlarged floating buddy in thumb zone
+                onTap: () {
+                  setState(() {
+                    _buddyMessage = _buddyMessage ??
+                        'Put the story events in the right order!';
+                  });
+                },
               ),
             ),
           ),

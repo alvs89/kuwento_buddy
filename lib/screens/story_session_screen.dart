@@ -48,6 +48,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   bool _isTranslating = false;
   bool _isNarrationPlaying = false;
   bool _isExiting = false;
+  bool _suppressBuddyHints = false;
   bool _showQuestionHintBubble = false;
   bool _showQuestionSuccessBubble = false;
   Timer? _hintBubbleTimer;
@@ -96,23 +97,36 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       // Persist an in-progress entry immediately so the Library tab reflects
       // the story without waiting for further interaction.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _controller?.saveProgress(immediate: true);
+        unawaited(_controller?.saveProgress(immediate: true));
+        // Keep AuthService cache in sync so My Library shows the card instantly.
+        final auth = context.read<AuthService>();
+        unawaited(auth.refreshCurrentUserFromCloud());
       });
     }
   }
 
   void _onControllerUpdate() {
     setState(() {});
+    final remainingHints = _controller?.remainingHintAttempts ?? 0;
+
+    // Suppress buddy/hints for the rest of this session once hints are exhausted.
+    if (remainingHints <= 0 && !_suppressBuddyHints) {
+      _suppressBuddyHints = true;
+    }
+
     if (_controller?.sessionState == SessionState.questioning &&
         !_showBuddyOverlay) {
       _showBuddyQuestion();
     }
     if (_controller?.sessionState == SessionState.completed &&
         !_showCelebration) {
+      _suppressBuddyHints = false; // hints replenish after completion
       setState(() => _showCelebration = true);
     }
     if (_controller?.sessionState == SessionState.questioning) {
-      if (_controller?.showHint == true) {
+      if (_suppressBuddyHints) {
+        _hideHintBubble();
+      } else if (_controller?.showHint == true) {
         _startHintBubble();
       } else {
         _hideHintBubble();
@@ -186,6 +200,36 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _isNarrationPlaying = false;
     }
     unawaited(ttsService.stop());
+  }
+
+  void _enterReplayMode() {
+    final controller = _controller;
+    if (controller == null) return;
+    setState(() {
+      _showCelebration = false;
+      _showBuddyOverlay = false;
+      _suppressBuddyHints = false;
+      _showQuestionHintBubble = false;
+      _showQuestionSuccessBubble = false;
+      _isExiting = false;
+    });
+    controller.startReplayMode();
+    _pageController.jumpToPage(0);
+  }
+
+  void _enterFreshSession() {
+    final controller = _controller;
+    if (controller == null) return;
+    setState(() {
+      _showCelebration = false;
+      _showBuddyOverlay = false;
+      _suppressBuddyHints = false;
+      _showQuestionHintBubble = false;
+      _showQuestionSuccessBubble = false;
+      _isExiting = false;
+    });
+    controller.startFreshCountedSession();
+    _pageController.jumpToPage(0);
   }
 
   Future<void> _toggleNarrationPlayback() async {
@@ -367,18 +411,23 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
     _stopSpeakingSilently();
 
-    try {
-      await _controller?.saveProgress(immediate: true);
-      // Pull fresh data so Library tabs reflect the latest progress right away.
-      if (mounted) {
-        await context.read<AuthService>().refreshCurrentUserFromCloud();
+    // Fire-and-forget persistence to keep the back navigation instant.
+    final controller = _controller;
+    final auth = mounted ? context.read<AuthService>() : null;
+    unawaited(Future(() async {
+      try {
+        await controller?.saveProgress(immediate: true);
+        if (auth != null) {
+          await auth.refreshCurrentUserFromCloud();
+        }
+      } catch (e) {
+        debugPrint('Failed to save progress before exit: $e');
       }
-    } catch (e) {
-      debugPrint('Failed to save progress before exit: $e');
-    }
+    }));
 
-    if (!mounted) return;
-    context.pop();
+    if (mounted) {
+      context.pop();
+    }
   }
 
   @override
@@ -456,7 +505,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             ),
 
             // Floating Buddy at bottom right (thumb zone)
-            if (!_showBuddyOverlay && !_showCelebration)
+            if (!_showBuddyOverlay && !_showCelebration && !_suppressBuddyHints)
               Positioned(
                 right: 16,
                 bottom: 100,
@@ -484,14 +533,17 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 storyTitle: _story!.title,
                 onReadAgain: () {
                   _stopSpeakingSilently();
-                  setState(() => _showCelebration = false);
-                  controller.resetSession();
-                  _pageController.jumpToPage(0);
+                  _enterFreshSession();
                 },
-                onActivity: () {
+                onActivity: () async {
                   _stopSpeakingSilently();
                   setState(() => _showCelebration = false);
-                  context.push('/activity/${_story!.id}');
+                  final result = await context.push('/activity/${_story!.id}');
+                  if (!mounted) return;
+                  // If activity was closed (X) or just completed, enter replay/read-again mode.
+                  if (result == true || result == null) {
+                    _enterReplayMode();
+                  }
                 },
                 onBackToLibrary: () {
                   _stopSpeakingSilently();
@@ -978,7 +1030,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
           // Next button
           IconButton(
-            onPressed: _controller!.canGoNext && !_controller!.hasCheckpoint
+            onPressed: (_controller!.canGoNext && !_controller!.hasCheckpoint)
                 ? () {
                     _stopSpeaking();
                     _pageController.nextPage(
@@ -1173,7 +1225,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                             ),
                                             const SizedBox(height: AppSpacing.xs),
                                             Text(
-                                              '${_controller!.remainingHintAttempts} hint${_controller!.remainingHintAttempts == 1 ? '' : 's'} remaining',
+                                              '${_controller!.remainingHintAttempts} hint${_controller!.remainingHintAttempts <= 1 ? '' : 's'} remaining',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .labelMedium

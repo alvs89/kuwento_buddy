@@ -136,6 +136,7 @@ service cloud.firestore {
 
     function validProgressUpdate(storyId) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'appStoryId',
         'storyId',
         'storyTitle',
         'currentSegmentIndex',

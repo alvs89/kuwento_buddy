@@ -178,13 +178,14 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Buddy cheering
-                  const BuddyCompanion(
-                    state: BuddyState.happy,
-                    size: 100,
-                    showSpeechBubble: false,
+                  Transform.translate(
+                    offset: const Offset(0, -12),
+                    child: const BuddyCompanion(
+                      state: BuddyState.happy,
+                      size: 100, // adjust height
+                      showSpeechBubble: false,
+                    ),
                   ),
-
                   const SizedBox(height: AppSpacing.md),
 
                   // Title

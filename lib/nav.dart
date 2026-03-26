@@ -237,10 +237,7 @@ class AppRouter {
         pageBuilder: (context, state) {
           final storyId = state.pathParameters['storyId'] ?? '';
           return CustomTransitionPage(
-            child: _withFloatingBuddy(
-              SequenceActivityScreen(storyId: storyId),
-              extraBottomOffset: 108,
-            ),
+            child: SequenceActivityScreen(storyId: storyId),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return SlideTransition(

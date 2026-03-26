@@ -143,6 +143,7 @@ class StoriesListScreen extends StatelessWidget {
                             child: StoryCard(
                               story: story,
                               width: cardWidth,
+                              enableHero: false,
                               onTap: () => context.push('/story/${story.id}'),
                             ),
                           ),

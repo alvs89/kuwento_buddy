@@ -47,6 +47,7 @@ class StoryController extends ChangeNotifier {
   final Map<String, int> _skillCorrect = {};
   final Map<String, int> _skillTotal = {};
   int _starsEarned = 0;
+  bool _replayMode = false;
 
   // Track if question was answered correctly on first try
   bool _answeredFirstTry = true;
@@ -71,6 +72,7 @@ class StoryController extends ChangeNotifier {
   int get totalQuestions => _totalQuestions;
   int get starsEarned => _starsEarned;
   Set<int> get wrongAnswers => _wrongAnswers;
+  bool get isReplayMode => _replayMode;
 
   /// Current segment
   StorySegment get currentSegment => story.segments[_currentSegmentIndex];
@@ -189,6 +191,7 @@ class StoryController extends ChangeNotifier {
   }
 
   Future<void> _persistHintAttempts() async {
+    if (_replayMode) return;
     try {
       final map = await _readHintUsageMap();
       if (_hintAttemptsUsed <= 0) {
@@ -217,6 +220,7 @@ class StoryController extends ChangeNotifier {
 
   /// Save current progress
   void _saveProgress({bool immediate = false}) {
+    if (_replayMode) return; // do not persist progress in replay mode
     if (immediate) {
       _saveQueue = _saveProgressInternal();
       return;
@@ -231,19 +235,13 @@ class StoryController extends ChangeNotifier {
   }
 
   Future<void> _saveProgressInternal() async {
+    if (_replayMode) return;
     debugPrint(
         'StoryController(${story.id}): Saving progress - segment=$_currentSegmentIndex, state=$_sessionState, uid=${_authService.currentUser?.id ?? "null"}');
     try {
       final userSnapshot =
           _authService.currentUser ?? await _waitForHydratedUser();
       final existingProgress = userSnapshot?.storyProgress[story.id];
-      // FIX: For new sessions (index 0 + no existing), set effective=1 to survive cleanup
-      final effectiveIndex =
-          (_currentSegmentIndex == 0 && existingProgress == null)
-              ? 1
-              : _currentSegmentIndex;
-      debugPrint(
-          '  -> effectiveIndex=$effectiveIndex (had existing: ${existingProgress != null})');
       final isNowCompleted = _sessionState == SessionState.completed;
       final wasAlreadyCompleted = existingProgress?.isCompleted == true;
       final hadCompletedVariant = !isNowCompleted &&
@@ -258,7 +256,7 @@ class StoryController extends ChangeNotifier {
       final progress = StoryProgress(
         storyId: story.id,
         storyTitle: story.title,
-        currentSegmentIndex: effectiveIndex,
+        currentSegmentIndex: _currentSegmentIndex,
         totalSegments: totalSegments,
         isCompleted: _sessionState == SessionState.completed,
         correctAnswers: _correctAnswers,
@@ -332,7 +330,7 @@ class StoryController extends ChangeNotifier {
 
   /// Reveal the hint proactively without waiting for a wrong attempt.
   void revealHint() {
-    if (currentQuestion == null || _showHint) return;
+    if (currentQuestion == null || _showHint || !hasHintAttemptsLeft) return;
 
     _showHint = true;
     notifyListeners();
@@ -348,8 +346,19 @@ class StoryController extends ChangeNotifier {
       );
     }
 
-    if (!hasHintAttemptsLeft) {
+    if (_replayMode) {
       _showHint = true;
+      notifyListeners();
+      return HintRequestResult(
+        hintShown: true,
+        remainingAttempts: remainingHintAttempts,
+        alreadyExhausted: false,
+      );
+    }
+
+    if (!hasHintAttemptsLeft) {
+      // Exhausted: do not show hint; keep Buddy hidden until story is re-completed.
+      _showHint = false;
       notifyListeners();
       return HintRequestResult(
         hintShown: false,
@@ -397,25 +406,32 @@ class StoryController extends ChangeNotifier {
     _currentAttempts++;
     _isAnswerCorrect = currentQuestion!.isCorrect(answerIndex);
 
+    // Count this question toward totals on the first attempt, regardless of correctness.
+    if (_currentAttempts == 1) {
+      final skillName = currentQuestion!.skill.name;
+      _skillTotal[skillName] = (_skillTotal[skillName] ?? 0) + 1;
+      _totalQuestions++;
+    }
+
     if (_isAnswerCorrect) {
       // Correct answer!
       final skillName = currentQuestion!.skill.name;
-      _skillTotal[skillName] = (_skillTotal[skillName] ?? 0) + 1;
 
       // Only count as correct in stats if answered on first try
       if (_answeredFirstTry) {
         _correctAnswers++;
         _skillCorrect[skillName] = (_skillCorrect[skillName] ?? 0) + 1;
       }
-      _totalQuestions++;
       _toastService.showCorrectAnswer();
     } else {
       // Wrong answer - track it but allow retry
       _answeredFirstTry = false;
 
       // Show hint after first wrong attempt
-      if (_currentAttempts >= 1) {
+      if (_currentAttempts >= 1 && hasHintAttemptsLeft) {
         _showHint = true;
+      } else if (!hasHintAttemptsLeft) {
+        _showHint = false;
       }
 
       // Clear selected answer to allow retry
@@ -453,6 +469,11 @@ class StoryController extends ChangeNotifier {
       _starsEarned = 0;
     }
 
+    if (_replayMode) {
+      notifyListeners();
+      return;
+    }
+
     _saveProgress();
     unawaited(_clearPersistedHintAttempts());
     _toastService.showStoryCompleted(_starsEarned);
@@ -473,6 +494,7 @@ class StoryController extends ChangeNotifier {
     _currentSegmentIndex = 0;
     _unlockedSegmentIndex = 0;
     _sessionState = SessionState.reading;
+    _replayMode = false;
     _correctAnswers = 0;
     _totalQuestions = 0;
     _skillCorrect.clear();
@@ -483,6 +505,29 @@ class StoryController extends ChangeNotifier {
     notifyListeners();
     unawaited(_clearPersistedHintAttempts());
     _ensureProgressEntry();
+  }
+
+  /// Start a replay session where progress is not recorded.
+  void startReplayMode() {
+    _replayMode = true;
+    _currentSegmentIndex = 0;
+    _unlockedSegmentIndex = 0;
+    _sessionState = SessionState.reading;
+    // Fresh local scoring for this replay run (not persisted)
+    _correctAnswers = 0;
+    _totalQuestions = 0;
+    _skillCorrect.clear();
+    _skillTotal.clear();
+    _starsEarned = 0;
+    _hintAttemptsUsed = 0;
+    _resetQuestionState();
+    notifyListeners();
+  }
+
+  /// Exit replay mode and prepare for a fresh counted session.
+  void startFreshCountedSession() {
+    _replayMode = false;
+    resetSession();
   }
 
   /// Mark segment as read and trigger checkpoint if needed
