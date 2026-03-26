@@ -508,7 +508,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             if (!_showBuddyOverlay && !_showCelebration && !_suppressBuddyHints)
               Positioned(
                 right: 16,
-                bottom: 100,
+                bottom: 140,
                 child: BuddyCompanion(
                   state: controller.hasCheckpoint && !controller.isAnswerCorrect
                       ? BuddyState.thinking
@@ -1197,13 +1197,16 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                 Align(
                                   alignment: Alignment.center,
                                   child: Opacity(
-                                    opacity: _controller!.hasHintAttemptsLeft ? 1.0 : 0.5,
+                                    opacity: _controller!.hasHintAttemptsLeft
+                                        ? 1.0
+                                        : 0.5,
                                     child: SizedBox(
                                       width: 200,
                                       child: OutlinedButton(
-                                        onPressed: _controller!.hasHintAttemptsLeft
-                                            ? _handleShowHintsTap
-                                            : null,
+                                        onPressed:
+                                            _controller!.hasHintAttemptsLeft
+                                                ? _handleShowHintsTap
+                                                : null,
                                         style: OutlinedButton.styleFrom(
                                           side: BorderSide(
                                             color: KuwentoColors.pastelBlue,
@@ -1223,14 +1226,16 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            const SizedBox(height: AppSpacing.xs),
+                                            const SizedBox(
+                                                height: AppSpacing.xs),
                                             Text(
                                               '${_controller!.remainingHintAttempts} hint${_controller!.remainingHintAttempts <= 1 ? '' : 's'} remaining',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .labelMedium
                                                   ?.copyWith(
-                                                    color: KuwentoColors.pastelBlue,
+                                                    color: KuwentoColors
+                                                        .pastelBlue,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                             ),
