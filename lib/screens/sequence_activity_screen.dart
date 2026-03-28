@@ -212,7 +212,33 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
             Icons.close,
             color: isDark ? Colors.white : KuwentoColors.textPrimary,
           ),
-          onPressed: () => context.pop(true), // signal re-read replay
+          onPressed: () async {
+            final action = await showDialog<String>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Leave activity?'),
+                content: const Text(
+                    'Do you want to exit this activity and return to the Home screen?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(null),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop('exit_home'),
+                    child: const Text('Go to Home'),
+                  ),
+                ],
+              ),
+            );
+
+            if (!context.mounted || action == null) return;
+            if (action == 'exit_home') {
+              GoRouter.of(context).go('/');
+              return;
+            }
+            context.pop({'action': action});
+          },
         ),
         title: Text(
           'Put It in Order',
@@ -374,9 +400,10 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                       top: Radius.circular(AppRadius.xl)),
                 ),
                 child: SafeArea(
-                  child: Row(
+                  child: Column(
                     children: [
-                      Expanded(
+                      SizedBox(
+                        width: double.infinity,
                         child: _isCompleted && _isCorrect
                             ? ElevatedButton(
                                 onPressed: () => context.go('/'),
@@ -402,6 +429,14 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                                 ),
                               ),
                       ),
+                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () => context.pop({'action': 'restart'}),
+                          child: const Text('Read Again'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -412,7 +447,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
           // Bottom-right floating buddy with interactive hint bubble
           Positioned(
             right: 20,
-            bottom: 100 + AppSpacing.lg,
+            bottom: 120 + AppSpacing.lg,
             child: SafeArea(
               child: BuddyCompanion(
                 state: _buddyState,

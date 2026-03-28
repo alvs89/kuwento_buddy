@@ -202,21 +202,6 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     unawaited(ttsService.stop());
   }
 
-  void _enterReplayMode() {
-    final controller = _controller;
-    if (controller == null) return;
-    setState(() {
-      _showCelebration = false;
-      _showBuddyOverlay = false;
-      _suppressBuddyHints = false;
-      _showQuestionHintBubble = false;
-      _showQuestionSuccessBubble = false;
-      _isExiting = false;
-    });
-    controller.startReplayMode();
-    _pageController.jumpToPage(0);
-  }
-
   void _enterFreshSession() {
     final controller = _controller;
     if (controller == null) return;
@@ -226,10 +211,20 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _suppressBuddyHints = false;
       _showQuestionHintBubble = false;
       _showQuestionSuccessBubble = false;
-      _isExiting = false;
     });
     controller.startFreshCountedSession();
     _pageController.jumpToPage(0);
+  }
+
+  Future<void> _speakCurrentSegment() async {
+    if (_controller == null || _story == null) return;
+    final ttsService = context.read<TTSService>();
+    final segment = _controller!.currentSegment;
+    final text = await _getTextForLanguage(segment, _activeLanguageCode);
+    await ttsService.speak(
+      text,
+      language: _activeLanguageCode == 'fil' ? 'fil-PH' : 'en-US',
+    );
   }
 
   Future<void> _toggleNarrationPlayback() async {
@@ -397,21 +392,14 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     );
   }
 
-  Future<void> _speakCurrentSegment() async {
-    if (_controller == null) return;
-    final narrationLanguageCode = _activeLanguageCode;
-    final segment = _controller!.currentSegment;
-    final text = await _getTextForLanguage(segment, narrationLanguageCode);
-    await _speakText(text, languageCode: narrationLanguageCode);
-  }
-
   Future<void> _saveProgressAndExit() async {
     if (_isExiting) return;
+
     _isExiting = true;
 
     _stopSpeakingSilently();
 
-    // Fire-and-forget persistence to keep the back navigation instant.
+    // Fire-and-forget persistence to keep the exit flow non-blocking
     final controller = _controller;
     final auth = mounted ? context.read<AuthService>() : null;
     unawaited(Future(() async {
@@ -426,7 +414,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     }));
 
     if (mounted) {
-      context.pop();
+      GoRouter.of(context).go('/');
     }
   }
 
@@ -537,19 +525,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 },
                 onActivity: () async {
                   _stopSpeakingSilently();
-                  setState(() => _showCelebration = false);
                   final result = await context.push('/activity/${_story!.id}');
                   if (!mounted) return;
-                  // If activity was closed (X) or just completed, enter replay/read-again mode.
-                  if (result == true || result == null) {
-                    _enterReplayMode();
+                  final action = result is Map ? result['action'] : result;
+
+                  if (action == 'restart') {
+                    _enterFreshSession();
+                  } else {
+                    // User canceled out of activity without navigating, safe to hide celebration now
+                    setState(() => _showCelebration = false);
                   }
                 },
-                onBackToLibrary: () {
-                  _stopSpeakingSilently();
-                  setState(() => _showCelebration = false);
-                  context.pop();
-                },
+                onBackToLibrary: _saveProgressAndExit,
               ),
           ],
         ),
@@ -845,13 +832,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       ),
     );
 
-    if (index == 0) {
-      return Hero(
-        tag: 'story_cover_${_story!.id}',
-        child: card,
-      );
-    }
-
+    // Removed the Hero widget wrapper to prevent layout exceptions or
+    // delayed unmounting frames when _isExiting forces an abrupt removal.
     return card;
   }
 

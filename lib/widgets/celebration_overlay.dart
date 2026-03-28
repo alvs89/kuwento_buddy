@@ -314,7 +314,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                     child: TextButton(
                       onPressed: widget.onBackToLibrary,
                       child: Text(
-                        'Back to Library',
+                        'Back to Home',
                         style: TextStyle(
                           color: isDark
                               ? Colors.white54
