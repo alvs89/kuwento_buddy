@@ -51,16 +51,22 @@ void main() async {
   );
 
   // Bootstrap heavy startup work in background so splash renders immediately.
-  unawaited(_bootstrapServices(authService, ttsService));
+  unawaited(_bootstrapServices(authService, ttsService, storyService));
 }
 
 Future<void> _bootstrapServices(
   AuthService authService,
   TTSService ttsService,
+  StoryService storyService,
 ) async {
   try {
     await authService.initialize();
     await ttsService.initialize();
+    try {
+      await storyService.seedStoriesToFirestoreIfMissing();
+    } catch (e) {
+      debugPrint('Story seeding skipped: $e');
+    }
 
     final currentUser = authService.currentUser;
     if (currentUser != null) {

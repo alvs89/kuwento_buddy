@@ -371,6 +371,800 @@ final List<StoryModel> filipinoTalesData = [
       ),
     ],
   ),
+  StoryModel(
+    id: 'huni-ng-duyan-sa-punong-kawayan',
+    title: 'Ang Huni ng Duyan sa Punong Kawayan',
+    author: 'KuwentoBuddy Original',
+    coverImage: 'assets/images/alamat_ng_pinya_cover_photo.jpg',
+    description:
+        'Isang batang nakaririnig ng mahinhing huni mula sa lumang duyan at natututuhan na ang kabutihan at pagtutulungan ay may sariling himig.',
+    localizedTitles: {
+      'en': 'The Hum of the Bamboo Cradle',
+    },
+    level: StoryLevel.beginner,
+    categories: [StoryCategory.filipinoTales],
+    estimatedMinutes: 5,
+    language: 'fil',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Narinig ni Laya ang mahinhing huni mula sa lumang duyan.',
+      'Sinundan niya ang tunog hanggang sa kubong may kawayan.',
+      'Tumulong siya sa mga gawain sa bahay at sa kapitbahay.',
+      'Napatunayan niyang lumalakas ang himig kapag sama-samang mabuti ang loob ng mga tao.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'huni-duyan-opening',
+        content: '''Page 1 (Opening Page)
+Title: Ang Huni ng Duyan sa Punong Kawayan
+Genre: Filipino Tale
+Level: Beginner
+Language: Filipino
+Synopsis:
+Sa isang bayang malapit sa ilog at mga punong kawayan, may batang si Laya na palaging nakaririnig ng mahinhing huni mula sa lumang duyan tuwing dapithapon. Hindi niya alam kung hangin ba iyon, o kung may lihim na gustong iparating ang tunog. Sa bawat pagsunod niya sa himig, natututuhan niyang ang kabutihan, pag-alalay, at pakikinig ay may sariling awit na nadarama ng buong komunidad.
+Source / Reference:
+Original Filipino-inspired folktale
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions sa bawat bahagi.
+
+Basahin nang mabuti at pag-isipan ang mga pangyayari bago sumagot.
+
+Pinakamainam para sa gabay na panimulang pagkatuto.''',
+      ),
+      StorySegment(
+        id: 'huni-duyan-1',
+        content:
+            '''Tuwing hapon, matapos ang maiinit na gawain sa bukid, umuupo si Laya sa ilalim ng kubong kawayan ng kanyang lola. Doon niya unang narinig ang mahinhing huni. Hindi ito malakas, ngunit tila may dalang lambing na pumapawi sa pagod.
+
+“Lola, may kumakanta po ba sa duyan?” tanong niya.
+
+Ngumiti ang lola. “Kapag payapa ang loob ng bahay at marunong magtulungan ang mga tao, parang may himig na sumusunod sa hangin,” sabi niya.
+
+Napaisip si Laya. Ang salitang himig ay bago sa kanya, pero sa paraan ng pagtugon ng lola, parang ibig nitong sabihing may tunog na mas nararamdaman kaysa naririnig.''',
+        question: QuestionModel(
+          id: 'huni-duyan-q1',
+          question:
+              'Bakit kaya nakaririnig si Laya ng mahinhing huni sa duyan?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Dahil may tumatangay na ibon sa duyan',
+            'B. Dahil sira ang mga kahoy at nag-iingay ito',
+            'C. Dahil ang duyan ay sumasagisag sa payapang tahanan at pagtutulungan',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Pakinggan ang paliwanag ng lola at ang salitang himig.',
+          encouragement:
+              'Tama! Ang huni ay paalala ng payapang bahay at pagkakaisa.',
+          buddyHintParagraph:
+              'Kapag payapa ang loob ng bahay at marunong magtulungan ang mga tao, parang may himig na sumusunod sa hangin.',
+        ),
+      ),
+      StorySegment(
+        id: 'huni-duyan-2',
+        content:
+            '''Kinabukasan, may kapitbahay na dumating upang humiram ng bigas dahil may bisita silang inaasikaso. Sa mismong oras na iyon, abala si Laya sa paglalaro at gusto na sana niyang tumakbo palayo. Ngunit nakita niya ang pagod sa mukha ng kanyang lola at ang pag-aalala ng kapitbahay.
+
+Sa halip na umalis, kinuha niya ang maliit na salok at tumulong sa pagbubuhat ng bigas. Habang ginagawa niya ito, naramdaman niyang mas gumagaan ang paligid.
+
+“Mabigat po ba?” tanong niya.
+
+“Mabigat man sa kamay, magaan naman sa puso kapag may kasamang alalay,” sagot ng lola.
+
+Nalaman ni Laya na ang alalay ay hindi lamang pagbubuhat ng gamit. Ito rin ay pagdadala ng pag-aalala ng iba nang may malasakit.''',
+        question: QuestionModel(
+          id: 'huni-duyan-q2',
+          question: 'Paano ipinakita ni Laya ang malasakit sa kapitbahay?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.emotion,
+          options: [
+            'A. Tumulong siya sa pagbubuhat ng bigas at hindi tumalikod sa pangangailangan',
+            'B. Tinago niya ang bigas upang hindi makapanghiram ang kapitbahay',
+            'C. Pinanood lang niya ang kapitbahay habang abala ang lahat',
+          ],
+          correctAnswerIndex: 0,
+          hint:
+              'Balikan ang ginawa niya nang makita ang pagod ng lola at kapitbahay.',
+          encouragement:
+              'Tama! Tumulong si Laya sa paraang nakita niyang kailangan ng iba.',
+          buddyHintParagraph:
+              'Kinuha niya ang maliit na salok at tumulong sa pagbubuhat ng bigas.',
+        ),
+      ),
+      StorySegment(
+        id: 'huni-duyan-3',
+        content:
+            '''Sa gabi ng munting pagdiriwang sa barangay, dinala ng mga tao ang pagkaing inihanda nila. Ang duyan sa kubo ni Laya ay hindi na payapa lamang na nakasabit; tila sumasabay ito sa tawa, kuwentuhan, at pagdalo ng mga kapitbahay.
+
+Noon niya napansin na mas malinaw ang mahinhing huni kapag ang mga tao ay nagkakaisa at hindi nagmamadali na unahin ang sarili. Sa bawat pag-abot ng pagkain at bawat ngiti, nagiging mas magaan ang tunog ng hangin.
+
+“Laya,” sabi ng lola, “ang kabutihan ay parang awit. Kapag ibinahagi, mas tumatagal.”
+
+Ngumiti si Laya. Naunawaan niyang ang duyan ay hindi lamang gamit sa pagtulog. Isa rin itong paalala na ang mabuting gawa ay may alon na umaabot sa buong komunidad.''',
+        question: QuestionModel(
+          id: 'huni-duyan-q3',
+          question: 'Ano ang ipinahihiwatig ng duyan sa dulo ng kuwento?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Na kailangang itago ng bawat isa ang lahat para maging payapa',
+            'B. Na ang mabubuting gawa ay may kakayahang magpabago sa buong komunidad',
+            'C. Na ang duyan ay simbolo lamang ng pagtulog',
+          ],
+          correctAnswerIndex: 1,
+          hint: 'Ano ang natutuhan ni Laya tungkol sa kabutihan?',
+          encouragement:
+              'Napakagaling! Naintindihan mo ang aral ng pagbabahagi at pagkakaisa.',
+          buddyHintParagraph:
+              'Ang kabutihan ay parang awit. Kapag ibinahagi, mas tumatagal.',
+        ),
+      ),
+    ],
+  ),
+  StoryModel(
+    id: 'butil-ng-tala-sa-ilalim-ng-balete',
+    title: 'Ang Butil ng Tala sa Ilalim ng Balete',
+    author: 'KuwentoBuddy Original',
+    coverImage:
+        'assets/images/magical_forest_fairy_tale_children_book_illustration_null_1773063134827.jpg',
+    description:
+        'Dalawang magkapatid ang sumusunod sa liwanag sa ilalim ng balete at natutuhang ang pag-aalaga sa tubig at pangako ay mas mahalaga kaysa sa pag-angkin.',
+    localizedTitles: {
+      'en': 'The Star Seed Beneath the Balete Tree',
+    },
+    level: StoryLevel.advanced,
+    categories: [StoryCategory.filipinoTales],
+    estimatedMinutes: 7,
+    language: 'fil',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Natuyo ang munting sapa sa paanan ng burol.',
+      'Sinundan ng magkapatid ang liwanag sa ilalim ng balete.',
+      'Nakakita sila ng butil na kumikislap na parang tala.',
+      'Pinili nilang ibahagi ang natitirang tubig sa mga kapitbahay.',
+      'Bumalik ang bukal matapos nilang tuparin ang pangako.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'butil-tala-opening',
+        content: '''Page 1 (Opening Page)
+Title: Ang Butil ng Tala sa Ilalim ng Balete
+Genre: Filipino Tale
+Level: Advanced
+Language: Filipino
+Synopsis:
+Sa isang baryong nakaahon sa burol at pilit na pinapawi ng araw ang mga halaman, natuyo ang munting sapa na pinagkukunan ng tubig ng mga tao. Isang gabi, sinundan ng magkapatid na sina Tano at Selya ang liwanag sa ilalim ng balete at nakatagpo ng butil na kumikislap na parang tala. Ngunit ang liwanag ay may kasabay na tanong: itatago ba nila ang tuklas, o ibabahagi ito para sa ikabubuti ng lahat?
+Source / Reference:
+Original Filipino-inspired folktale
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions sa bawat bahagi.
+
+Magbasa nang mabuti at isipin ang layunin at bunga ng bawat pasya.
+
+Pinakamainam para sa gabay na pagninilay at mas malalim na pag-unawa.''',
+      ),
+      StorySegment(
+        id: 'butil-tala-1',
+        content:
+            '''Gabi na nang mapansin nina Tano at Selya na halos wala nang tubig sa sapa. Ang mga dahon ay kulubot, at ang mga palay sa bakuran ay nakayuko na parang pagod na pagod. Habang naglalakad sila pauwi, may nakita silang maliit na sinag na galing sa ilalim ng lumang balete.
+
+“May ilaw sa puno,” bulong ni Selya.
+
+Sinundan nila ang kislap hanggang sa isang hukay na natatakpan ng ugat. Sa gitna nito ay may butil na tila may sariling liwanag. Hindi iyon nakakasilaw, ngunit may hatak na hindi maipaliwanag.
+
+“Huwag nating galawin agad,” sabi ni Tano. “Baka may dahilan kung bakit ito narito.”
+
+Napaisip si Selya. Ang salitang dahilan ay tila may bigat na nagsasabing ang bawat bagay ay may pinanggagalingan at dapat ding alagaan sa tamang paraan.''',
+        question: QuestionModel(
+          id: 'butil-tala-q1',
+          question:
+              'Bakit hindi agad kinuha nina Tano at Selya ang kumikislap na butil?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Dahil inakala nilang ginto iyon at gusto nila itong itago',
+            'B. Dahil natatakot silang may magalit sa kanila kung hindi nila ito gagalawin',
+            'C. Dahil naramdaman nilang may dahilan at responsibilidad ang kanilang natuklasan',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Pakinggan ang sinabi ni Tano tungkol sa dahilan ng butil.',
+          encouragement:
+              'Tama! Naunawaan nila na ang natuklasan ay may kaakibat na pananagutan.',
+          buddyHintParagraph:
+              'Huwag nating galawin agad. Baka may dahilan kung bakit ito narito.',
+        ),
+      ),
+      StorySegment(
+        id: 'butil-tala-2',
+        content:
+            '''Kinabukasan, may dumating na matatandang kapitbahay na humihingi ng kaunting tubig para sa mga batang may lagnat. Sa bahay nila, iisa na lamang ang tapayang halos kalahati na lang ang laman.
+
+Mabilis na sumagi sa isip ni Tano na baka mas makabubuti kung itatago muna nila ang natitirang tubig. Ngunit tumingin si Selya sa mga mata ng mga kapitbahay at naalala ang laging sinasabi ng kanilang ina: “Kung may sapat para maibahagi, huwag hayaang maging dahilan ng gutom ang takot sa bukas.”
+
+Pinili nilang ipahiram ang tubig kahit alam nilang mababawasan ang natitira para sa kanilang sariling bahay.
+
+Sa sandaling iyon, napansin ni Tano na mas madaling huminga ang kanyang dibdib. Hindi man nadagdagan ang tubig, parang gumaan naman ang kanilang loob.
+
+Ang salitang pahiram ay hindi na lamang simpleng pag-abot ng salok. Isa na itong pangako na ang pansamantalang kakulangan ay hindi dapat gawing dahilan para isara ang pinto sa iba.''',
+        question: QuestionModel(
+          id: 'butil-tala-q2',
+          question:
+              'Paano nila ipinakita ang tamang pagpapasya sa gitna ng kakulangan?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.emotion,
+          options: [
+            'A. Itinago nila ang tubig para siguradong sa kanila lang ito',
+            'B. Ibinahagi nila ang tubig kahit limitado na ito',
+            'C. Ginamit nila ang tubig sa pagpuputi ng bakod',
+          ],
+          correctAnswerIndex: 1,
+          hint:
+              'Balikan ang ginawa nila nang humingi ng tulong ang mga kapitbahay.',
+          encouragement:
+              'Tama! Pinili nilang magbahagi kahit may pangambang mabawasan sila.',
+          buddyHintParagraph:
+              'Pinili nilang ipahiram ang tubig kahit alam nilang mababawasan ang natitira.',
+        ),
+      ),
+      StorySegment(
+        id: 'butil-tala-3',
+        content:
+            '''Nang sumunod na gabi, ibinalik ng mga kapitbahay ang lalagyan at dinalhan sila ng mga punlang gulay at ilang pirasong prutas mula sa mataas na bahagi ng baryo. Sa pag-uwi nila, muli silang dumaan sa balete at nakita na ang liwanag ng butil ay naging manipis na sinag na papalapit sa lupa.
+
+Kinabukasan, tumulo ang unang patak mula sa pinakatuktok ng burol. Pagkatapos ay sunod-sunod na umaagos ang malinaw na tubig na para bang matagal na itong naghintay na may magbigay-pugay sa kanya.
+
+“Hindi natin inangkin ang hiwaga,” sabi ni Selya. “Pinangalagaan natin ito.”
+
+At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Isa itong paalala na ang pag-ibig sa lupa, tubig, at kapwa ay lumalago kapag may pagtitiwala at pananagutan.''',
+        question: QuestionModel(
+          id: 'butil-tala-q3',
+          question: 'Ano ang sinisimbolo ng butil ng tala sa kuwento?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Takot sa dilim at pag-iisa',
+            'B. Pagiging sakim at pagtatago ng yaman',
+            'C. Pag-asa, pananagutan, at pagbabahagi sa komunidad',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Ano ang nangyari nang pinili nilang ibahagi ang tubig?',
+          encouragement:
+              'Napakagaling! Ang butil ay naging simbolo ng pag-asa at malasakit.',
+          buddyHintParagraph: 'Pinangalagaan natin ito.',
+        ),
+      ),
+    ],
+  ),
+  StoryModel(
+    id: 'lia-at-ang-mapa-ng-mahinhing-alon',
+    title: 'Lia at ang Mapa ng Mahinhing Alon',
+    author: 'KuwentoBuddy Original',
+    coverImage:
+        'assets/images/tropical_jungle_adventure_children_illustration_null_1773063139698.jpg',
+    description:
+        'Sinundan ni Lia ang isang lumang mapa sa tabing-dagat at natutuhan niyang ang pag-usisa ay mas ligtas kapag may pag-iingat at malasakit sa kasama.',
+    localizedTitles: {
+      'en': 'Lia and the Map of Whispering Waves',
+    },
+    level: StoryLevel.beginner,
+    categories: [StoryCategory.adventureJourney],
+    estimatedMinutes: 5,
+    language: 'en',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Nakakita si Lia ng lumang mapa sa loob ng kabibe.',
+      'Sinundan niya ang mga palatandaan sa daan ng buhangin at kawayan.',
+      'Tinulungan niya ang batang pinsan na maglakad sa tulay na lumiliyad.',
+      'Natagpuan niya ang nawawalang kompas ng mangingisda sa isang lihim na look.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'lia-map-opening',
+        content: '''Page 1 (Opening Page)
+Title: Lia at ang Mapa ng Mahinhing Alon
+Genre: Adventure & Journey Story
+Level: Beginner
+Language: English
+Synopsis:
+On a coastal morning after a short rain, Lia finds an old map tucked inside a shell box near her grandmother’s hut. The map contains short clues written in a fading hand, and the clues seem to point toward a hidden cove beyond the bamboo bridge. As Lia follows the trail, she learns that curiosity becomes wiser when it is guided by caution, patience, and care for the people walking beside us.
+Source / Reference:
+Original adventure story
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions in every section.
+
+Read carefully and think before answering.
+
+Best for guided introduction.''',
+      ),
+      StorySegment(
+        id: 'lia-map-1',
+        content:
+            '''Lia was helping her grandmother sort shells when she noticed a tiny map rolled into a shell box. The paper was soft at the edges, and one line could still be read: “Follow the hush after the rain.”
+
+Lia frowned. She did not know the word hush at first, but the clue itself felt calm. It reminded her of the quiet sound she heard when the sea settled after a storm.
+
+She tucked the map into her pocket and looked toward the path that curved behind the bamboo trees. The path seemed ordinary, yet the map made it feel important.
+
+“If the clue is asking me to listen, then I should walk slowly,” she whispered.''',
+        question: QuestionModel(
+          id: 'lia-map-q1',
+          question: 'What does the word hush most likely mean in the clue?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. A loud crashing noise',
+            'B. A quiet and gentle sound',
+            'C. A bright and flashing light',
+          ],
+          correctAnswerIndex: 1,
+          hint: 'Think about the sea after a storm and the way Lia reacts.',
+          encouragement:
+              'Correct! Hush means a quiet, gentle sound in this context.',
+          buddyHintParagraph: 'Follow the hush after the rain.',
+        ),
+      ),
+      StorySegment(
+        id: 'lia-map-2',
+        content:
+            '''A narrow bamboo bridge led across a shallow stream before the path climbed toward the cove. Lia’s younger cousin, Pio, had followed her without asking. At first, he laughed and ran ahead, but the bridge swayed under his feet.
+
+Lia stopped immediately. She held out her hand and told Pio to step slowly and match her pace. The boards creaked, but they crossed safely.
+
+On the far side, Pio asked why she was not rushing like in the stories they heard from older cousins.
+
+“Because a journey is not better when it is faster,” Lia said. “It is better when everyone reaches the end safely.”
+
+Her map still pointed forward, but now she understood that the companion beside her mattered as much as the destination.''',
+        question: QuestionModel(
+          id: 'lia-map-q2',
+          question: 'How did Lia show good judgment on the bridge?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.emotion,
+          options: [
+            'A. She asked Pio to slow down and cross carefully with her',
+            'B. She left Pio behind and ran ahead alone',
+            'C. She jumped across without checking the bridge',
+          ],
+          correctAnswerIndex: 0,
+          hint: 'What did Lia do when she saw the bridge sway?',
+          encouragement:
+              'Tama! Pinili ni Lia ang ligtas na paraan para sa kanilang dalawa.',
+          buddyHintParagraph:
+              'She held out her hand and told Pio to step slowly and match her pace.',
+        ),
+      ),
+      StorySegment(
+        id: 'lia-map-3',
+        content:
+            '''At the cove, Lia found an old fisherman sitting beside a net with a broken knot. He smiled when he saw the shell box in her hand.
+
+“That map belonged to my brother,” he said. “He hid it so someone kind would bring back my compass.”
+
+Near the rocks, Lia spotted the missing compass, caught between two stones.
+
+She returned it gently. When the fisherman opened it, the needle pointed to a tide pool filled with small glowing shells.
+
+The fisherman explained that the compass had been used not to rush from place to place, but to guide helpers toward people who needed patience and care.
+
+Lia looked at the shell map again and understood: a journey can lead to discovery, but it can also lead to responsibility.''',
+        question: QuestionModel(
+          id: 'lia-map-q3',
+          question: 'Why was the compass hidden near the cove?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.prediction,
+          options: [
+            'A. To be sold in the market later',
+            'B. To keep it away from the sea forever',
+            'C. To guide a kind traveler to return it to its owner',
+          ],
+          correctAnswerIndex: 2,
+          hint:
+              'Listen to the fisherman’s explanation about kindness and purpose.',
+          encouragement:
+              'Correct! The compass was hidden so a kind person could find and return it.',
+          buddyHintParagraph:
+              'He hid it so someone kind would bring back my compass.',
+        ),
+      ),
+    ],
+  ),
+  StoryModel(
+    id: 'daan-ng-orasan-sa-ulap-na-gulod',
+    title: 'The Clockmaker’s Path to Cloud Ridge',
+    author: 'KuwentoBuddy Original',
+    coverImage:
+        'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
+    description:
+        'Naglakad si Rafael sa mahamog na daan upang maihatid ang mga piyesa ng orasan ng kanyang lolo at natutuhan niyang ang pag-iingat ay mahalaga sa gitna ng hamon.',
+    localizedTitles: {
+      'fil': 'Ang Daan ng Tagapag-ayos ng Orasan sa Ulap na Gulod',
+    },
+    level: StoryLevel.intermediate,
+    categories: [StoryCategory.adventureJourney],
+    estimatedMinutes: 6,
+    language: 'en',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Tinanggap ni Rafael ang sira-sirang orasan mula sa kanyang lolo.',
+      'Umakyat siya sa daan papunta sa Cloud Ridge.',
+      'Nabanaag niya ang dalawang landas sa gitna ng hamog.',
+      'Pinili niyang sumunod sa ligtas na bakas at natapos ang paglalakbay.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'clockmaker-opening',
+        content: '''Page 1 (Opening Page)
+Title: The Clockmaker’s Path to Cloud Ridge
+Genre: Adventure & Journey Story
+Level: Intermediate
+Language: English
+Synopsis:
+A mountain village waits for its festival bell, but the clock that guides the bell has stopped at 5:30. Rafael, the grandson of the village clockmaker, is asked to carry the broken parts up to Cloud Ridge before the fog grows thicker. As he travels, he must choose between the shortest route and the safest one, learning that sometimes the clearest destination is reached by careful steps rather than hurried ones.
+Source / Reference:
+Original adventure story
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions after each part.
+
+Read carefully and think before answering.
+
+Best for guided decision-making.''',
+      ),
+      StorySegment(
+        id: 'clockmaker-1',
+        content:
+            '''Rafael held the broken clock parts carefully in a cloth wrapped by his grandfather. The hands had stopped at 5:30, and his grandfather explained that the village bell had once been set to that time to warn farmers when the fog usually began to thicken on the ridge.
+
+“So the clock is not only for telling time,” Rafael said.
+
+His grandfather nodded. “It is also for keeping people safe.”
+
+Rafael looked at the pieces again and noticed a tiny crack near the gear. It was not enough to shatter the clock, but it was enough to make him realize that small damage can cause a larger problem if ignored.''',
+        question: QuestionModel(
+          id: 'clockmaker-q1',
+          question:
+              'Why did Rafael’s grandfather keep the broken clock parts carefully wrapped?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Because the parts were useless and should be forgotten',
+            'B. Because the clock had an important role in guiding the village safely',
+            'C. Because he wanted to hide the clock from everyone forever',
+          ],
+          correctAnswerIndex: 1,
+          hint: 'Think about the bell and why 5:30 mattered.',
+          encouragement:
+              'Correct! The clock had a safety purpose, not just a decorative one.',
+          buddyHintParagraph: 'It is also for keeping people safe.',
+        ),
+      ),
+      StorySegment(
+        id: 'clockmaker-2',
+        content:
+            '''As Rafael climbed toward Cloud Ridge, the fog rolled in earlier than expected. He saw two paths: one was narrow and looked quicker, while the other was longer but had small stones painted white along the edge.
+
+He almost chose the shortcut because the festival bell seemed to be calling him from far away. Then he remembered his grandfather’s warning: the shortest path is not always the surest one.
+
+Rafael followed the white stones, and along the way he noticed that the cliffside grass bent sharply toward a drop. The shortcut, he realized, would have taken him too close to the edge.
+
+By choosing the safer path, he did not save time. He saved himself from a mistake he might not have noticed until it was too late.''',
+        question: QuestionModel(
+          id: 'clockmaker-q2',
+          question:
+              'What is the best explanation for Rafael’s choice of the longer path?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.prediction,
+          options: [
+            'A. He wanted to prove he was faster than everyone else',
+            'B. He was afraid of the fog and wanted to stop completely',
+            'C. He noticed the safer path and chose caution over speed',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Look at the white stones and the cliffside grass.',
+          encouragement:
+              'Tama! Pinili ni Rafael ang pag-iingat kaysa sa pagmamadali.',
+          buddyHintParagraph:
+              'He noticed that the shortcut would have taken him too close to the edge.',
+        ),
+      ),
+      StorySegment(
+        id: 'clockmaker-3',
+        content:
+            '''When Rafael reached the top, the old tower bell was silent. Inside the tower room, he found a tiny note tucked behind the clock face: “The bell keeps time, but the mountain keeps memory.”
+
+He repaired the parts with his grandfather’s instructions in mind and set the hands so the bell would ring again at 5:30.
+
+As the bell sounded across Cloud Ridge, the foghorns in the village answered below. Farmers paused, children hurried home, and the festival lanterns began to glow.
+
+Rafael realized the clock was not simply a family treasure. It was a promise that the village would listen to time, weather, and one another.''',
+        question: QuestionModel(
+          id: 'clockmaker-q3',
+          question:
+              'What did Rafael discover about the clock by the end of the journey?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. That it was only useful because it looked old',
+            'B. That it was a toy with no real purpose',
+            'C. That it carried family trust and helped protect the village',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Consider what happened when the bell rang again.',
+          encouragement:
+              'Correct! The clock held both family meaning and village responsibility.',
+          buddyHintParagraph:
+              'It was a promise that the village would listen to time, weather, and one another.',
+        ),
+      ),
+    ],
+  ),
+  StoryModel(
+    id: 'empty-seat-by-the-window',
+    title: 'The Empty Seat by the Window',
+    author: 'KuwentoBuddy Original',
+    coverImage:
+        'assets/images/rice_terraces_Philippines_landscape_beautiful_null_1773063138652.jpg',
+    description:
+        'Isang bagong mag-aaral ang dumarating sa klase, at natututuhan ni Mara na ang simpleng pagbati at pagbabahagi ay maaaring magpaluwag ng kaba ng iba.',
+    localizedTitles: {
+      'fil': 'Ang Bakanteng Upuan sa Bintana',
+    },
+    level: StoryLevel.beginner,
+    categories: [StoryCategory.socialStories],
+    estimatedMinutes: 5,
+    language: 'en',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Napansin ni Mara ang isang bakanteng upuan sa tabi ng bintana.',
+      'Nakilala niya ang bagong mag-aaral na mahigpit ang hawak sa kuwaderno.',
+      'Ibinahagi niya ang mga krayola at pinakilala ang mga gawain sa silid.',
+      'Naging mas masaya ang proyekto nang tumulong ang buong klase.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'window-seat-opening',
+        content: '''Page 1 (Opening Page)
+Title: The Empty Seat by the Window
+Genre: Real-Life / Social Story
+Level: Beginner
+Language: English
+Synopsis:
+When Mara arrives at school, she notices an empty seat by the window and a new boy standing near the teacher’s desk, holding his notebook very tightly. He looks unsure, as if he is trying to be invisible. Mara must decide whether to stay with her friends or make room for someone who is still finding his place. Through a small act of welcome, she learns how kindness can turn a strange room into a familiar one.
+Source / Reference:
+Original social story
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions after each part.
+
+Read carefully and think before answering.
+
+Best for guided introduction.''',
+      ),
+      StorySegment(
+        id: 'window-seat-1',
+        content:
+            '''Mara placed her bag on the chair beside the window and noticed the boy glance around the classroom. He held his notebook close to his chest, and his shoulders looked stiff, as if he were bracing for something unknown.
+
+The teacher smiled and said, “Class, this is Ben. He is new here.”
+
+Mara looked at Ben again. He did not speak, but his eyes kept checking the floor and then the door, as if he wanted to escape the room without anyone noticing.
+
+Mara thought of the empty seat beside her. It suddenly felt less empty and more like an invitation.''',
+        question: QuestionModel(
+          id: 'window-seat-q1',
+          question: 'Why was Ben holding his notebook so tightly?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Because he was angry with the teacher',
+            'B. Because he wanted to hide the notebook from everyone',
+            'C. Because he felt unsure and nervous in the new classroom',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Look at his shoulders and the way he keeps checking the room.',
+          encouragement:
+              'Correct! Ben seemed nervous and unsure in the new classroom.',
+          buddyHintParagraph:
+              'He held his notebook close to his chest, and his shoulders looked stiff.',
+        ),
+      ),
+      StorySegment(
+        id: 'window-seat-2',
+        content:
+            '''During art time, the teacher passed out crayons. Ben only had a pencil and one short crayon in his bag. Mara noticed that he paused each time the class needed a color.
+
+She remembered that she had a full box with several extra crayons. Instead of waiting for someone else to notice, she slid the box toward him and said, “You can borrow these.”
+
+Ben looked surprised. Then he gave a small smile, the kind that appears when worry finally loosens its grip.
+
+The classroom seemed brighter, even though nothing had changed on the walls.''',
+        question: QuestionModel(
+          id: 'window-seat-q2',
+          question: 'What was the best next step for Mara?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Share her crayons and speak kindly to Ben',
+            'B. Tell Ben to sit somewhere else because he is new',
+            'C. Ignore him so he can learn on his own',
+          ],
+          correctAnswerIndex: 0,
+          hint: 'Think about what makes a new place feel safer.',
+          encouragement:
+              'Tama! Ang simpleng pagbabahagi ay malaking tulong sa bagong kaklase.',
+          buddyHintParagraph:
+              'She slid the box toward him and said, “You can borrow these.”',
+        ),
+      ),
+      StorySegment(
+        id: 'window-seat-3',
+        content:
+            '''By the end of the day, the class was working on a map poster that showed the places they came from. Ben drew a small river and a market from his old town. He finally spoke in a clear voice, adding one detail after another.
+
+Mara noticed that once someone had offered him room, Ben had more room inside himself to speak.
+
+When the teacher hung the poster on the wall, Mara realized that the brightest part of the room was not the window. It was the way one small welcome had helped a quiet student find his place.
+
+She understood that kindness is often quiet at the beginning but can grow loud in the ways it changes a person’s day.''',
+        question: QuestionModel(
+          id: 'window-seat-q3',
+          question: 'What did Mara learn at the end of the story?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. That new students never want help',
+            'B. That posters are the most important part of class',
+            'C. That small kindnesses can help someone feel safe and included',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'What changed after Mara shared her crayons?',
+          encouragement:
+              'Correct! Small kindnesses can help someone feel safe and welcome.',
+          buddyHintParagraph:
+              'The brightest part of the room was the way one small welcome had helped a quiet student find his place.',
+        ),
+      ),
+    ],
+  ),
+  StoryModel(
+    id: 'saturday-market-list',
+    title: 'The Saturday Market List',
+    author: 'KuwentoBuddy Original',
+    coverImage:
+        'assets/images/dragon_castle_fantasy_children_illustration_null_1773063135821.jpg',
+    description:
+        'Pinagkakatiwalaang bumili ni Jun ng mga pangangailangan sa palengke, at natutuhan niyang ang pagbabalik ng sobrang sukli ay bumubuo ng tiwala.',
+    localizedTitles: {
+      'fil': 'Ang Listahan sa Sabado',
+    },
+    level: StoryLevel.intermediate,
+    categories: [StoryCategory.socialStories],
+    estimatedMinutes: 6,
+    language: 'en',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Binigyan si Jun ng listahan at eksaktong pera.',
+      'Napansin niya ang sobrang sukli sa palengke.',
+      'Naaamoy niya ang mainit na pandesal at naisip ang baon.',
+      'Ibinalik niya ang sobrang sukli at nakuha ang tiwala ng nanay niya.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'market-list-opening',
+        content: '''Page 1 (Opening Page)
+Title: The Saturday Market List
+Genre: Real-Life / Social Story
+Level: Intermediate
+Language: English
+Synopsis:
+Every Saturday, Jun helps his mother buy vegetables, rice, and soap at the market. This week, his mother gives him an exact amount of money and asks him to return with the change. At the market, Jun receives a little more money than he should. The extra coins seem small, but the decision they invite is bigger: keep them, or return them and protect the trust he has been given.
+Source / Reference:
+Original social story
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions after each part.
+
+Read carefully and think before answering.
+
+Best for guided decision-making.''',
+      ),
+      StorySegment(
+        id: 'market-list-1',
+        content:
+            '''Jun folded the market list and slipped the exact money into his pocket. His mother reminded him, “The amount is just right. If there is change, bring it back.”
+
+At the market, the seller weighed the tomatoes quickly and placed the coins in Jun’s hand. Jun looked down and noticed the change felt heavier than expected. He counted again and realized there was a little extra.
+
+For a second, Jun simply stared. The coins were tiny, but his thoughts were not. He remembered how his mother had trusted him with the errand.
+
+The market noise moved around him like a river, but Jun’s decision felt still.''',
+        question: QuestionModel(
+          id: 'market-list-q1',
+          question: 'Why did Jun pause after receiving the change?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Because he had forgotten the list at home',
+            'B. Because he planned to spend the money right away',
+            'C. Because he noticed the amount might not belong to him',
+          ],
+          correctAnswerIndex: 2,
+          hint: 'Think about what he remembered from his mother’s instruction.',
+          encouragement:
+              'Correct! Jun realized the extra money might not be his to keep.',
+          buddyHintParagraph:
+              'The amount is just right. If there is change, bring it back.',
+        ),
+      ),
+      StorySegment(
+        id: 'market-list-2',
+        content:
+            '''As Jun walked past a stall selling warm bread, the smell made his stomach growl. He thought about the sweet bun he had wanted for days. With the extra coins, he could buy one and still go home with enough to make the errand feel easier.
+
+Then he looked at the seller, who was busy serving another customer. The man’s hands moved fast, and Jun realized the mistake may have happened without anyone noticing.
+
+Jun took a slow breath. He placed the extra coins back into his palm and turned toward the stall.
+
+“Nanghingi po ako ng sobra,” he said.
+
+The seller blinked, then smiled with relief.''',
+        question: QuestionModel(
+          id: 'market-list-q2',
+          question: 'What should Jun do next?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.emotion,
+          options: [
+            'A. Return the extra money to the seller',
+            'B. Spend part of it on the bread stall',
+            'C. Keep the coins and say nothing',
+          ],
+          correctAnswerIndex: 0,
+          hint: 'Think about trust, not just desire.',
+          encouragement:
+              'Tama! Ang pagbalik ng sobrang sukli ay pagprotekta sa tiwala.',
+          buddyHintParagraph:
+              'He placed the extra coins back into his palm and turned toward the stall.',
+        ),
+      ),
+      StorySegment(
+        id: 'market-list-3',
+        content:
+            '''When Jun reached home, he handed his mother the vegetables, the soap, and the exact change. He also told her about the extra coins and how he returned them.
+
+His mother listened quietly, then nodded. “You made the errand smaller in money, but bigger in honesty,” she said.
+
+Jun felt the warm bread smell still lingering in the air, but now it did not tempt him as much. The part that stayed with him was his mother’s calm smile.
+
+He learned that trust grows when a person returns even the little things that could have been hidden.''',
+        question: QuestionModel(
+          id: 'market-list-q3',
+          question: 'What lesson did Jun learn from the errand?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. That honesty builds trust even in small tasks',
+            'B. That market trips are only about buying snacks',
+            'C. That it is better to ignore mistakes if nobody notices',
+          ],
+          correctAnswerIndex: 0,
+          hint: 'Listen to what his mother says about honesty.',
+          encouragement:
+              'Correct! Honesty made the task matter more than the coins.',
+          buddyHintParagraph:
+              'You made the errand smaller in money, but bigger in honesty.',
+        ),
+      ),
+    ],
+  ),
 ];
 
 final List<StoryModel> adventureJourneyData = [

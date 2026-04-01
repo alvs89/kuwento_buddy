@@ -104,7 +104,11 @@ class StoryService {
         return StoryModel.fromJson(data);
       }).toList();
 
-      if (remoteStories.isNotEmpty || !fallbackToLocal) {
+      if (remoteStories.isNotEmpty) {
+        return _mergeStories(_localStories, remoteStories);
+      }
+
+      if (!fallbackToLocal) {
         return remoteStories;
       }
     } catch (_) {
@@ -112,6 +116,35 @@ class StoryService {
     }
 
     return _localStories;
+  }
+
+  List<StoryModel> _mergeStories(
+    List<StoryModel> localStories,
+    List<StoryModel> remoteStories,
+  ) {
+    final mergedById = <String, StoryModel>{
+      for (final story in remoteStories) story.id: story,
+    };
+
+    for (final story in localStories) {
+      mergedById[story.id] = story;
+    }
+
+    final mergedStories = <StoryModel>[];
+    final addedIds = <String>{};
+
+    for (final story in localStories) {
+      mergedStories.add(mergedById[story.id]!);
+      addedIds.add(story.id);
+    }
+
+    for (final story in remoteStories) {
+      if (addedIds.add(story.id)) {
+        mergedStories.add(story);
+      }
+    }
+
+    return mergedStories;
   }
 
   List<StoryModel> searchStories(String query) {

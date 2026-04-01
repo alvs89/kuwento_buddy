@@ -179,8 +179,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             scale: _scaleAnimation,
             child: Container(
               margin: const EdgeInsets.all(24),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
               decoration: BoxDecoration(
                 color: isDark ? KuwentoColors.cardDark : Colors.white,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -260,40 +259,30 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                   AnimatedBuilder(
                     animation: _starAnimation,
                     builder: (context, child) {
-                      double _starFill(int index) {
-                        const epsilon = 1e-6;
-                        final score = widget.comprehensionScore.clamp(0, 100);
-                        // Normalize score to a 0–3 scale, then find how much of this star is filled.
-                        final normalized = (score / 100) * 3;
-                        final value = normalized - index;
+                      final earnedStars = widget.starsEarned.clamp(0, 3);
 
-                        if (value >= 1 - epsilon) return 1.0; // full star
-                        if (value >= 0.5 - epsilon) return 0.5; // half star
-                        return value.clamp(0.0, 1.0);
-                      }
-
-                      IconData _starIcon(double fill) {
-                        if (fill >= 1) return Icons.star;
-                        if (fill >= 0.5) return Icons.star_half;
-                        return Icons.star_border;
+                      bool _isFilled(int index) {
+                        return index < earnedStars;
                       }
 
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(3, (index) {
-                          final fill = _starFill(index);
+                          final isFilled = _isFilled(index);
                           final delay = index * 0.2;
                           final animValue =
                               (_starAnimation.value - delay).clamp(0.0, 1.0);
 
                           return Transform.scale(
-                            scale: fill > 0 ? animValue : 1.0,
+                            scale: isFilled ? animValue : 1.0,
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 4),
                               child: Icon(
-                                _starIcon(fill),
-                                color: KuwentoColors.buddyThinking,
+                                isFilled ? Icons.star : Icons.star_border,
+                                color: isFilled
+                                    ? KuwentoColors.buddyThinking
+                                    : KuwentoColors.buddyThinking,
                                 size: 48,
                               ),
                             ),

@@ -294,6 +294,7 @@ class AppRouter {
           return CustomTransitionPage(
             child: _withFloatingBuddy(
               StoriesListScreen(level: level, title: '$levelName Stories'),
+              extraBottomOffset: 24,
             ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -337,6 +338,7 @@ class AppRouter {
                 currentLibraryOnly: currentLibraryOnly,
                 recommendedStoryIds: recommendedStoryIds,
               ),
+              extraBottomOffset: 24,
             ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
