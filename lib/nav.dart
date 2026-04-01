@@ -211,8 +211,12 @@ class AppRouter {
         name: 'story-session',
         pageBuilder: (context, state) {
           final storyId = state.pathParameters['storyId'] ?? '';
+          final resumeProgress = state.uri.queryParameters['resume'] == 'true';
           return CustomTransitionPage(
-            child: StorySessionScreen(storyId: storyId),
+            child: StorySessionScreen(
+              storyId: storyId,
+              resumeProgress: resumeProgress,
+            ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return SlideTransition(
@@ -236,8 +240,12 @@ class AppRouter {
         name: 'sequence-activity',
         pageBuilder: (context, state) {
           final storyId = state.pathParameters['storyId'] ?? '';
+          final initialLanguageCode = state.uri.queryParameters['lang'];
           return CustomTransitionPage(
-            child: SequenceActivityScreen(storyId: storyId),
+            child: SequenceActivityScreen(
+              storyId: storyId,
+              initialLanguageCode: initialLanguageCode,
+            ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return SlideTransition(
@@ -352,15 +360,14 @@ class AppRouter {
   static String _getCategoryTitle(String category) {
     switch (category) {
       case 'filipino_tales':
+      case 'filipino-tales':
         return 'Filipino Tales 🇵🇭';
-      case 'quick_reads':
-        return 'Quick Reads ⚡';
       case 'adventure':
-        return 'Adventure 🗺️';
-      case 'fantasy':
-        return 'Fantasy ✨';
-      case 'nature':
-        return 'Nature 🌿';
+      case 'adventure-journey':
+        return 'Adventure Journey 🧭';
+      case 'social':
+      case 'social-stories':
+        return 'Social Stories 🤝';
       case 'recommended':
         return 'Recommended for You ⭐';
       default:

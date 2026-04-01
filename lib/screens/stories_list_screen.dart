@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
+import 'package:kuwentobuddy/services/story_launch_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/story_card.dart';
 
@@ -17,10 +18,11 @@ class StoriesListScreen extends StatelessWidget {
 
   static const Map<String, StoryCategory> _categoryByRoute = {
     'filipino_tales': StoryCategory.filipinoTales,
-    'quick_reads': StoryCategory.quickReads,
-    'adventure': StoryCategory.adventure,
-    'fantasy': StoryCategory.fantasy,
-    'nature': StoryCategory.nature,
+    'filipino-tales': StoryCategory.filipinoTales,
+    'adventure': StoryCategory.adventureJourney,
+    'adventure-journey': StoryCategory.adventureJourney,
+    'social': StoryCategory.socialStories,
+    'social-stories': StoryCategory.socialStories,
   };
 
   static const Map<String, StoryLevel> _levelByRoute = {
@@ -144,7 +146,9 @@ class StoriesListScreen extends StatelessWidget {
                               story: story,
                               width: cardWidth,
                               enableHero: false,
-                              onTap: () => context.push('/story/${story.id}'),
+                              onTap: () {
+                                openStoryFromCard(context, story);
+                              },
                             ),
                           ),
                         )

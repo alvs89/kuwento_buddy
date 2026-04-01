@@ -34,10 +34,22 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   late AnimationController _starController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _starAnimation;
+  late final bool _isZeroOutcome;
+  late final String _supportiveTitle;
+  final List<String> _supportiveMessages = const [
+    "It's okay, Buddy! Let's bounce back. 🤜🤛",
+    'Try again? You can do it! 💪',
+    "Don't give up, read and learn again! 📚✨",
+  ];
 
   @override
   void initState() {
     super.initState();
+
+    _isZeroOutcome = widget.starsEarned == 0 && widget.comprehensionScore == 0;
+    _supportiveTitle = _supportiveMessages[math.Random().nextInt(
+      _supportiveMessages.length,
+    )];
 
     // Confetti controller
     _confettiController =
@@ -67,7 +79,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
     _scaleController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       _starController.forward();
-      _confettiController.play();
+      if (!_isZeroOutcome) {
+        _confettiController.play();
+      }
     });
   }
 
@@ -93,69 +107,71 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
           ),
         ),
 
-        // Confetti from top center
-        Align(
-          alignment: Alignment.topCenter,
-          child: ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirection: math.pi / 2,
-            maxBlastForce: 5,
-            minBlastForce: 2,
-            emissionFrequency: 0.05,
-            numberOfParticles: 30,
-            gravity: 0.2,
-            shouldLoop: false,
-            colors: [
-              KuwentoColors.buddyHappy,
-              KuwentoColors.buddyThinking,
-              KuwentoColors.softCoral,
-              KuwentoColors.pastelBlue,
-              KuwentoColors.buddyEncouraging,
-              Colors.white,
-            ],
-            createParticlePath: (size) => _drawStar(size),
+        if (!_isZeroOutcome) ...[
+          // Confetti from top center
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: math.pi / 2,
+              maxBlastForce: 5,
+              minBlastForce: 2,
+              emissionFrequency: 0.05,
+              numberOfParticles: 30,
+              gravity: 0.2,
+              shouldLoop: false,
+              colors: [
+                KuwentoColors.buddyHappy,
+                KuwentoColors.buddyThinking,
+                KuwentoColors.softCoral,
+                KuwentoColors.pastelBlue,
+                KuwentoColors.buddyEncouraging,
+                Colors.white,
+              ],
+              createParticlePath: (size) => _drawStar(size),
+            ),
           ),
-        ),
 
-        // Confetti from left
-        Align(
-          alignment: Alignment.topLeft,
-          child: ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirection: -math.pi / 4,
-            maxBlastForce: 10,
-            minBlastForce: 5,
-            emissionFrequency: 0.03,
-            numberOfParticles: 20,
-            gravity: 0.3,
-            shouldLoop: false,
-            colors: [
-              KuwentoColors.buddyHappy,
-              KuwentoColors.buddyThinking,
-              KuwentoColors.softCoral,
-            ],
+          // Confetti from left
+          Align(
+            alignment: Alignment.topLeft,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: -math.pi / 4,
+              maxBlastForce: 10,
+              minBlastForce: 5,
+              emissionFrequency: 0.03,
+              numberOfParticles: 20,
+              gravity: 0.3,
+              shouldLoop: false,
+              colors: [
+                KuwentoColors.buddyHappy,
+                KuwentoColors.buddyThinking,
+                KuwentoColors.softCoral,
+              ],
+            ),
           ),
-        ),
 
-        // Confetti from right
-        Align(
-          alignment: Alignment.topRight,
-          child: ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirection: -3 * math.pi / 4,
-            maxBlastForce: 10,
-            minBlastForce: 5,
-            emissionFrequency: 0.03,
-            numberOfParticles: 20,
-            gravity: 0.3,
-            shouldLoop: false,
-            colors: [
-              KuwentoColors.pastelBlue,
-              KuwentoColors.buddyEncouraging,
-              Colors.white,
-            ],
+          // Confetti from right
+          Align(
+            alignment: Alignment.topRight,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: -3 * math.pi / 4,
+              maxBlastForce: 10,
+              minBlastForce: 5,
+              emissionFrequency: 0.03,
+              numberOfParticles: 20,
+              gravity: 0.3,
+              shouldLoop: false,
+              colors: [
+                KuwentoColors.pastelBlue,
+                KuwentoColors.buddyEncouraging,
+                Colors.white,
+              ],
+            ),
           ),
-        ),
+        ],
 
         // Main celebration dialog
         Center(
@@ -163,7 +179,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             scale: _scaleAnimation,
             child: Container(
               margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(24),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
               decoration: BoxDecoration(
                 color: isDark ? KuwentoColors.cardDark : Colors.white,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -179,23 +196,51 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Transform.translate(
-                    offset: const Offset(0, -12),
-                    child: const BuddyCompanion(
-                      state: BuddyState.happy,
+                    offset: _isZeroOutcome
+                        ? const Offset(0, -9)
+                        : const Offset(0, -12),
+                    child: BuddyCompanion(
+                      state: _isZeroOutcome
+                          ? BuddyState.sympathetic
+                          : BuddyState.happy,
                       size: 100, // adjust height
                       showSpeechBubble: false,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  // Title
-                  Text(
-                    'Magaling! 🎉',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: KuwentoColors.buddyHappy,
-                        ),
+                  SizedBox(
+                    height: _isZeroOutcome ? AppSpacing.xl : AppSpacing.lg,
                   ),
+
+                  // Title (keep supportive messages on a single line)
+                  _isZeroOutcome
+                      ? FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _supportiveTitle,
+                            maxLines: 1,
+                            softWrap: false,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  color: KuwentoColors.buddyEncouraging,
+                                ),
+                          ),
+                        )
+                      : Text(
+                          'Magaling! 🎉',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: KuwentoColors.buddyHappy,
+                              ),
+                        ),
 
                   const SizedBox(height: AppSpacing.xs),
 
@@ -207,27 +252,47 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                         ),
                   ),
 
-                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    height: _isZeroOutcome ? AppSpacing.lg : AppSpacing.md,
+                  ),
 
                   // Stars earned with animation
                   AnimatedBuilder(
                     animation: _starAnimation,
                     builder: (context, child) {
+                      double _starFill(int index) {
+                        const epsilon = 1e-6;
+                        final score = widget.comprehensionScore.clamp(0, 100);
+                        // Normalize score to a 0–3 scale, then find how much of this star is filled.
+                        final normalized = (score / 100) * 3;
+                        final value = normalized - index;
+
+                        if (value >= 1 - epsilon) return 1.0; // full star
+                        if (value >= 0.5 - epsilon) return 0.5; // half star
+                        return value.clamp(0.0, 1.0);
+                      }
+
+                      IconData _starIcon(double fill) {
+                        if (fill >= 1) return Icons.star;
+                        if (fill >= 0.5) return Icons.star_half;
+                        return Icons.star_border;
+                      }
+
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(3, (index) {
-                          final isEarned = index < widget.starsEarned;
+                          final fill = _starFill(index);
                           final delay = index * 0.2;
                           final animValue =
                               (_starAnimation.value - delay).clamp(0.0, 1.0);
 
                           return Transform.scale(
-                            scale: isEarned ? animValue : 1.0,
+                            scale: fill > 0 ? animValue : 1.0,
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 4),
                               child: Icon(
-                                isEarned ? Icons.star : Icons.star_border,
+                                _starIcon(fill),
                                 color: KuwentoColors.buddyThinking,
                                 size: 48,
                               ),

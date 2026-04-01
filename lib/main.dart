@@ -7,6 +7,8 @@ import 'package:kuwentobuddy/firebase_options.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/nav.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
+import 'package:kuwentobuddy/services/app_language_service.dart';
+import 'package:kuwentobuddy/services/story_service.dart';
 import 'package:kuwentobuddy/services/tts_service.dart';
 
 /// KuwentoBuddy - Interactive Reading Comprehension App
@@ -33,12 +35,16 @@ void main() async {
 
   final authService = AuthService();
   final ttsService = TTSService();
+  final storyService = StoryService();
+
+  await storyService.initialize(preferFirestore: true);
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider.value(value: ttsService),
+        ChangeNotifierProvider(create: (_) => AppLanguageService()),
       ],
       child: const KuwentoBuddyApp(),
     ),

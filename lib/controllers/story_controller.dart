@@ -17,6 +17,7 @@ enum SessionState { reading, questioning, completed }
 /// Implements the "Read-Think-Continue" logic with progress persistence
 class StoryController extends ChangeNotifier {
   final StoryModel story;
+  final bool resumeProgress;
   final AuthService _authService = AuthService();
   final ToastService _toastService = ToastService();
 
@@ -53,8 +54,12 @@ class StoryController extends ChangeNotifier {
   bool _answeredFirstTry = true;
   Future<void> _saveQueue = Future.value();
 
-  StoryController({required this.story}) {
-    _loadProgress();
+  StoryController({required this.story, this.resumeProgress = false}) {
+    if (resumeProgress) {
+      _loadProgress();
+    } else {
+      _ensureProgressEntry(immediate: true);
+    }
   }
 
   // Getters
@@ -118,13 +123,16 @@ class StoryController extends ChangeNotifier {
       if (user == null) return;
 
       final progress = user.storyProgress[story.id];
-      if (progress != null && !progress.isCompleted) {
+      if (progress != null) {
         _currentSegmentIndex = progress.currentSegmentIndex;
         _unlockedSegmentIndex = progress.currentSegmentIndex;
         _correctAnswers = progress.correctAnswers;
         _totalQuestions = progress.totalQuestions;
         _skillCorrect.addAll(progress.skillCorrect);
         _skillTotal.addAll(progress.skillTotal);
+        _sessionState = progress.isCompleted
+            ? SessionState.completed
+            : SessionState.reading;
         final persisted = await _loadPersistedHintAttempts();
         final remoteHintAttempts = progress.hintAttemptsUsed;
         _hintAttemptsUsed = math.min(
@@ -427,8 +435,9 @@ class StoryController extends ChangeNotifier {
       // Wrong answer - track it but allow retry
       _answeredFirstTry = false;
 
-      // Show hint after first wrong attempt
-      if (_currentAttempts >= 1 && hasHintAttemptsLeft) {
+      // Auto-show Buddy only after the learner has used all allowed answer attempts.
+      const int attemptsBeforeHint = 3;
+      if (_currentAttempts >= attemptsBeforeHint && hasHintAttemptsLeft) {
         _showHint = true;
       } else if (!hasHintAttemptsLeft) {
         _showHint = false;

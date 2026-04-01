@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,8 +21,13 @@ import 'package:kuwentobuddy/widgets/celebration_overlay.dart';
 /// Implements the "Read-Think-Continue" interactive module with TTS
 class StorySessionScreen extends StatefulWidget {
   final String storyId;
+  final bool resumeProgress;
 
-  const StorySessionScreen({super.key, required this.storyId});
+  const StorySessionScreen({
+    super.key,
+    required this.storyId,
+    this.resumeProgress = false,
+  });
 
   @override
   State<StorySessionScreen> createState() => _StorySessionScreenState();
@@ -42,6 +48,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   StoryModel? _story;
   int? _recentWrongAnswerIndex;
   Timer? _wrongAnswerHighlightTimer;
+  final Map<String, String> _translatedTitleCache = {};
   final Map<String, String> _translatedSegmentCache = {};
   final Map<String, String> _translatedQuestionCache = {};
   String _activeLanguageCode = 'en';
@@ -89,7 +96,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     if (story != null) {
       setState(() {
         _story = story;
-        _controller = StoryController(story: story);
+        _controller = StoryController(
+          story: story,
+          resumeProgress: widget.resumeProgress,
+        );
         _controller!.addListener(_onControllerUpdate);
         _activeLanguageCode = _sourceLanguageCode;
       });
@@ -97,6 +107,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       // Persist an in-progress entry immediately so the Library tab reflects
       // the story without waiting for further interaction.
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_prefetchAllTranslations(_activeLanguageCode));
         unawaited(_controller?.saveProgress(immediate: true));
         // Keep AuthService cache in sync so My Library shows the card instantly.
         final auth = context.read<AuthService>();
@@ -107,10 +118,13 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
   void _onControllerUpdate() {
     setState(() {});
+    _syncPageControllerToCurrentSegment();
     final remainingHints = _controller?.remainingHintAttempts ?? 0;
 
     // Suppress buddy/hints for the rest of this session once hints are exhausted.
-    if (remainingHints <= 0 && !_suppressBuddyHints) {
+    if (remainingHints <= 0 &&
+        !_suppressBuddyHints &&
+        _controller?.showHint != true) {
       _suppressBuddyHints = true;
     }
 
@@ -164,24 +178,16 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
     final result = _controller!.requestHint();
     if (result.remainingAttempts > 0) {
-      final label =
-          result.remainingAttempts == 1 ? 'hint attempt' : 'hint attempts';
+      final label = result.remainingAttempts == 1
+          ? _uiText(en: 'hint attempt', fil: 'pahiwatig')
+          : _uiText(en: 'hint attempts', fil: 'mga pahiwatig');
       _toastService.showInfo(
-        '${result.remainingAttempts} $label remaining',
+        '${result.remainingAttempts} $label ${_hintRemainingText(result.remainingAttempts)}',
       );
       return;
     }
 
-    _toastService.showWarning('You\'ve used all available hints');
-  }
-
-  Future<void> _speakText(String text, {required String languageCode}) async {
-    if (!_isTTSEnabled) return;
-    final ttsService = context.read<TTSService>();
-    await ttsService.speak(
-      text,
-      language: languageCode == 'fil' ? 'fil-PH' : 'en-US',
-    );
+    _toastService.showWarning(_usedAllHintsLabel);
   }
 
   Future<void> _stopSpeaking() async {
@@ -214,6 +220,23 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     });
     controller.startFreshCountedSession();
     _pageController.jumpToPage(0);
+  }
+
+  void _syncPageControllerToCurrentSegment() {
+    final controller = _controller;
+    if (controller == null || !_pageController.hasClients) return;
+
+    final targetIndex = controller.currentSegmentIndex;
+    final currentPage = _pageController.page?.round();
+    if (currentPage == targetIndex) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) return;
+      final pageNow = _pageController.page?.round();
+      if (pageNow != targetIndex) {
+        _pageController.jumpToPage(targetIndex);
+      }
+    });
   }
 
   Future<void> _speakCurrentSegment() async {
@@ -263,9 +286,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       storyTitle: _story!.title,
     );
     if (isNowFavorite) {
-      _toastService.showSuccess('Added to favorites! ❤️');
+      _toastService.showSuccess(_addedToFavoritesLabel);
     } else {
-      _toastService.showInfo('Removed from favorites');
+      _toastService.showInfo(_removedFromFavoritesLabel);
     }
   }
 
@@ -378,17 +401,15 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _isTranslating = true;
     });
 
-    await _ensureCurrentSegmentTranslation();
-    await _ensureCurrentQuestionTranslation();
+    await _prefetchAllTranslations(nextLanguage);
 
     if (!mounted) return;
 
     setState(() {
       _isTranslating = false;
     });
-
     _toastService.showInfo(
-      _activeLanguageCode == 'fil' ? 'Filipino mode' : 'English mode',
+      nextLanguage == 'fil' ? 'Filipino mode' : 'English mode',
     );
   }
 
@@ -417,6 +438,212 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       GoRouter.of(context).go('/');
     }
   }
+
+  Future<void> _prefetchAllTranslations(String targetLanguage) async {
+    final story = _story;
+    if (story == null) return;
+
+    if (targetLanguage == _sourceLanguageCode) {
+      return;
+    }
+
+    final tasks = <Future<void>>[
+      _translateStoryTitle(targetLanguage),
+    ];
+
+    for (final segment in story.segments) {
+      tasks.add(_getTextForLanguage(segment, targetLanguage).then((_) {}));
+      final question = segment.question;
+      if (question != null) {
+        tasks.add(_prefetchQuestionTranslation(question, targetLanguage));
+      }
+    }
+
+    await Future.wait(tasks);
+  }
+
+  Future<void> _translateStoryTitle(String targetLanguage) async {
+    final story = _story;
+    if (story == null || targetLanguage == _sourceLanguageCode) return;
+
+    final key = _storyTitleCacheKey(targetLanguage);
+    if (_translatedTitleCache.containsKey(key)) return;
+
+    final translated = await _translationService.translateText(
+      text: story.title,
+      sourceLanguage: _sourceLanguageCode,
+      targetLanguage: targetLanguage,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _translatedTitleCache[key] = translated;
+    });
+  }
+
+  Future<void> _prefetchQuestionTranslation(
+    QuestionModel question,
+    String targetLanguage,
+  ) async {
+    if (targetLanguage == _sourceLanguageCode) return;
+
+    final texts = <String>[
+      question.question,
+      ...question.options,
+      question.hint,
+      question.encouragement,
+      question.buddyHintParagraph,
+    ];
+
+    final updates = <String, String>{};
+    for (final text in texts) {
+      final key = _questionCacheKey(text, targetLanguage);
+      if (_translatedQuestionCache.containsKey(key)) continue;
+
+      final translated = await _translationService.translateText(
+        text: text,
+        sourceLanguage: _sourceLanguageCode,
+        targetLanguage: targetLanguage,
+      );
+      updates[key] = translated;
+    }
+
+    if (!mounted || updates.isEmpty) return;
+
+    setState(() {
+      _translatedQuestionCache.addAll(updates);
+    });
+  }
+
+  String _storyTitleCacheKey(String langCode) => 'story-title::$langCode';
+
+  bool get _isFilipino => _activeLanguageCode == 'fil';
+
+  String _uiText({required String en, required String fil}) =>
+      _isFilipino ? fil : en;
+
+  String _skillLabel(QuestionSkill skill) {
+    switch (skill) {
+      case QuestionSkill.inference:
+        return _uiText(
+          en: 'Understanding Why',
+          fil: 'Pag-unawa sa Dahilan',
+        );
+      case QuestionSkill.prediction:
+        return _uiText(
+          en: 'Predicting What Happens',
+          fil: 'Paghula sa Mangyayari',
+        );
+      case QuestionSkill.emotion:
+        return _uiText(
+          en: 'Understanding Feelings',
+          fil: 'Pag-unawa sa Damdamin',
+        );
+    }
+  }
+
+  String get _readingNowLabel =>
+      _uiText(en: 'READING NOW', fil: 'BINABASA NGAYON');
+
+  String _displayStoryTitle() {
+    final story = _story;
+    if (story == null) return '';
+
+    final explicitTitle = story.explicitTitleTranslation(_activeLanguageCode);
+    if (explicitTitle != null && explicitTitle.trim().isNotEmpty) {
+      return explicitTitle;
+    }
+
+    final key = _storyTitleCacheKey(_activeLanguageCode);
+    return _translatedTitleCache[key] ?? story.title;
+  }
+
+  String _localizedPartLabel() => _uiText(en: 'Part', fil: 'Bahagi');
+
+  String _languageDisplayName(String languageCode) {
+    switch (languageCode) {
+      case 'fil':
+        return _uiText(en: 'Filipino', fil: 'Filipino');
+      case 'en':
+        return _uiText(en: 'English', fil: 'English');
+      default:
+        return languageCode.toUpperCase();
+    }
+  }
+
+  String get _sectionCountLabel => _uiText(en: 'parts', fil: 'bahagi');
+
+  String get _languageLabel => _uiText(en: 'Language', fil: 'Wika');
+
+  String get _translatingLabel =>
+      _uiText(en: 'Translating story...', fil: 'Isinasalin ang kuwento...');
+
+  String get _switchLanguageTooltip => _uiText(
+        en: 'Switch to ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+        fil:
+            'Lumipat sa ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+      );
+
+  String get _voiceEnabledLabel =>
+      _uiText(en: 'Voice enabled', fil: 'Naka-on ang boses');
+
+  String get _voiceDisabledLabel =>
+      _uiText(en: 'Voice disabled', fil: 'Naka-off ang boses');
+
+  String get _addedToFavoritesLabel =>
+      _uiText(en: 'Added to favorites! ❤️', fil: 'Idinagdag sa paborito! ❤️');
+
+  String get _removedFromFavoritesLabel =>
+      _uiText(en: 'Removed from favorites', fil: 'Tinanggal sa paborito');
+
+  String get _readingCheckpointTitle =>
+      _uiText(en: 'Reading Checkpoint!', fil: 'Checkpoint sa Pagbasa!');
+
+  String get _readingCheckpointSubtitle => _uiText(
+        en: 'Tap to answer a question before continuing',
+        fil: 'I-tap upang sagutin ang tanong bago magpatuloy',
+      );
+
+  String get _backToReadStoryLabel =>
+      _uiText(en: 'Back to Read Story Again', fil: 'Bumalik sa Pagbasa');
+
+  String get _continueReadingLabel =>
+      _uiText(en: 'Continue Reading ✨', fil: 'Magpatuloy sa Pagbasa ✨');
+
+  String get _openingPageTitleLabel =>
+      _uiText(en: 'Opening Page', fil: 'Pahina ng Pagbubukas');
+
+  String get _synopsisLabel => _uiText(en: 'Synopsis', fil: 'Buod');
+
+  String get _headsUpLabel => _uiText(en: 'Heads Up', fil: 'Paalala');
+
+  String get _sourceReferenceLabel =>
+      _uiText(en: 'Source / Reference', fil: 'Pinagmulan / Sanggunian');
+
+  String _hintRemainingText(int remaining) => _uiText(
+        en: remaining == 1 || remaining == 0
+            ? 'hint remaining'
+            : 'hints remaining',
+        fil: 'pahiwatig ang natitira',
+      );
+
+  String get _showHintsLabel =>
+      _uiText(en: 'Show Hints', fil: 'Ipakita ang Mga Pahiwatig');
+
+  String get _usedAllHintsLabel => _uiText(
+        en: 'You\'ve used all available hints',
+        fil: 'Nagamit mo na ang lahat ng pahiwatig',
+      );
+
+  String get _buddyReadyLabel => _uiText(
+        en: 'Checkpoint question is ready soon! Continue reading to keep up the flow.',
+        fil:
+            'Malapit nang lumabas ang checkpoint na tanong! Magpatuloy sa pagbabasa.',
+      );
+
+  String get _buddyCheeringLabel =>
+      _uiText(en: 'Buddy is cheering you on!', fil: 'Nagmumotivate ang Buddy!');
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -525,7 +752,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 },
                 onActivity: () async {
                   _stopSpeakingSilently();
-                  final result = await context.push('/activity/${_story!.id}');
+                  final result = await context.push(
+                    '/activity/${_story!.id}?lang=${Uri.encodeComponent(_activeLanguageCode)}',
+                  );
                   if (!mounted) return;
                   final action = result is Map ? result['action'] : result;
 
@@ -565,7 +794,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 child: Column(
                   children: [
                     Text(
-                      'READING NOW',
+                      _readingNowLabel,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: isDark
                                 ? Colors.white54
@@ -574,7 +803,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           ),
                     ),
                     Text(
-                      _story!.title,
+                      _displayStoryTitle(),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isDark
@@ -605,8 +834,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       ? (isDark ? Colors.white54 : KuwentoColors.textMuted)
                       : KuwentoColors.pastelBlue,
                 ),
-                tooltip:
-                    'Switch to ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+                tooltip: _switchLanguageTooltip,
               ),
               // TTS toggle button
               IconButton(
@@ -618,7 +846,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                     _stopSpeaking();
                   }
                   _toastService.showInfo(
-                    _isTTSEnabled ? 'Voice enabled' : 'Voice disabled',
+                    _isTTSEnabled ? _voiceEnabledLabel : _voiceDisabledLabel,
                   );
                 },
                 icon: Icon(
@@ -651,7 +879,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Part ${_controller!.currentSegmentIndex + 1}',
+                    '${_localizedPartLabel()} ${_controller!.currentSegmentIndex + 1}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color:
                               isDark ? Colors.white54 : KuwentoColors.textMuted,
@@ -676,7 +904,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       ],
                     ),
                   Text(
-                    '${_controller!.totalSegments} parts',
+                    '${_controller!.totalSegments} $_sectionCountLabel',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color:
                               isDark ? Colors.white54 : KuwentoColors.textMuted,
@@ -697,7 +925,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
-                    'Language: ${_activeLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+                    '$_languageLabel: ${_languageDisplayName(_activeLanguageCode)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: KuwentoColors.pastelBlue,
                           fontWeight: FontWeight.w600,
@@ -724,6 +952,15 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       itemBuilder: (context, index) {
         final segment = _story!.segments[index];
         final displayedSegmentText = _getDisplayedSegmentText(segment);
+
+        if (_isOpeningPageSegment(segment, index)) {
+          return _buildOpeningPageSegment(
+            context,
+            segment,
+            isDark,
+            displayedSegmentText,
+          );
+        }
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -753,7 +990,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Text(
-                        'Translating story...',
+                        _translatingLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: isDark
                                   ? Colors.white70
@@ -837,6 +1074,629 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     return card;
   }
 
+  bool _isOpeningPageSegment(StorySegment segment, int index) {
+    return index == 0 && segment.id.endsWith('-opening');
+  }
+
+  Widget _buildOpeningPageSegment(
+    BuildContext context,
+    StorySegment segment,
+    bool isDark,
+    String? displayedSegmentText,
+  ) {
+    final theme = Theme.of(context);
+    final localizedStoryTitle =
+        _story?.explicitTitleTranslation(_activeLanguageCode);
+    final title = localizedStoryTitle?.trim().isNotEmpty == true
+        ? localizedStoryTitle!
+        : (_story?.title ?? _openingPageTitleLabel);
+    final articleText = displayedSegmentText ?? segment.content;
+    final extractedTitle = _extractOpeningFieldAny(articleText, const [
+      'Title',
+      'Pamagat',
+    ]);
+    final titleValue = _activeLanguageCode == _sourceLanguageCode
+        ? (extractedTitle.isNotEmpty ? extractedTitle : title)
+        : (localizedStoryTitle?.trim().isNotEmpty == true
+            ? localizedStoryTitle!
+            : (extractedTitle.isNotEmpty ? extractedTitle : title));
+    final genreValue = _extractOpeningFieldAny(articleText, const [
+      'Genre',
+      'Uri',
+    ]);
+    final levelValue = _extractOpeningFieldAny(articleText, const [
+      'Level',
+      'Antas',
+    ]);
+    final languageValue = _extractOpeningFieldAny(articleText, const [
+      'Language',
+      'Wika',
+    ]);
+    final synopsisValue = _extractOpeningBlockAny(
+      articleText,
+      const ['Synopsis', 'Buod'],
+      const [
+        'Source / Reference',
+        'Source / Sanggunian',
+        'Pinagmulan / Sanggunian',
+        'Heads Up',
+        'Paalala',
+      ],
+    );
+    final sourceValue = _extractOpeningBlockAny(
+      articleText,
+      const [
+        'Source / Reference',
+        'Source / Sanggunian',
+        'Pinagmulan / Sanggunian'
+      ],
+      const ['Heads Up', 'Paalala'],
+    );
+    final headsUpValue = _extractOpeningBlockAny(
+      articleText,
+      const ['Heads Up', 'Paalala'],
+    );
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? KuwentoColors.backgroundDark : const Color(0xFFF7FAFC),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 150),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildOpeningHeroCard(
+                  context,
+                  isDark: isDark,
+                  title: titleValue,
+                  genre: genreValue,
+                  level: levelValue,
+                  language: languageValue,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.language_rounded,
+                      size: 18,
+                      color: KuwentoColors.pastelBlueDark,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _openingPageCaption,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          height: 1.5,
+                          color: isDark
+                              ? Colors.white70
+                              : KuwentoColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _buildOpeningGlassCard(
+                  context,
+                  label: _synopsisLabel,
+                  icon: Icons.menu_book_outlined,
+                  content: synopsisValue,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _buildOpeningTipCard(
+                  context,
+                  label: _headsUpLabel,
+                  icon: Icons.push_pin_rounded,
+                  content: headsUpValue,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _buildOpeningReferenceCard(
+                  context,
+                  isDark: isDark,
+                  sourceText: sourceValue,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _controller!.canGoNext
+                        ? () {
+                            _controller!.goToNext();
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 320),
+                              curve: Curves.easeOutCubic,
+                            );
+                          }
+                        : null,
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: Text(
+                      _openingPageButtonLabel,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: KuwentoColors.pastelBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.lg,
+                      ),
+                      elevation: 6,
+                      shadowColor:
+                          KuwentoColors.pastelBlue.withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String get _openingPageButtonLabel =>
+      _activeLanguageCode == 'fil' ? 'Susunod' : 'Next';
+
+  String get _openingPageCaption {
+    final targetLanguageCode = _activeLanguageCode == _sourceLanguageCode
+        ? _targetLanguageCode
+        : _sourceLanguageCode;
+    final targetLanguageName = _languageDisplayName(targetLanguageCode);
+
+    return _uiText(
+      en: _activeLanguageCode == _sourceLanguageCode
+          ? 'Use the translate button above to switch to $targetLanguageName.'
+          : 'Use the translate button above to switch back to $targetLanguageName.',
+      fil: _activeLanguageCode == _sourceLanguageCode
+          ? 'Gamitin ang translate button sa itaas para lumipat sa $targetLanguageName.'
+          : 'Gamitin ang translate button sa itaas para bumalik sa $targetLanguageName.',
+    );
+  }
+
+  Widget _buildOpeningHeroCard(
+    BuildContext context, {
+    required bool isDark,
+    required String title,
+    required String genre,
+    required String level,
+    required String language,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? KuwentoColors.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : KuwentoColors.creamDark,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        child: AspectRatio(
+          aspectRatio: 16 / 10,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(
+                color:
+                    isDark ? KuwentoColors.backgroundDark : KuwentoColors.cream,
+              ),
+              Image.asset(
+                _story!.coverImage,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.high,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        KuwentoColors.pastelBlue.withValues(alpha: 0.2),
+                        KuwentoColors.skyBlue.withValues(alpha: 0.45),
+                      ],
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.menu_book_rounded,
+                      size: 72,
+                      color: KuwentoColors.pastelBlueDark,
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.04),
+                      Colors.black.withValues(alpha: 0.0),
+                      Colors.black.withValues(alpha: 0.45),
+                    ],
+                    stops: const [0.0, 0.58, 1.0],
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: AppSpacing.md,
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _openingPageTitleLabel,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            height: 1.15,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildOpeningHeroBadge(
+                          context,
+                          label: genre,
+                          isDark: true,
+                          accent: KuwentoColors.pastelBlue,
+                        ),
+                        _buildOpeningHeroBadge(
+                          context,
+                          label: level,
+                          isDark: true,
+                          accent: KuwentoColors.softCoral,
+                        ),
+                        _buildOpeningHeroBadge(
+                          context,
+                          label: language,
+                          isDark: true,
+                          accent: KuwentoColors.buddyThinking,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpeningHeroBadge(
+    BuildContext context, {
+    required String label,
+    required bool isDark,
+    Color? accent,
+  }) {
+    final tint = accent ?? KuwentoColors.pastelBlue;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 280),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: isDark
+              ? tint.withValues(alpha: 0.16)
+              : Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : tint.withValues(alpha: 0.18),
+          ),
+        ),
+        child: Text(
+          label,
+          maxLines: 2,
+          softWrap: true,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpeningGlassCard(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required String content,
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.xl),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : KuwentoColors.pastelBlue.withValues(alpha: 0.14),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: KuwentoColors.pastelBlue.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: KuwentoColors.pastelBlueDark,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color:
+                            isDark ? Colors.white : KuwentoColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                content,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: FontSizes.bodyLarge + 1,
+                      height: 1.8,
+                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                    ) ??
+                    TextStyle(
+                      fontSize: FontSizes.bodyLarge + 1,
+                      height: 1.8,
+                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpeningTipCard(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required String content,
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: KuwentoColors.softCoral.withValues(alpha: isDark ? 0.12 : 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: KuwentoColors.softCoral.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(icon, size: 20, color: KuwentoColors.coralDark),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                label,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: KuwentoColors.coralDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            content,
+            style: theme.textTheme.bodyLarge?.copyWith(
+                  height: 1.8,
+                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                ) ??
+                TextStyle(
+                  height: 1.8,
+                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpeningReferenceCard(
+    BuildContext context, {
+    required bool isDark,
+    required String sourceText,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : KuwentoColors.creamDark,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.source_outlined,
+                size: 18,
+                color: KuwentoColors.pastelBlueDark,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                _sourceReferenceLabel,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            sourceText,
+            style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.65,
+                  color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
+                ) ??
+                TextStyle(
+                  height: 1.65,
+                  color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _extractOpeningFieldAny(String content, List<String> labels) {
+    for (final label in labels) {
+      final match = RegExp(
+        '^${RegExp.escape(label)}:\\s*(.+)' r'$',
+        multiLine: true,
+      ).firstMatch(content);
+      if (match != null) {
+        return match.group(1)?.trim() ?? '';
+      }
+    }
+    return '';
+  }
+
+  String _extractOpeningBlockAny(
+    String content,
+    List<String> startLabels, [
+    List<String>? endLabels,
+  ]) {
+    RegExpMatch? startMatch;
+    for (final label in startLabels) {
+      final match = RegExp(
+        '^${RegExp.escape(label)}:\\s*' r'$',
+        multiLine: true,
+      ).firstMatch(content);
+      if (match != null) {
+        startMatch = match;
+        break;
+      }
+    }
+
+    if (startMatch == null) return '';
+
+    final startIndex = startMatch.end;
+    if (endLabels == null) {
+      return content.substring(startIndex).trim();
+    }
+
+    final trailingContent = content.substring(startIndex);
+    int? endIndex;
+    for (final label in endLabels) {
+      final match = RegExp(
+        '^${RegExp.escape(label)}:\\s*' r'$',
+        multiLine: true,
+      ).firstMatch(trailingContent);
+      if (match != null) {
+        endIndex =
+            endIndex == null || match.start < endIndex ? match.start : endIndex;
+      }
+    }
+
+    return content
+        .substring(startIndex,
+            endIndex == null ? content.length : startIndex + endIndex)
+        .trim();
+  }
+
   String _resolveSegmentImage(StorySegment segment, int index) {
     // 1) Explicit per-segment image wins
     if (segment.image != null && segment.image!.isNotEmpty) {
@@ -888,14 +1748,14 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Reading Checkpoint!',
+                    _readingCheckpointTitle,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: KuwentoColors.pastelBlue,
                         ),
                   ),
                   Text(
-                    'Tap to answer a question before continuing',
+                    _readingCheckpointSubtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isDark
                               ? Colors.white70
@@ -920,6 +1780,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       BuildContext context, bool isDark, TTSService ttsService) {
     final isCompleted = _controller!.isCompleted;
     final isNarrationPlaying = _isNarrationPlaying || ttsService.isSpeaking;
+    final isOpeningPage = _isOpeningPageSegment(
+      _controller!.currentSegment,
+      _controller!.currentSegmentIndex,
+    );
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -971,44 +1835,44 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             ),
           ),
 
-          // Main action button
-          GestureDetector(
-            onTap: () {
-              _stopSpeaking();
-              if (isCompleted) {
-                setState(() => _showCelebration = true);
-              } else if (_controller!.hasCheckpoint &&
-                  !_controller!.isAnswerCorrect) {
-                _controller!.triggerCheckpoint();
-              } else if (_controller!.canGoNext) {
-                _pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-                _controller!.goToNext();
-              }
-            },
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: isCompleted
-                    ? KuwentoColors.buddyHappy
-                    : KuwentoColors.pastelBlue,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isCompleted
-                    ? Icons.celebration
-                    : (_controller!.hasCheckpoint &&
-                            !_controller!.isAnswerCorrect)
-                        ? Icons.quiz
-                        : Icons.arrow_forward,
-                color: Colors.white,
-                size: 32,
+          if (!isOpeningPage)
+            GestureDetector(
+              onTap: () {
+                _stopSpeaking();
+                if (isCompleted) {
+                  setState(() => _showCelebration = true);
+                } else if (_controller!.hasCheckpoint &&
+                    !_controller!.isAnswerCorrect) {
+                  _controller!.triggerCheckpoint();
+                } else if (_controller!.canGoNext) {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                  _controller!.goToNext();
+                }
+              },
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? KuwentoColors.buddyHappy
+                      : KuwentoColors.pastelBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isCompleted
+                      ? Icons.celebration
+                      : (_controller!.hasCheckpoint &&
+                              !_controller!.isAnswerCorrect)
+                          ? Icons.quiz
+                          : Icons.arrow_forward,
+                  color: Colors.white,
+                  size: 32,
+                ),
               ),
             ),
-          ),
 
           // Next button
           IconButton(
@@ -1041,10 +1905,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
   String _floatingBuddyMessage(StoryController controller) {
     if (controller.hasCheckpoint && !controller.isAnswerCorrect) {
-      return 'Checkpoint question is ready soon! Continue reading to keep up the flow.';
+      return _buddyReadyLabel;
     }
 
-    return 'Buddy is cheering you on!';
+    return _buddyCheeringLabel;
   }
 
   void _startSuccessBubble() {
@@ -1082,8 +1946,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   Widget _buildBuddyOverlay(BuildContext context, bool isDark) {
     final question = _controller!.currentQuestion;
     if (question == null) return const SizedBox.shrink();
+    final hintButtonMaxWidth = _activeLanguageCode == 'fil' ? 320.0 : 220.0;
 
-    final displaySkill = _translatedQuestionText(question.skillDisplayName);
+    final displaySkill = _skillLabel(question.skill);
     final displayQuestion = _translatedQuestionText(question.question);
     final displayOptions =
         question.options.map(_translatedQuestionText).toList(growable: false);
@@ -1182,46 +2047,85 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                     opacity: _controller!.hasHintAttemptsLeft
                                         ? 1.0
                                         : 0.5,
-                                    child: SizedBox(
-                                      width: 200,
-                                      child: OutlinedButton(
-                                        onPressed:
-                                            _controller!.hasHintAttemptsLeft
-                                                ? _handleShowHintsTap
-                                                : null,
-                                        style: OutlinedButton.styleFrom(
-                                          side: BorderSide(
-                                            color: KuwentoColors.pastelBlue,
-                                            width: 2,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 16,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Text(
-                                              '💡Show Hints',
-                                              style: TextStyle(
-                                                color: KuwentoColors.pastelBlue,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: hintButtonMaxWidth,
+                                      ),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: OutlinedButton(
+                                          onPressed:
+                                              _controller!.hasHintAttemptsLeft
+                                                  ? _handleShowHintsTap
+                                                  : null,
+                                          style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(
+                                              color: KuwentoColors.pastelBlue,
+                                              width: 2,
                                             ),
-                                            const SizedBox(
-                                                height: AppSpacing.xs),
-                                            Text(
-                                              '${_controller!.remainingHintAttempts} hint${_controller!.remainingHintAttempts <= 1 ? '' : 's'} remaining',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium
-                                                  ?.copyWith(
-                                                    color: KuwentoColors
-                                                        .pastelBlue,
-                                                    fontWeight: FontWeight.w600,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 18,
+                                            ),
+                                            alignment: Alignment.center,
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Text(
+                                                    '💡',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                    ),
                                                   ),
-                                            ),
-                                          ],
+                                                  const SizedBox(width: 6),
+                                                  Flexible(
+                                                    child: Text(
+                                                      _showHintsLabel,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      softWrap: true,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        color: KuwentoColors
+                                                            .pastelBlue,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_controller!.remainingHintAttempts} ${_hintRemainingText(_controller!.remainingHintAttempts)}',
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                softWrap: true,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelMedium
+                                                    ?.copyWith(
+                                                      color: KuwentoColors
+                                                          .pastelBlue,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1241,7 +2145,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                       color: KuwentoColors.pastelBlue,
                                     ),
                                     label: Text(
-                                      'Back to Read Story Again',
+                                      _backToReadStoryLabel,
                                       style: TextStyle(
                                         color: KuwentoColors.pastelBlue,
                                         fontWeight: FontWeight.w500,
@@ -1276,9 +2180,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 16),
                                     ),
-                                    child: const Text(
-                                      'Continue Reading ✨',
-                                      style: TextStyle(
+                                    child: Text(
+                                      _continueReadingLabel,
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                       ),

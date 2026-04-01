@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
+import 'package:kuwentobuddy/services/story_launch_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 
 /// Search screen for finding stories
@@ -23,31 +24,19 @@ class _SearchScreenState extends State<SearchScreen> {
       title: 'Filipino Tales',
       emoji: '🇵🇭',
       color: KuwentoColors.softCoral,
-      route: 'filipino_tales',
+      route: 'filipino-tales',
     ),
-    StoryCategory.adventure: _CategoryMeta(
-      title: 'Adventure',
-      emoji: '🗺️',
+    StoryCategory.adventureJourney: _CategoryMeta(
+      title: 'Adventure Journey',
+      emoji: '🧭',
       color: KuwentoColors.deepTeal,
-      route: 'adventure',
+      route: 'adventure-journey',
     ),
-    StoryCategory.fantasy: _CategoryMeta(
-      title: 'Fantasy',
-      emoji: '✨',
-      color: KuwentoColors.buddyThinking,
-      route: 'fantasy',
-    ),
-    StoryCategory.nature: _CategoryMeta(
-      title: 'Nature',
-      emoji: '🌿',
-      color: KuwentoColors.buddyHappy,
-      route: 'nature',
-    ),
-    StoryCategory.quickReads: _CategoryMeta(
-      title: 'Quick Reads',
-      emoji: '⚡',
+    StoryCategory.socialStories: _CategoryMeta(
+      title: 'Social Stories',
+      emoji: '🤝',
       color: KuwentoColors.buddyEncouraging,
-      route: 'quick_reads',
+      route: 'social-stories',
     ),
   };
 
@@ -238,7 +227,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => context.push('/story/${story.id}'),
+      onTap: () {
+        openStoryFromCard(context, story);
+      },
       child: LayoutBuilder(
         builder: (context, constraints) {
           final horizontalPadding =

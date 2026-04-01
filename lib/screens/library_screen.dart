@@ -6,8 +6,11 @@ import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
+import 'package:kuwentobuddy/services/story_launch_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/story_card.dart';
+
+enum _LibraryLevelFilter { all, beginner, intermediate, advanced }
 
 /// Leveled Library Screen - Spotify-Home style layout
 class LibraryScreen extends StatefulWidget {
@@ -21,8 +24,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
   final StoryService _storyService = StoryService();
   final Random _random = Random();
   StoryModel? _featuredStory;
-  StoryLevel? _selectedLevel; // null == all levels
+  _LibraryLevelFilter _selectedLevelFilter = _LibraryLevelFilter.all;
   List<StoryModel> _recommendedStories = const [];
+
+  StoryLevel? get _selectedLevel => switch (_selectedLevelFilter) {
+        _LibraryLevelFilter.all => null,
+        _LibraryLevelFilter.beginner => StoryLevel.beginner,
+        _LibraryLevelFilter.intermediate => StoryLevel.intermediate,
+        _LibraryLevelFilter.advanced => StoryLevel.advanced,
+      };
 
   @override
   void initState() {
@@ -41,7 +51,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ? _recommendedStories
         : _shuffleRecommended();
     final filipinoTales = _storyService.getFilipinoTales();
-    final quickReads = _storyService.getQuickReads();
+    final adventureJourney = _storyService.getAdventureJourneyStories();
+    final socialStories = _storyService.getSocialStories();
     final allStories = _storyService.getAllStories();
     final filteredStories = _selectedLevel == null
         ? allStories
@@ -261,7 +272,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           ? 'All Levels'
                           : '${_selectedLevel!.name[0].toUpperCase()}${_selectedLevel!.name.substring(1)} Stories',
                       emoji: _selectedLevel == null
-                          ? '🧭'
+                          ? '📊'
                           : switch (_selectedLevel!) {
                               StoryLevel.beginner => '🌱',
                               StoryLevel.intermediate => '🌿',
@@ -302,23 +313,39 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       stories: filipinoTales,
                       onStoryTap: _navigateToStory,
                       onSeeAll: () =>
-                          context.push('/stories/category/filipino_tales'),
+                          context.push('/stories/category/filipino-tales'),
                     ),
                   ),
                 ),
 
-              // Quick Reads Section
-              if (quickReads.isNotEmpty)
+              // Adventure & Journey Stories
+              if (adventureJourney.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.lg),
                     child: StoryRow(
-                      title: 'Quick Reads',
-                      emoji: '⚡',
-                      stories: quickReads,
+                      title: 'Adventure & Journey Stories',
+                      emoji: '🧭',
+                      stories: adventureJourney,
                       onStoryTap: _navigateToStory,
                       onSeeAll: () =>
-                          context.push('/stories/category/quick_reads'),
+                          context.push('/stories/category/adventure-journey'),
+                    ),
+                  ),
+                ),
+
+              // Real-life / Social Stories
+              if (socialStories.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: StoryRow(
+                      title: 'Real-life / Social Stories',
+                      emoji: '🌍',
+                      stories: socialStories,
+                      onStoryTap: _navigateToStory,
+                      onSeeAll: () =>
+                          context.push('/stories/category/social-stories'),
                     ),
                   ),
                 ),
@@ -367,7 +394,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   void _navigateToStory(StoryModel story) {
-    context.push('/story/${story.id}');
+    openStoryFromCard(context, story);
   }
 
   Widget _buildLevelDropdown(BuildContext context, bool isDark) {
@@ -376,7 +403,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           color: isDark ? Colors.white : KuwentoColors.textPrimary,
         );
 
-    return PopupMenuButton<StoryLevel?>(
+    return PopupMenuButton<_LibraryLevelFilter>(
       tooltip: 'Select level',
       color: isDark ? KuwentoColors.cardDark : Colors.white,
       iconSize: 28,
@@ -387,39 +414,40 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       onSelected: (level) {
         setState(() {
-          _selectedLevel = level;
+          _selectedLevelFilter = level;
         });
       },
       itemBuilder: (_) => [
-        PopupMenuItem<StoryLevel?>(
-          value: null,
+        const PopupMenuItem<_LibraryLevelFilter>(
+          value: _LibraryLevelFilter.all,
           child: Row(
             children: [
               const Text('🧭'),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'All Levels',
-                  style: textStyle,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              const Text(
+                'All Levels',
+                maxLines: 1,
+                softWrap: false,
               ),
             ],
           ),
         ),
         ...StoryLevel.values.map(
-          (level) => PopupMenuItem<StoryLevel?>(
-            value: level,
+          (level) => PopupMenuItem<_LibraryLevelFilter>(
+            value: switch (level) {
+              StoryLevel.beginner => _LibraryLevelFilter.beginner,
+              StoryLevel.intermediate => _LibraryLevelFilter.intermediate,
+              StoryLevel.advanced => _LibraryLevelFilter.advanced,
+            },
             child: Row(
               children: [
                 Text(_levelEmoji(level)),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    _levelDisplay(level),
-                    style: textStyle,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                Text(
+                  _levelDisplay(level),
+                  style: textStyle,
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ],
             ),

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/models/user_model.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
+import 'package:kuwentobuddy/services/story_launch_service.dart';
 import '../services/auth_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import '../widgets/story_card.dart';
@@ -601,7 +602,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: GestureDetector(
-              onTap: () => context.push('/story/${story.id}'),
+                    onTap: () {
+                      openStoryFromCard(context, story);
+                    },
               child: Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
@@ -814,7 +817,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                         StoryCard(
                           story: story,
                           width: cardWidth,
-                          onTap: () => context.push('/story/${story.id}'),
+                              onTap: () {
+                                openStoryFromCard(context, story);
+                              },
                         ),
                         Positioned(
                           top: 8,
@@ -967,7 +972,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                             StoryCard(
                               story: story,
                               width: cardWidth,
-                              onTap: () => context.push('/story/${story.id}'),
+                                  onTap: () {
+                                    openStoryFromCard(context, story);
+                                  },
                             ),
                             Positioned(
                               top: 8,
@@ -1157,7 +1164,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       coverImage: '',
       description: '',
       level: StoryLevel.beginner,
-      categories: const [StoryCategory.quickReads],
+      categories: const [StoryCategory.filipinoTales],
       segments: const [],
       estimatedMinutes: 1,
       createdAt: DateTime.now(),

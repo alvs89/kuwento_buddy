@@ -23,50 +23,56 @@ class StoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final card = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _StoryCover(story: story, width: width),
+        if (showDetails) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            story.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            story.author,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.72)
+                      : KuwentoColors.textSecondary,
+                ),
+          ),
+        ],
+      ],
+    );
+
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
         width: width,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Story Cover with Hero animation support
-            (enableHero
-                ? Hero(
-                    tag: 'story_cover_${story.id}',
-                    child: _buildCardCover(),
-                  )
-                : _buildCardCover()),
-            if (showDetails) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                story.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                story.author,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color:
-                          isDark ? Colors.white70 : KuwentoColors.textSecondary,
-                    ),
-              ),
-            ],
-          ],
-        ),
+        child: enableHero
+            ? Hero(tag: 'story_cover_${story.id}', child: card)
+            : card,
       ),
     );
   }
+}
 
-  Widget _buildCardCover() {
+class _StoryCover extends StatelessWidget {
+  final StoryModel story;
+  final double width;
+
+  const _StoryCover({required this.story, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: width,
       height: width,
@@ -87,24 +93,20 @@ class StoryCard extends StatelessWidget {
           Image.asset(
             story.coverImage,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stack) => Container(
+            errorBuilder: (context, error, stackTrace) => Container(
               color: KuwentoColors.deepTeal.withValues(alpha: 0.2),
               child: const Icon(
-                Icons.auto_stories,
+                Icons.auto_stories_rounded,
                 size: 48,
                 color: KuwentoColors.deepTeal,
               ),
             ),
           ),
-          // Level badge
           Positioned(
             top: 8,
             right: 8,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -119,15 +121,11 @@ class StoryCard extends StatelessWidget {
               ),
             ),
           ),
-          // Duration badge
           Positioned(
             bottom: 8,
             left: 8,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -135,11 +133,7 @@ class StoryCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.schedule,
-                    color: Colors.white,
-                    size: 12,
-                  ),
+                  const Icon(Icons.schedule, color: Colors.white, size: 12),
                   const SizedBox(width: 4),
                   Text(
                     '${story.estimatedMinutes} min',
@@ -174,12 +168,16 @@ class FeaturedStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget _cover() => Image.asset(
-          story.coverImage,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stack) =>
-              Container(color: KuwentoColors.deepTeal),
-        );
+    final cover = Image.asset(
+      story.coverImage,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: KuwentoColors.deepTeal,
+      ),
+    );
+
+    final image =
+        enableHero ? Hero(tag: 'story_cover_${story.id}', child: cover) : cover;
 
     return GestureDetector(
       onTap: onTap,
@@ -200,13 +198,7 @@ class FeaturedStoryCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            enableHero
-                ? Hero(
-                    tag: 'story_cover_${story.id}',
-                    child: _cover(),
-                  )
-                : _cover(),
-            // Gradient overlay
+            image,
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -219,7 +211,6 @@ class FeaturedStoryCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Content
             Positioned(
               left: 20,
               right: 20,
@@ -274,6 +265,8 @@ class FeaturedStoryCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         story.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -285,7 +278,7 @@ class FeaturedStoryCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white70,
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                       ),
                     ],
@@ -299,14 +292,6 @@ class FeaturedStoryCard extends StatelessWidget {
     );
   }
 }
-
-Widget _coverImageBuilder(StoryModel story) => Image.asset(
-      story.coverImage,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stack) => Container(
-        color: KuwentoColors.deepTeal,
-      ),
-    );
 
 /// Horizontal scrolling story row - like Spotify playlists
 class StoryRow extends StatelessWidget {
@@ -353,7 +338,9 @@ class StoryRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : KuwentoColors.textPrimary,
                             ),
                       ),
                     ),
@@ -370,7 +357,9 @@ class StoryRow extends StatelessWidget {
               TextButton(
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                  ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onPressed: onSeeAll,

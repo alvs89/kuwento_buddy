@@ -4,7 +4,10 @@ import 'package:kuwentobuddy/models/question_model.dart';
 enum StoryLevel { beginner, intermediate, advanced }
 
 /// Category tags for stories
-enum StoryCategory { filipinoTales, adventure, fantasy, nature, quickReads }
+/// - filipinoTales: curated Filipino folk and cultural narratives
+/// - adventureJourney: travel, quests, explorations, and action-driven plots
+/// - socialStories: real-life, social themes, and everyday lessons
+enum StoryCategory { filipinoTales, adventureJourney, socialStories }
 
 /// A segment of a story with optional question checkpoint
 class StorySegment {
@@ -44,9 +47,12 @@ class StoryModel {
   final String author;
   final String coverImage;
   final String description;
+  final Map<String, String> localizedTitles;
+  final Map<String, String> localizedDescriptions;
   final StoryLevel level;
   final List<StoryCategory> categories;
   final List<StorySegment> segments;
+  final List<String> sequenceActivity; // Added for sequence activity
   final int estimatedMinutes;
   final String language; // 'en' or 'fil' for TTS
   final DateTime createdAt;
@@ -58,9 +64,12 @@ class StoryModel {
     required this.author,
     required this.coverImage,
     required this.description,
+    this.localizedTitles = const {},
+    this.localizedDescriptions = const {},
     required this.level,
     required this.categories,
     required this.segments,
+    this.sequenceActivity = const [], // Default empty list
     required this.estimatedMinutes,
     this.language = 'en',
     required this.createdAt,
@@ -69,6 +78,12 @@ class StoryModel {
 
   /// Get the total number of segments
   int get totalSegments => segments.length;
+
+  String? explicitTitleTranslation(String languageCode) =>
+      localizedTitles[languageCode];
+
+  String? explicitDescriptionTranslation(String languageCode) =>
+      localizedDescriptions[languageCode];
 
   /// Get segments that have questions (checkpoints)
   List<StorySegment> get checkpoints =>
@@ -104,6 +119,13 @@ class StoryModel {
         author: json['author'] as String,
         coverImage: json['coverImage'] as String,
         description: json['description'] as String,
+        localizedTitles: (json['localizedTitles'] as Map<String, dynamic>?)
+                ?.map((key, value) => MapEntry(key, value as String)) ??
+            const {},
+        localizedDescriptions:
+            (json['localizedDescriptions'] as Map<String, dynamic>?)
+                    ?.map((key, value) => MapEntry(key, value as String)) ??
+                const {},
         level: StoryLevel.values.firstWhere(
           (e) => e.name == json['level'],
           orElse: () => StoryLevel.beginner,
@@ -111,12 +133,16 @@ class StoryModel {
         categories: (json['categories'] as List<dynamic>)
             .map((e) => StoryCategory.values.firstWhere(
                   (c) => c.name == e,
-                  orElse: () => StoryCategory.adventure,
+                  orElse: () => StoryCategory.adventureJourney,
                 ))
             .toList(),
         segments: (json['segments'] as List<dynamic>)
             .map((e) => StorySegment.fromJson(e as Map<String, dynamic>))
             .toList(),
+        sequenceActivity: (json['sequenceActivity'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            [],
         estimatedMinutes: json['estimatedMinutes'] as int,
         language: json['language'] as String? ?? 'en',
         createdAt: DateTime.parse(json['createdAt'] as String),
@@ -129,9 +155,13 @@ class StoryModel {
         'author': author,
         'coverImage': coverImage,
         'description': description,
+        if (localizedTitles.isNotEmpty) 'localizedTitles': localizedTitles,
+        if (localizedDescriptions.isNotEmpty)
+          'localizedDescriptions': localizedDescriptions,
         'level': level.name,
         'categories': categories.map((e) => e.name).toList(),
         'segments': segments.map((e) => e.toJson()).toList(),
+        'sequenceActivity': sequenceActivity,
         'estimatedMinutes': estimatedMinutes,
         'language': language,
         'createdAt': createdAt.toIso8601String(),
@@ -144,9 +174,12 @@ class StoryModel {
     String? author,
     String? coverImage,
     String? description,
+    Map<String, String>? localizedTitles,
+    Map<String, String>? localizedDescriptions,
     StoryLevel? level,
     List<StoryCategory>? categories,
     List<StorySegment>? segments,
+    List<String>? sequenceActivity,
     int? estimatedMinutes,
     String? language,
     DateTime? createdAt,
@@ -158,9 +191,13 @@ class StoryModel {
         author: author ?? this.author,
         coverImage: coverImage ?? this.coverImage,
         description: description ?? this.description,
+        localizedTitles: localizedTitles ?? this.localizedTitles,
+        localizedDescriptions:
+            localizedDescriptions ?? this.localizedDescriptions,
         level: level ?? this.level,
         categories: categories ?? this.categories,
         segments: segments ?? this.segments,
+        sequenceActivity: sequenceActivity ?? this.sequenceActivity,
         estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
         language: language ?? this.language,
         createdAt: createdAt ?? this.createdAt,
