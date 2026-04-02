@@ -35,10 +35,11 @@ class ChildProfileModel {
         id: id,
         parentId: json['parentId'] as String? ?? '',
         displayName: json['displayName'] as String? ?? 'Reader',
-        avatarAsset:
-            json['avatarAsset'] as String? ?? 'assets/icons/avatar_default.png',
+        avatarAsset: _normalizeAvatarAsset(json['avatarAsset']),
         totalStars: json['totalStars'] as int? ?? 0,
-        storiesCompleted: json['storiesCompleted'] as int? ?? 0,
+        storiesCompleted: json['storiesCompleted'] as int? ??
+            json['completedCount'] as int? ??
+            0,
         favoriteStoryIds: List<String>.from(json['favoriteStoryIds'] ?? []),
         storyProgress: (json['storyProgress'] as Map<String, dynamic>?)?.map(
               (key, value) => MapEntry(
@@ -58,6 +59,7 @@ class ChildProfileModel {
         'avatarAsset': avatarAsset,
         'totalStars': totalStars,
         'storiesCompleted': storiesCompleted,
+        'completedCount': storiesCompleted,
         'favoriteStoryIds': favoriteStoryIds,
         'storyProgress':
             storyProgress.map((key, value) => MapEntry(key, value.toJson())),
@@ -89,6 +91,14 @@ class ChildProfileModel {
         createdAt: createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
+}
+
+String _normalizeAvatarAsset(dynamic value) {
+  final avatar = value as String?;
+  if (avatar == null || avatar.trim().isEmpty) {
+    return '';
+  }
+  return avatar.trim();
 }
 
 DateTime _parseDateTime(dynamic value) {

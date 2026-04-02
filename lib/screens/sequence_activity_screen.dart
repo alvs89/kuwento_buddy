@@ -134,26 +134,26 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
       _uiText(en: 'Put It in Order', fil: 'Ayusin sa Tamang Ayos');
 
   String get _instructionsText => _uiText(
-        en: 'Tap events in the order they happened in the story',
-        fil: 'I-tap ang mga pangyayari ayon sa pagkakasunod-sunod sa kuwento',
-      );
+    en: 'Tap events in the order they happened in the story',
+    fil: 'I-tap ang mga pangyayari ayon sa pagkakasunod-sunod sa kuwento',
+  );
 
   String get _introBuddyMessage => _uiText(
-        en: 'Put the story events in the right order! Tap each one to arrange them.',
-        fil:
-            'Ayusin ang mga pangyayari sa tamang pagkakasunod-sunod! I-tap ang bawat isa para ayusin.',
-      );
+    en: 'Put the story events in the right order! Tap each one to arrange them.',
+    fil:
+        'Ayusin ang mga pangyayari sa tamang pagkakasunod-sunod! I-tap ang bawat isa para ayusin.',
+  );
 
   String get _successBuddyMessage => _uiText(
-        en: 'Well done! You got the story order correct! 🎉',
-        fil: 'Magaling! Tama ang pagkakasunod-sunod ng kuwento mo! 🎉',
-      );
+    en: 'Well done! You got the story order correct! 🎉',
+    fil: 'Magaling! Tama ang pagkakasunod-sunod ng kuwento mo! 🎉',
+  );
 
   String get _failureBuddyMessage => _uiText(
-        en: 'Almost! Let\'s try again. Think about what happened first in the story.',
-        fil:
-            'Malapit na! Subukan ulit. Isipin kung ano ang unang nangyari sa kuwento.',
-      );
+    en: 'Almost! Let\'s try again. Think about what happened first in the story.',
+    fil:
+        'Malapit na! Subukan ulit. Isipin kung ano ang unang nangyari sa kuwento.',
+  );
 
   String get _perfectSequenceToast =>
       _uiText(en: 'Perfect sequence!', fil: 'Perpektong pagkakasunod-sunod!');
@@ -162,23 +162,14 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
       _uiText(en: 'Leave activity?', fil: 'Lalabas sa gawain?');
 
   String get _leaveActivityMessage => _uiText(
-        en: 'Do you want to exit this activity and return to the Home screen?',
-        fil: 'Gusto mo bang lumabas sa gawaing ito at bumalik sa Home screen?',
-      );
+    en: 'Do you want to exit this activity and return to the Home screen?',
+    fil: 'Gusto mo bang lumabas sa gawaing ito at bumalik sa Home screen?',
+  );
 
   String get _cancelLabel => _uiText(en: 'Cancel', fil: 'Kanselahin');
 
   String get _goToHomeLabel =>
       _uiText(en: 'Go to Home', fil: 'Pumunta sa Home');
-
-  String get _translateTextsLabel => _uiText(
-        en: _activeLanguageCode == _sourceLanguageCode
-            ? 'Translate Texts'
-            : 'Show Original',
-        fil: _activeLanguageCode == _sourceLanguageCode
-            ? 'Isalin ang mga Teksto'
-            : 'Ipakita ang Orihinal',
-      );
 
   String get _backToHomeLabel =>
       _uiText(en: 'Back to Home', fil: 'Bumalik sa Home');
@@ -242,11 +233,13 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
 
     if (story.sequenceActivity.isNotEmpty) {
       for (int i = 0; i < story.sequenceActivity.length; i++) {
-        events.add(_SequenceEvent(
-          id: i,
-          text: story.sequenceActivity[i],
-          correctOrder: i,
-        ));
+        events.add(
+          _SequenceEvent(
+            id: i,
+            text: story.sequenceActivity[i],
+            correctOrder: i,
+          ),
+        );
       }
     } else {
       for (int i = 0; i < story.segments.length; i++) {
@@ -273,11 +266,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
         }
 
         if (eventText.isNotEmpty) {
-          events.add(_SequenceEvent(
-            id: i,
-            text: eventText,
-            correctOrder: i,
-          ));
+          events.add(_SequenceEvent(id: i, text: eventText, correctOrder: i));
         }
       }
     }
@@ -350,23 +339,25 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
 
     final existingProgress = userSnapshot.storyProgress[story.id];
     final now = DateTime.now();
-    final completedProgress = (existingProgress ??
-            StoryProgress(
-              storyId: story.id,
-              storyTitle: story.title,
+    final completedProgress =
+        (existingProgress ??
+                StoryProgress(
+                  storyId: story.id,
+                  storyTitle: story.title,
+                  totalSegments: story.totalSegments,
+                  startedAt: now,
+                  updatedAt: now,
+                ))
+            .copyWith(
+              storyTitle: existingProgress?.storyTitle ?? story.title,
+              currentSegmentIndex: story.totalSegments > 0
+                  ? story.totalSegments - 1
+                  : 0,
               totalSegments: story.totalSegments,
-              startedAt: now,
+              isCompleted: true,
+              completedAt: now,
               updatedAt: now,
-            ))
-        .copyWith(
-      storyTitle: existingProgress?.storyTitle ?? story.title,
-      currentSegmentIndex:
-          story.totalSegments > 0 ? story.totalSegments - 1 : 0,
-      totalSegments: story.totalSegments,
-      isCompleted: true,
-      completedAt: now,
-      updatedAt: now,
-    );
+            );
 
     final wasAlreadyCompleted = existingProgress?.isCompleted == true;
 
@@ -396,9 +387,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
     if (_story == null) {
       return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
-            color: KuwentoColors.pastelBlue,
-          ),
+          child: CircularProgressIndicator(color: KuwentoColors.pastelBlue),
         ),
       );
     }
@@ -452,9 +441,15 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
           ),
         ),
         actions: [
-          TextButton.icon(
+          TextButton(
             onPressed: _isTranslating ? null : _toggleTextsLanguage,
-            icon: _isTranslating
+            style: TextButton.styleFrom(
+              foregroundColor: KuwentoColors.pastelBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: const Size(36, 36),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: _isTranslating
                 ? SizedBox(
                     width: 14,
                     height: 14,
@@ -463,22 +458,11 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                       color: KuwentoColors.pastelBlue,
                     ),
                   )
-                : const Icon(
-                    Icons.translate_rounded,
-                    size: 18,
-                  ),
-            label: Text(_translateTextsLabel),
-            style: TextButton.styleFrom(
-              foregroundColor: KuwentoColors.pastelBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
+                : const Icon(Icons.translate_rounded, size: 18),
           ),
           if (_isCompleted && !_isCorrect)
             IconButton(
-              icon: Icon(
-                Icons.refresh,
-                color: KuwentoColors.pastelBlue,
-              ),
+              icon: Icon(Icons.refresh, color: KuwentoColors.pastelBlue),
               onPressed: _resetActivity,
             ),
         ],
@@ -490,14 +474,18 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
               // Instructions
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  0,
+                ),
                 child: Text(
                   _instructionsText,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: isDark
-                            ? Colors.white70
-                            : KuwentoColors.textSecondary,
-                      ),
+                    color: isDark
+                        ? Colors.white70
+                        : KuwentoColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -531,18 +519,22 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                             : KuwentoColors.softCoral;
                       } else {
                         backgroundColor = Colors.transparent;
-                        borderColor =
-                            isDark ? Colors.white24 : KuwentoColors.creamDark;
+                        borderColor = isDark
+                            ? Colors.white24
+                            : KuwentoColors.creamDark;
                       }
                     } else if (isSelected) {
-                      backgroundColor =
-                          KuwentoColors.pastelBlue.withValues(alpha: 0.2);
+                      backgroundColor = KuwentoColors.pastelBlue.withValues(
+                        alpha: 0.2,
+                      );
                       borderColor = KuwentoColors.pastelBlue;
                     } else {
-                      backgroundColor =
-                          isDark ? KuwentoColors.cardDark : Colors.white;
-                      borderColor =
-                          isDark ? Colors.white24 : KuwentoColors.creamDark;
+                      backgroundColor = isDark
+                          ? KuwentoColors.cardDark
+                          : Colors.white;
+                      borderColor = isDark
+                          ? Colors.white24
+                          : KuwentoColors.creamDark;
                     }
 
                     return Padding(
@@ -598,9 +590,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                               Expanded(
                                 child: Text(
                                   _displayText(event.text),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
+                                  style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
                                         color: isDark
                                             ? Colors.white
@@ -623,7 +613,8 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                 decoration: BoxDecoration(
                   color: isDark ? KuwentoColors.cardDark : Colors.white,
                   borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppRadius.xl)),
+                    top: Radius.circular(AppRadius.xl),
+                  ),
                 ),
                 child: SafeArea(
                   child: Column(
@@ -635,8 +626,9 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                                 onPressed: () => context.go('/'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: KuwentoColors.buddyHappy,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                 ),
                                 child: Text(
                                   _backToHomeLabel,
@@ -651,7 +643,8 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                                 child: Text(
                                   _isCompleted ? _tryAgainLabel : _resetLabel,
                                   style: TextStyle(
-                                      color: KuwentoColors.pastelBlue),
+                                    color: KuwentoColors.pastelBlue,
+                                  ),
                                 ),
                               ),
                       ),

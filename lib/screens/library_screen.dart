@@ -9,6 +9,7 @@ import 'package:kuwentobuddy/services/auth_service.dart';
 import 'package:kuwentobuddy/services/story_launch_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/story_card.dart';
+import 'package:kuwentobuddy/widgets/profile_avatar.dart';
 
 enum _LibraryLevelFilter { all, beginner, intermediate, advanced }
 
@@ -23,6 +24,7 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   final StoryService _storyService = StoryService();
   final Random _random = Random();
+  final GlobalKey _levelFilterKey = GlobalKey();
   StoryModel? _featuredStory;
   _LibraryLevelFilter _selectedLevelFilter = _LibraryLevelFilter.all;
   List<StoryModel> _recommendedStories = const [];
@@ -76,33 +78,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       // Avatar
                       GestureDetector(
                         onTap: () => context.push('/settings'),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                KuwentoColors.pastelBlue,
-                                KuwentoColors.pastelBlueLight,
-                              ],
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: user?.photoUrl != null
-                              ? ClipOval(
-                                  child: Image.network(
-                                    user!.photoUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                ),
+                        child: ProfileAvatar(
+                          label:
+                              user?.displayName ?? user?.firstName ?? 'Reader',
+                          source: user?.photoUrl,
+                          size: 44,
+                          showBorder: false,
                         ),
                       ),
                       const SizedBox(width: AppSpacing.md),
@@ -148,8 +129,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             vertical: AppSpacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color: KuwentoColors.buddyThinking
-                                .withValues(alpha: 0.2),
+                            color: KuwentoColors.buddyThinking.withValues(
+                              alpha: 0.2,
+                            ),
                             borderRadius: BorderRadius.circular(AppRadius.xl),
                           ),
                           child: Row(
@@ -188,19 +170,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
               if (user?.isGuest == true)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
                     child: GestureDetector(
                       onTap: () => context.push('/login?mode=signin'),
                       child: Container(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
-                          color:
-                              KuwentoColors.pastelBlue.withValues(alpha: 0.15),
+                          color: KuwentoColors.pastelBlue.withValues(
+                            alpha: 0.15,
+                          ),
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                           border: Border.all(
-                            color:
-                                KuwentoColors.pastelBlue.withValues(alpha: 0.3),
+                            color: KuwentoColors.pastelBlue.withValues(
+                              alpha: 0.3,
+                            ),
                           ),
                         ),
                         child: Row(
@@ -216,9 +201,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
-                                    ?.copyWith(
-                                      color: KuwentoColors.pastelBlue,
-                                    ),
+                                    ?.copyWith(color: KuwentoColors.pastelBlue),
                               ),
                             ),
                             Icon(
@@ -351,9 +334,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
 
               // Bottom padding
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
         ),
@@ -397,38 +378,37 @@ class _LibraryScreenState extends State<LibraryScreen> {
     openStoryFromCard(context, story);
   }
 
-  Widget _buildLevelDropdown(BuildContext context, bool isDark) {
-    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : KuwentoColors.textPrimary,
-        );
+  Future<void> _showLevelFilterMenu(bool isDark) async {
+    final buttonContext = _levelFilterKey.currentContext;
+    if (buttonContext == null) return;
 
-    return PopupMenuButton<_LibraryLevelFilter>(
-      tooltip: 'Select level',
+    final buttonBox = buttonContext.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (buttonBox == null || overlay == null || !buttonBox.attached) return;
+
+    final topLeft = buttonBox.localToGlobal(Offset.zero, ancestor: overlay);
+    final bottomRight = buttonBox.localToGlobal(
+      buttonBox.size.bottomRight(Offset.zero),
+      ancestor: overlay,
+    );
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(topLeft, bottomRight),
+      Offset.zero & overlay.size,
+    );
+
+    final selected = await showMenu<_LibraryLevelFilter>(
+      context: context,
+      position: position,
       color: isDark ? KuwentoColors.cardDark : Colors.white,
-      iconSize: 28,
-      constraints: const BoxConstraints(minWidth: 0),
-      icon: Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
-      ),
-      onSelected: (level) {
-        setState(() {
-          _selectedLevelFilter = level;
-        });
-      },
-      itemBuilder: (_) => [
+      items: [
         const PopupMenuItem<_LibraryLevelFilter>(
           value: _LibraryLevelFilter.all,
           child: Row(
             children: [
-              const Text('🧭'),
-              const SizedBox(width: AppSpacing.sm),
-              const Text(
-                'All Levels',
-                maxLines: 1,
-                softWrap: false,
-              ),
+              Text('🧭'),
+              SizedBox(width: AppSpacing.sm),
+              Text('All Levels', maxLines: 1, softWrap: false),
             ],
           ),
         ),
@@ -445,7 +425,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   _levelDisplay(level),
-                  style: textStyle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color:
+                            isDark ? Colors.white : KuwentoColors.textPrimary,
+                      ),
                   maxLines: 1,
                   softWrap: false,
                 ),
@@ -454,6 +438,35 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
       ],
+    );
+
+    if (!mounted || selected == null) return;
+    setState(() {
+      _selectedLevelFilter = selected;
+    });
+  }
+
+  Widget _buildLevelDropdown(BuildContext context, bool isDark) {
+    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : KuwentoColors.textPrimary,
+        );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: _levelFilterKey,
+        borderRadius: BorderRadius.circular(999),
+        onTap: () => _showLevelFilterMenu(isDark),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
+            size: 28,
+          ),
+        ),
+      ),
     );
   }
 

@@ -783,7 +783,7 @@ Lia looked at the shell map again and understood: a journey can lead to discover
     description:
         'Naglakad si Rafael sa mahamog na daan upang maihatid ang mga piyesa ng orasan ng kanyang lolo at natutuhan niyang ang pag-iingat ay mahalaga sa gitna ng hamon.',
     localizedTitles: {
-      'fil': 'Ang Daan ng Tagapag-ayos ng Orasan sa Ulap na Gulod',
+      'fil': 'Ang Landas ng Relohero Patungo sa Ulap na Gulod',
     },
     level: StoryLevel.intermediate,
     categories: [StoryCategory.adventureJourney],
@@ -1043,7 +1043,7 @@ She understood that kindness is often quiet at the beginning but can grow loud i
     description:
         'Pinagkakatiwalaang bumili ni Jun ng mga pangangailangan sa palengke, at natutuhan niyang ang pagbabalik ng sobrang sukli ay bumubuo ng tiwala.',
     localizedTitles: {
-      'fil': 'Ang Listahan sa Sabado',
+      'fil': 'Ang Talaan ng Pamimili sa Pamilihan tuwing Sabado',
     },
     level: StoryLevel.intermediate,
     categories: [StoryCategory.socialStories],
@@ -2030,7 +2030,7 @@ That evening, a message was sent through the school group chat. The wallet had b
     description:
         'At a deep-space research station orbiting Europa, Dr. Elara Vance must decide how to respond when a signal beneath the ice may be either the greatest discovery in human history or a dangerous unknown.',
     localizedTitles: {
-      'fil': 'Ang Protokol sa Etika ng Raven Station',
+      'fil': 'Ang Protokol ng Etika ng Istasyon Raven',
     },
     level: StoryLevel.advanced,
     categories: [StoryCategory.socialStories],

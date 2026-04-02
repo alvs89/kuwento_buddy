@@ -402,6 +402,12 @@ class _LoginScreenState extends State<LoginScreen> {
           title: 'Comprehension Growth',
           subtitle: 'Strengthen understanding and retention',
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildFeatureListItem(
+          icon: Icons.switch_account_rounded,
+          title: 'Signed-In Profiles',
+          subtitle: 'Create and switch between reading profiles',
+        ),
       ],
     );
   }

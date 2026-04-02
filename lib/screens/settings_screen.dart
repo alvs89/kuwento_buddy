@@ -6,6 +6,7 @@ import 'package:kuwentobuddy/services/tts_service.dart';
 import 'package:kuwentobuddy/services/toast_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/buddy_companion.dart';
+import 'package:kuwentobuddy/widgets/profile_avatar.dart';
 
 /// Settings screen for user preferences
 class SettingsScreen extends StatefulWidget {
@@ -53,7 +54,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     {
       'question': 'How are comprehension scores and stars calculated?',
       'answer':
-          'Your comprehension score is based on the checkpoint questions in the story. Each question is counted the first time you answer it. If you get it right on the first try, it counts as correct; if you miss it first, it still counts as answered, but it does not count as a correct first-try answer.\n\nThe app then calculates the percentage as correct first-try answers divided by total questions, multiplied by 100. After the story ends, that final percentage becomes your stars: 3 stars for 90% or higher, 2 stars for 70% to 89%, 1 star for 50% to 69%, and 0 star below 50%.',
+          'Your comprehension score comes from the checkpoint questions in the story. Each question is counted once when you answer it the first time. If your first answer is correct, it counts as a good answer. If the first answer is wrong, the question still counts, but it does not count as correct.\n\nThe app then finds your score by dividing the number of correct first answers by the total number of questions, then multiplying by 100. After the story ends, that score becomes your stars: 3 stars for 90% or higher, 2 stars for 70% to 89%, 1 star for 50% to 69%, and 0 stars below 50%.',
+    },
+    {
+      'question': 'How is inference calculated?',
+      'answer':
+          'Inference questions ask you to figure out something the story does not say directly. The app counts how many inference questions you answer on the first try and how many of those are correct. Your inference score is the number of correct first answers divided by all inference questions, then multiplied by 100.',
+    },
+    {
+      'question': 'How is prediction calculated?',
+      'answer':
+          'Prediction questions ask what you think will happen next. The app counts how many prediction questions you answer on the first try and how many of those are correct. Your prediction score is the number of correct first answers divided by all prediction questions, then multiplied by 100.',
+    },
+    {
+      'question': 'How is emotion calculated?',
+      'answer':
+          'Emotion questions ask how a character feels. The app counts how many emotion questions you answer on the first try and how many of those are correct. Your emotion score is the number of correct first answers divided by all emotion questions, then multiplied by 100.',
     },
     {
       'question': 'Will my progress be saved?',
@@ -68,10 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String get _activePreviewLocale => _previewInEnglish ? 'en-US' : 'fil-PH';
 
   Future<void> _playNarratorPreview(TTSService ttsService) async {
-    await ttsService.speak(
-      _activePreviewText,
-      language: _activePreviewLocale,
-    );
+    await ttsService.speak(_activePreviewText, language: _activePreviewLocale);
   }
 
   void _ensureSpeedInitialized(AuthService authService, TTSService ttsService) {
@@ -91,12 +104,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _savingVoiceSpeed = true;
     });
 
-    final updatedPreferences = user.preferences.copyWith(
-      voiceSpeed: value,
-    );
-    final updatedUser = user.copyWith(
-      preferences: updatedPreferences,
-    );
+    final updatedPreferences = user.preferences.copyWith(voiceSpeed: value);
+    final updatedUser = user.copyWith(preferences: updatedPreferences);
 
     await authService.updateUser(updatedUser);
 
@@ -195,8 +204,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: OutlinedButton.styleFrom(
                               fixedSize: const Size.fromHeight(48),
                               side: BorderSide(
-                                color: KuwentoColors.pastelBlue
-                                    .withValues(alpha: 0.55),
+                                color: KuwentoColors.pastelBlue.withValues(
+                                  alpha: 0.55,
+                                ),
                                 width: 1.4,
                               ),
                               padding: EdgeInsets.zero,
@@ -204,8 +214,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ? Colors.white70
                                   : KuwentoColors.textSecondary,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                             ),
                             child: const Text('Cancel'),
@@ -226,8 +237,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               padding: EdgeInsets.zero,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                             ),
                             child: const Text('Sign Out'),
@@ -253,9 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       debugPrint('Sign out failed: $e');
     } finally {
       if (mounted) {
-        // Use root navigator context to exit the shell and land on login immediately.
-        final rootCtx = Navigator.of(context, rootNavigator: true).context;
-        GoRouter.of(rootCtx).go('/login');
+        GoRouter.of(context).go('/login');
         setState(() => _isSigningOut = false);
       }
     }
@@ -303,31 +313,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color:
-                              KuwentoColors.pastelBlue.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: photoUrl != null && photoUrl.isNotEmpty
-                            ? ClipOval(
-                                child: Image.network(
-                                  photoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.person,
-                                    color: KuwentoColors.pastelBlue,
-                                    size: 30,
-                                  ),
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person,
-                                color: KuwentoColors.pastelBlue,
-                                size: 30,
-                              ),
+                      ProfileAvatar(
+                        label: user?.displayName ?? user?.firstName ?? 'Reader',
+                        source: photoUrl,
+                        size: 60,
+                        accentColor: KuwentoColors.pastelBlue,
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
@@ -459,8 +449,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   width: 44,
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color: KuwentoColors.pastelBlue
-                                        .withValues(alpha: 0.18),
+                                    color: KuwentoColors.pastelBlue.withValues(
+                                      alpha: 0.18,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -525,8 +516,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 color: isDark
                                     ? Colors.black.withValues(alpha: 0.16)
                                     : Colors.white,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                                 border: Border.all(
                                   color: isDark
                                       ? Colors.white.withValues(alpha: 0.1)
@@ -571,8 +563,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         vertical: 12,
                                       ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(AppRadius.md),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.md,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -601,8 +594,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         vertical: 12,
                                       ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(AppRadius.md),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.md,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -620,8 +614,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 color: isDark
                                     ? Colors.white.withValues(alpha: 0.04)
                                     : Colors.white,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                                 border: Border.all(
                                   color: isDark
                                       ? Colors.white.withValues(alpha: 0.12)
@@ -736,8 +731,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             if (_savingVoiceSpeed)
                               Padding(
-                                padding:
-                                    const EdgeInsets.only(top: AppSpacing.xs),
+                                padding: const EdgeInsets.only(
+                                  top: AppSpacing.xs,
+                                ),
                                 child: Text(
                                   'Saving speed preference...',
                                   style: Theme.of(context)
@@ -752,15 +748,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
-                                'Voice quality and gender depend on your device’s installed Text-to-Speech engine and available voices.',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: isDark
-                                          ? Colors.white60
-                                          : KuwentoColors.textSecondary,
-                                    )),
+                              'Voice quality and gender depend on your device’s installed Text-to-Speech engine and available voices.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: isDark
+                                        ? Colors.white60
+                                        : KuwentoColors.textSecondary,
+                                  ),
+                            ),
                           ],
                         ),
                       ),
@@ -805,8 +802,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.md),
                             border: Border.all(
                               color: isExpanded
-                                  ? KuwentoColors.pastelBlue
-                                      .withValues(alpha: 0.5)
+                                  ? KuwentoColors.pastelBlue.withValues(
+                                      alpha: 0.5,
+                                    )
                                   : (isDark
                                       ? Colors.white.withValues(alpha: 0.12)
                                       : KuwentoColors.creamDark),
@@ -815,8 +813,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Theme(
                             data: Theme.of(context).copyWith(
                               dividerColor: Colors.transparent,
-                              splashColor: KuwentoColors.pastelBlue
-                                  .withValues(alpha: 0.12),
+                              splashColor: KuwentoColors.pastelBlue.withValues(
+                                alpha: 0.12,
+                              ),
                               highlightColor: Colors.transparent,
                             ),
                             child: ExpansionTile(
@@ -906,10 +905,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Icons.switch_account_rounded,
                             color: KuwentoColors.skyBlue,
                           ),
-                          title: const Text(
-                            'Switch Profile',
+                          title: Text(
+                            'Switch Profiles',
                             style: TextStyle(
-                              color: KuwentoColors.textPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : KuwentoColors.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -920,9 +921,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           },
                         ),
                         Divider(
-                          height: 1, 
-                          indent: 56, 
-                          color: isDark ? Colors.white12 : KuwentoColors.creamDark
+                          height: 1,
+                          indent: 56,
+                          color:
+                              isDark ? Colors.white12 : KuwentoColors.creamDark,
                         ),
                         ListTile(
                           leading: const Icon(
@@ -931,9 +933,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           title: const Text(
                             'Sign Out',
-                            style: TextStyle(
-                              color: KuwentoColors.softCoral,
-                            ),
+                            style: TextStyle(color: KuwentoColors.softCoral),
                           ),
                           onTap: () => _confirmAndSignOut(authService),
                         ),

@@ -21,8 +21,6 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _textFade;
   late final Animation<Offset> _textSlide;
 
-  static const String _loginRoute = '/login';
-
   List<Widget> _buildFloatingParticles(bool isDark) {
     final particleColor = isDark
         ? Colors.white.withValues(alpha: 0.09)
@@ -96,15 +94,13 @@ class _SplashScreenState extends State<SplashScreen>
       curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
     );
 
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _controller.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) => _navigateNext());
@@ -115,8 +111,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     // Use router's redirect logic or explicitly navigate to correct initial state
-    final authService =
-        context.read<kuwentobuddy.AuthService>(); // Need to import this
+    final authService = context
+        .read<kuwentobuddy.AuthService>(); // Need to import this
     if (authService.isAuthenticated) {
       context.go('/profile-selection');
     } else if (authService.isGuest) {
@@ -213,9 +209,7 @@ class _SplashScreenState extends State<SplashScreen>
           ),
           Positioned.fill(
             child: IgnorePointer(
-              child: CustomPaint(
-                painter: _StoryPatternPainter(isDark: isDark),
-              ),
+              child: CustomPaint(painter: _StoryPatternPainter(isDark: isDark)),
             ),
           ),
           ..._buildFloatingParticles(isDark),
@@ -257,21 +251,24 @@ class _SplashScreenState extends State<SplashScreen>
                                 spreadRadius: 1,
                               ),
                               BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: isDark ? 0.35 : 0.12),
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.35 : 0.12,
+                                ),
                                 blurRadius: 22,
                                 offset: const Offset(0, 14),
                               ),
                             ],
                             border: Border.all(
-                              color: Colors.white
-                                  .withValues(alpha: isDark ? 0.12 : 0.36),
+                              color: Colors.white.withValues(
+                                alpha: isDark ? 0.12 : 0.36,
+                              ),
                               width: 1.2,
                             ),
                           ),
                           child: Text(
                             'KB',
-                            style: theme.textTheme.displaySmall?.copyWith(
+                            style:
+                                theme.textTheme.displaySmall?.copyWith(
                                   color: isDark
                                       ? Colors.white
                                       : KuwentoColors.textPrimary,
@@ -300,8 +297,9 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Text(
                       'Kuwento Buddy',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.9),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.9,
+                        ),
                         letterSpacing: 0.8,
                       ),
                     ),

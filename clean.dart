@@ -9,7 +9,7 @@ void main() {
       .replaceAll('\r\n', '\n')
       .replaceAll('﻿', '')
       .replaceAll('ï¿½', '');
-      
+
   file.writeAsStringSync(str);
-  print('Done.');
+  stdout.writeln('Done.');
 }

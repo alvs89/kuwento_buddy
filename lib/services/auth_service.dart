@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kuwentobuddy/models/child_profile_model.dart';
 import 'package:kuwentobuddy/models/user_model.dart';
 import 'package:kuwentobuddy/services/user_service.dart';
 
@@ -51,16 +52,18 @@ class AuthService extends ChangeNotifier {
 
   /// Set the profile view model when a child is selected
   void switchToProfileView(UserModel profileUser) {
+    _parentUser ??= _currentUser;
     _currentUser = profileUser;
     notifyListeners();
   }
 
   /// Switch back to parent view
   void switchToParentView() {
+    _userService.setActiveProfileId(null);
     if (_parentUser != null) {
       _currentUser = _parentUser;
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   void _attachAuthStateListener() {
@@ -103,16 +106,19 @@ class AuthService extends ChangeNotifier {
     return null;
   }
 
-  Future<void> _bootstrapCloudProfile(User firebaseUser,
-      {required bool strict}) async {
+  Future<void> _bootstrapCloudProfile(
+    User firebaseUser, {
+    required bool strict,
+  }) async {
     _status = AuthStatus.authenticated;
     try {
       await _loadOrCreateUser(
         firebaseUser,
         allowCachedFallback: !strict,
+        includeCollections: _userService.hasActiveProfile,
       );
       await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
-      if (_currentUser != null) {
+      if (_currentUser != null && !_userService.hasActiveProfile) {
         _parentUser = _currentUser;
         await _cacheAuthenticatedUser(_currentUser!);
       }
@@ -124,7 +130,9 @@ class AuthService extends ChangeNotifier {
   }
 
   AuthStatus get status => _status;
-  UserModel? get currentUser => _currentUser;    String? get parentUid => _auth.currentUser?.uid;  bool get isLoading => _isLoading;
+  UserModel? get currentUser => _currentUser;
+  String? get parentUid => _auth.currentUser?.uid;
+  bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isGuest => _status == AuthStatus.guest;
   bool get _hasFirebaseSession => _auth.currentUser != null;
@@ -195,15 +203,17 @@ class AuthService extends ChangeNotifier {
         // Mobile uses GoogleSignIn, then exchanges tokens with Firebase.
         // Clear stale local Google session first so users can pick any account.
         await _googleSignIn.signOut();
-        final googleUser =
-            await _googleSignIn.signIn().timeout(const Duration(seconds: 45));
+        final googleUser = await _googleSignIn.signIn().timeout(
+          const Duration(seconds: 45),
+        );
         if (googleUser == null) {
           // User cancelled the Google account picker.
           return const GoogleAuthResult(wasCancelled: true);
         }
 
-        final googleAuth = await googleUser.authentication
-            .timeout(const Duration(seconds: 30));
+        final googleAuth = await googleUser.authentication.timeout(
+          const Duration(seconds: 30),
+        );
         final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
@@ -221,12 +231,16 @@ class AuthService extends ChangeNotifier {
         Object? profileBootstrapError;
 
         try {
-          await _bootstrapCloudProfile(firebaseUser, strict: true)
-              .timeout(const Duration(seconds: 30));
+          await _bootstrapCloudProfile(
+            firebaseUser,
+            strict: true,
+          ).timeout(const Duration(seconds: 30));
           await _mergeGuestProgress().timeout(const Duration(seconds: 20));
-          await _syncAuthenticatedStateWithCloud(firebaseUser.uid)
-              .timeout(const Duration(seconds: 20));
-          cloudProfileReady = _currentUser != null &&
+          await _syncAuthenticatedStateWithCloud(
+            firebaseUser.uid,
+          ).timeout(const Duration(seconds: 20));
+          cloudProfileReady =
+              _currentUser != null &&
               _currentUser!.id == firebaseUser.uid &&
               !_currentUser!.isGuest;
         } catch (e) {
@@ -238,7 +252,8 @@ class AuthService extends ChangeNotifier {
           try {
             _currentUser = await _ensureCloudProfileReady(firebaseUser);
             _parentUser = _currentUser;
-            cloudProfileReady = _currentUser != null &&
+            cloudProfileReady =
+                _currentUser != null &&
                 _currentUser!.id == firebaseUser.uid &&
                 !_currentUser!.isGuest;
           } catch (e) {
@@ -286,10 +301,7 @@ class AuthService extends ChangeNotifier {
           'Google auth completed. intent=$intent, isNewUser=$isNewUser',
         );
 
-        return GoogleAuthResult(
-          user: _currentUser,
-          isNewUser: isNewUser,
-        );
+        return GoogleAuthResult(user: _currentUser, isNewUser: isNewUser);
       }
       return const GoogleAuthResult();
     } on TimeoutException {
@@ -299,7 +311,8 @@ class AuthService extends ChangeNotifier {
       );
     } on FirebaseAuthException catch (e) {
       debugPrint(
-          'Google sign in FirebaseAuthException: ${e.code} ${e.message}');
+        'Google sign in FirebaseAuthException: ${e.code} ${e.message}',
+      );
       return GoogleAuthResult(errorMessage: _mapFirebaseAuthError(e));
     } on PlatformException catch (e) {
       debugPrint('Google sign in PlatformException: ${e.code} ${e.message}');
@@ -382,6 +395,8 @@ class AuthService extends ChangeNotifier {
         await _googleSignIn.signOut();
       }
 
+      _userService.setActiveProfileId(null);
+
       // Clear guest data
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_guestUserKey);
@@ -398,6 +413,7 @@ class AuthService extends ChangeNotifier {
   Future<void> _loadOrCreateUser(
     User firebaseUser, {
     bool allowCachedFallback = true,
+    bool includeCollections = true,
   }) async {
     try {
       _currentUser = await _userService.getOrCreateUser(
@@ -405,6 +421,7 @@ class AuthService extends ChangeNotifier {
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
         photoUrl: _resolvePhotoUrl(firebaseUser),
+        includeCollections: includeCollections,
       );
       if (_currentUser != null) {
         await _cacheAuthenticatedUser(_currentUser!);
@@ -441,6 +458,7 @@ class AuthService extends ChangeNotifier {
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoUrl: _resolvePhotoUrl(firebaseUser),
+              includeCollections: _userService.hasActiveProfile,
             )
             .timeout(const Duration(seconds: 25));
 
@@ -502,7 +520,8 @@ class AuthService extends ChangeNotifier {
         final guestUser = UserModel.fromJson(jsonDecode(guestData));
 
         // Merge progress
-        final hasGuestDataToMerge = guestUser.storyProgress.isNotEmpty ||
+        final hasGuestDataToMerge =
+            guestUser.storyProgress.isNotEmpty ||
             guestUser.favoriteStoryIds.isNotEmpty ||
             guestUser.totalStars > 0 ||
             guestUser.storiesCompleted > 0;
@@ -546,8 +565,9 @@ class AuthService extends ChangeNotifier {
 
         // Ensure user id aligns with the active Firebase user for Firestore rules.
         final activeUid = _auth.currentUser!.uid;
-        final cloudUser =
-            user.id == activeUid ? user : user.copyWith(id: activeUid);
+        final cloudUser = user.id == activeUid
+            ? user
+            : user.copyWith(id: activeUid);
 
         if (_currentUser == null || _currentUser!.id != activeUid) {
           _currentUser = await _userService.getOrCreateUser(
@@ -560,8 +580,13 @@ class AuthService extends ChangeNotifier {
 
         await _userService.updateUser(cloudUser);
         final refreshed = await _userService.getUser(activeUid);
-        _currentUser = refreshed ?? cloudUser;
-        await _cacheAuthenticatedUser(_currentUser!);
+        if (_userService.hasActiveProfile) {
+          _parentUser = refreshed ?? cloudUser;
+          await _cacheAuthenticatedUser(_currentUser ?? cloudUser);
+        } else {
+          _currentUser = refreshed ?? cloudUser;
+          await _cacheAuthenticatedUser(_currentUser!);
+        }
       }
     } catch (e) {
       debugPrint('Failed to persist user update: $e');
@@ -576,22 +601,34 @@ class AuthService extends ChangeNotifier {
             photoUrl: _resolvePhotoUrl(_auth.currentUser!),
           );
 
-          final retryUser =
-              user.id == activeUid ? user : user.copyWith(id: activeUid);
+          final retryUser = user.id == activeUid
+              ? user
+              : user.copyWith(id: activeUid);
           await _userService.updateUser(retryUser);
           _status = AuthStatus.authenticated;
-          _currentUser = retryUser;
-          await _cacheAuthenticatedUser(retryUser);
+          if (_userService.hasActiveProfile) {
+            _parentUser = retryUser;
+            await _cacheAuthenticatedUser(_currentUser ?? retryUser);
+          } else {
+            _currentUser = retryUser;
+            await _cacheAuthenticatedUser(retryUser);
+          }
           return;
         } catch (retryError) {
           debugPrint('Retry failed while persisting user update: $retryError');
         }
 
         _status = AuthStatus.authenticated;
-        final fallbackUser =
-            user.id == activeUid ? user : user.copyWith(id: activeUid);
-        _currentUser = fallbackUser;
-        await _cacheAuthenticatedUser(fallbackUser);
+        final fallbackUser = user.id == activeUid
+            ? user
+            : user.copyWith(id: activeUid);
+        if (_userService.hasActiveProfile) {
+          _parentUser = fallbackUser;
+          await _cacheAuthenticatedUser(_currentUser ?? fallbackUser);
+        } else {
+          _currentUser = fallbackUser;
+          await _cacheAuthenticatedUser(fallbackUser);
+        }
       }
     }
   }
@@ -603,7 +640,8 @@ class AuthService extends ChangeNotifier {
     if (user == null) {
       if (_hasFirebaseSession) {
         final activeUid = _auth.currentUser!.uid;
-        user = await _userService.getUser(activeUid) ??
+        user =
+            await _userService.getUser(activeUid) ??
             await _userService.getOrCreateUser(
               uid: activeUid,
               email: _auth.currentUser!.email,
@@ -666,8 +704,15 @@ class AuthService extends ChangeNotifier {
           storyTitle: storyTitle,
         );
         final refreshed = await _userService.getUser(activeUid);
-        _currentUser = refreshed ?? updatedUser.copyWith(id: activeUid);
-        await _cacheAuthenticatedUser(_currentUser!);
+        if (_userService.hasActiveProfile) {
+          _parentUser = refreshed ?? updatedUser.copyWith(id: activeUid);
+          await _cacheAuthenticatedUser(
+            _currentUser ?? updatedUser.copyWith(id: activeUid),
+          );
+        } else {
+          _currentUser = refreshed ?? updatedUser.copyWith(id: activeUid);
+          await _cacheAuthenticatedUser(_currentUser!);
+        }
       }
     } catch (e) {
       debugPrint('Failed to persist favorite toggle: $e');
@@ -685,7 +730,9 @@ class AuthService extends ChangeNotifier {
   Future<void> _cacheAuthenticatedUser(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        _authUserCacheKey(user.id), jsonEncode(user.toJson()));
+      _authUserCacheKey(user.id),
+      jsonEncode(user.toJson()),
+    );
   }
 
   Future<UserModel?> _loadCachedAuthenticatedUser(String uid) async {
@@ -705,19 +752,46 @@ class AuthService extends ChangeNotifier {
     if (_status != AuthStatus.authenticated) return;
 
     try {
-      final fresh = await _userService.getUser(uid);
+      final fresh = await _userService.getUser(
+        uid,
+        includeCollections: _userService.hasActiveProfile,
+      );
       if (fresh != null) {
-        _currentUser = fresh;
-        await _cacheAuthenticatedUser(fresh);
-        notifyListeners();
+        _parentUser = fresh;
+        if (_userService.hasActiveProfile) {
+          final activeProfileUser = await _loadActiveProfileUser(uid);
+          if (activeProfileUser != null) {
+            _currentUser = activeProfileUser;
+            await _cacheAuthenticatedUser(activeProfileUser);
+            notifyListeners();
+            return;
+          }
+        }
+        if (!_userService.hasActiveProfile) {
+          _currentUser = fresh;
+          await _cacheAuthenticatedUser(fresh);
+          notifyListeners();
+        }
         return;
       }
 
       final fallback = await _loadCachedAuthenticatedUser(uid) ?? _currentUser;
       if (fallback != null) {
-        _currentUser = fallback;
-        await _cacheAuthenticatedUser(fallback);
-        notifyListeners();
+        _parentUser = fallback;
+        if (_userService.hasActiveProfile) {
+          final activeProfileUser = await _loadActiveProfileUser(uid);
+          if (activeProfileUser != null) {
+            _currentUser = activeProfileUser;
+            await _cacheAuthenticatedUser(activeProfileUser);
+            notifyListeners();
+            return;
+          }
+        }
+        if (!_userService.hasActiveProfile) {
+          _currentUser = fallback;
+          await _cacheAuthenticatedUser(fallback);
+          notifyListeners();
+        }
       }
     } catch (e) {
       debugPrint('Failed to sync authenticated user state with cloud: $e');
@@ -735,7 +809,8 @@ class AuthService extends ChangeNotifier {
     if (current == null) {
       if (_hasFirebaseSession) {
         final activeUid = _auth.currentUser!.uid;
-        current = await _userService.getUser(activeUid) ??
+        current =
+            await _userService.getUser(activeUid) ??
             await _userService.getOrCreateUser(
               uid: activeUid,
               email: _auth.currentUser!.email,
@@ -745,31 +820,32 @@ class AuthService extends ChangeNotifier {
       }
       current ??= await _loadGuestUserFromPrefs();
       current ??= await continueAsGuest();
-
-      if (current != null) {
-        _currentUser = current;
-        notifyListeners();
-      }
+      _currentUser = current;
+      notifyListeners();
     }
-    if (current == null) return;
 
-    final updatedProgress =
-        Map<String, StoryProgress>.from(current.storyProgress);
+    final activeUser = current;
+
+    final updatedProgress = Map<String, StoryProgress>.from(
+      activeUser.storyProgress,
+    );
     if (!progress.isCompleted) {
       final normalizedTarget = _normalizeKey(progress.storyId);
       updatedProgress.removeWhere((key, value) {
         final keyMatches = _normalizeKey(key) == normalizedTarget;
-        final valueMatches = _normalizeKey(value.storyId) == normalizedTarget &&
+        final valueMatches =
+            _normalizeKey(value.storyId) == normalizedTarget &&
             value.isCompleted;
         return (keyMatches || valueMatches) && value.isCompleted;
       });
     }
     updatedProgress[progress.storyId] = progress;
 
-    final optimisticUser = current.copyWith(
+    final optimisticUser = activeUser.copyWith(
       storyProgress: updatedProgress,
-      totalStars: current.totalStars + (starsDelta > 0 ? starsDelta : 0),
-      storiesCompleted: current.storiesCompleted + (completedIncrement ? 1 : 0),
+      totalStars: activeUser.totalStars + (starsDelta > 0 ? starsDelta : 0),
+      storiesCompleted:
+          activeUser.storiesCompleted + (completedIncrement ? 1 : 0),
       updatedAt: DateTime.now(),
     );
 
@@ -780,14 +856,24 @@ class AuthService extends ChangeNotifier {
       if (_status == AuthStatus.guest && !_hasFirebaseSession) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
-            _guestUserKey, jsonEncode(optimisticUser.toJson()));
+          _guestUserKey,
+          jsonEncode(optimisticUser.toJson()),
+        );
         return;
       }
 
       if (_hasFirebaseSession) {
+        if (!_userService.hasActiveProfile) {
+          debugPrint(
+            'AuthService.saveStoryProgress: skipped Firestore write because no active profile is selected yet.',
+          );
+          return;
+        }
+
         final activeUid = _auth.currentUser!.uid;
         debugPrint(
-            'AuthService.saveStoryProgress: uid=$activeUid storyId=${progress.storyId} segment=${progress.currentSegmentIndex}');
+          'AuthService.saveStoryProgress: uid=$activeUid storyId=${progress.storyId} segment=${progress.currentSegmentIndex}',
+        );
         await _userService.updateStoryProgress(
           activeUid,
           progress,
@@ -798,12 +884,22 @@ class AuthService extends ChangeNotifier {
           await _userService.addStars(activeUid, starsDelta);
         }
 
-        final fresh = await _userService.getUser(activeUid);
-        if (fresh != null) {
-          _currentUser = fresh;
-          await _cacheAuthenticatedUser(fresh);
-          notifyListeners();
-        }
+          final fresh = await _userService.getUser(activeUid);
+          if (_userService.hasActiveProfile) {
+            _parentUser = fresh ?? _parentUser;
+            final activeProfileUser = await _loadActiveProfileUser(activeUid);
+            if (activeProfileUser != null) {
+              _currentUser = activeProfileUser;
+              await _cacheAuthenticatedUser(activeProfileUser);
+              notifyListeners();
+            } else if (fresh != null) {
+              await _cacheAuthenticatedUser(_currentUser ?? fresh);
+            }
+          } else if (fresh != null) {
+            _currentUser = fresh;
+            await _cacheAuthenticatedUser(fresh);
+            notifyListeners();
+          }
       }
     } catch (e) {
       debugPrint('Failed to persist story progress: $e');
@@ -819,7 +915,16 @@ class AuthService extends ChangeNotifier {
             await _userService.addStars(activeUid, starsDelta);
           }
           final recovered = await _userService.getUser(activeUid);
-          if (recovered != null) {
+          if (_userService.hasActiveProfile) {
+            _parentUser = recovered ?? _parentUser;
+            final activeProfileUser = await _loadActiveProfileUser(activeUid);
+            if (activeProfileUser != null) {
+              _currentUser = activeProfileUser;
+              await _cacheAuthenticatedUser(activeProfileUser);
+              notifyListeners();
+              return;
+            }
+          } else if (recovered != null) {
             _currentUser = recovered;
             await _cacheAuthenticatedUser(recovered);
             notifyListeners();
@@ -858,10 +963,24 @@ class AuthService extends ChangeNotifier {
     _status = AuthStatus.authenticated;
 
     try {
-      final fresh = await _userService.getUser(uid);
+      final fresh = await _userService.getUser(
+        uid,
+        includeCollections: _userService.hasActiveProfile,
+      );
       if (fresh != null) {
-        _currentUser = fresh;
-        await _cacheAuthenticatedUser(fresh);
+        _parentUser = fresh;
+        if (_userService.hasActiveProfile) {
+          final activeProfileUser = await _loadActiveProfileUser(uid);
+          if (activeProfileUser != null) {
+            _currentUser = activeProfileUser;
+            await _cacheAuthenticatedUser(activeProfileUser);
+          } else {
+            await _cacheAuthenticatedUser(_currentUser ?? fresh);
+          }
+        } else {
+          _currentUser = fresh;
+          await _cacheAuthenticatedUser(fresh);
+        }
         notifyListeners();
         return;
       }
@@ -870,6 +989,33 @@ class AuthService extends ChangeNotifier {
     }
 
     await _syncAuthenticatedStateWithCloud(uid);
+  }
+
+  Future<UserModel?> _loadActiveProfileUser(String parentUid) async {
+    final activeProfileId = _userService.activeProfileId;
+    if (activeProfileId == null) return null;
+
+    final profile = await _userService.getChildProfile(parentUid, activeProfileId);
+    if (profile == null) return null;
+
+    return _profileToUserModel(parentUid, profile);
+  }
+
+  UserModel _profileToUserModel(String parentUid, ChildProfileModel profile) {
+    return UserModel(
+      id: parentUid,
+      email: _auth.currentUser?.email,
+      displayName: profile.displayName,
+      photoUrl: profile.avatarAsset,
+      totalStars: profile.totalStars,
+      storiesCompleted: profile.storiesCompleted,
+      favoriteStoryIds: profile.favoriteStoryIds,
+      storyProgress: profile.storyProgress,
+      preferences: profile.preferences,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+      isGuest: false,
+    );
   }
 
   @override

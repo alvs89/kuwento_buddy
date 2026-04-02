@@ -103,7 +103,6 @@ class AppRouter {
       final canAccessApp = isAuthenticated || isGuest;
       final isLoginRoute = state.uri.path == AppRoutes.login;
       final isSplashRoute = state.uri.path == AppRoutes.splash;
-      final isProfileSelection = state.uri.path == AppRoutes.profileSelection;
 
       // Allow splash to handle its own forward navigation.
       if (isSplashRoute) {
@@ -144,15 +143,13 @@ class AppRouter {
         pageBuilder: (context, state) => _buildLoginTransitionPage(
           state: state,
           child: _withFloatingBuddy(
-            LoginScreen(
-              mode: state.uri.queryParameters['mode'] ?? 'signin',
-            ),
+            LoginScreen(mode: state.uri.queryParameters['mode'] ?? 'signin'),
             extraBottomOffset: 24,
             extraRightOffset: 2,
             size: 80,
             animateFloatingBuddy: true,
             speechMessage:
-                'Welcome! Sign in or create an account to start your reading adventure!',
+                'Sign in to sync progress and use profiles, or continue as guest to start reading right away!',
             allowInteraction: true,
           ),
         ),
@@ -182,10 +179,7 @@ class AppRouter {
             currentIndex = 2;
           }
 
-          return MainShell(
-            currentIndex: currentIndex,
-            child: child,
-          );
+          return MainShell(currentIndex: currentIndex, child: child);
         },
         routes: [
           GoRoute(
@@ -242,10 +236,12 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(0, 1),
                   end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
                 child: child,
               );
             },
@@ -271,10 +267,12 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(1, 0),
                   end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
                 child: child,
               );
             },
@@ -293,10 +291,12 @@ class AppRouter {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              ).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
               child: child,
             );
           },
@@ -321,10 +321,12 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(1, 0),
                   end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
                 child: child,
               );
             },
@@ -340,6 +342,7 @@ class AppRouter {
           final category = state.pathParameters['category'] ?? '';
           final scope = state.uri.queryParameters['scope'];
           final idsParam = state.uri.queryParameters['ids'];
+          final customTitle = state.uri.queryParameters['title']?.trim();
           final recommendedStoryIds = idsParam == null || idsParam.isEmpty
               ? const <String>[]
               : idsParam
@@ -348,7 +351,9 @@ class AppRouter {
                   .map((id) => id.trim())
                   .toList();
           final currentLibraryOnly = scope == 'current';
-          final title = _getCategoryTitle(category);
+          final title = customTitle == null || customTitle.isEmpty
+              ? _getCategoryTitle(category)
+              : customTitle;
           return CustomTransitionPage(
             child: _withFloatingBuddy(
               StoriesListScreen(
@@ -365,10 +370,12 @@ class AppRouter {
                 position: Tween<Offset>(
                   begin: const Offset(1, 0),
                   end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
                 child: child,
               );
             },
@@ -382,13 +389,13 @@ class AppRouter {
     switch (category) {
       case 'filipino_tales':
       case 'filipino-tales':
-        return 'Filipino Tales 🇵🇭';
+        return 'Filipino Folktales 🇵🇭';
       case 'adventure':
       case 'adventure-journey':
-        return 'Adventure Journey 🧭';
+        return 'Adventure & Discovery 🧭';
       case 'social':
       case 'social-stories':
-        return 'Social Stories 🤝';
+        return 'Social & Life Lessons 🤝';
       case 'recommended':
         return 'Recommended for You ⭐';
       default:
@@ -428,10 +435,7 @@ class _AnimatedFloatingBuddyState extends State<AnimatedFloatingBuddy> {
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      tween: Tween<double>(
-        begin: _floatUp ? -5 : 5,
-        end: _floatUp ? 5 : -5,
-      ),
+      tween: Tween<double>(begin: _floatUp ? -5 : 5, end: _floatUp ? 5 : -5),
       duration: const Duration(milliseconds: 3200),
       curve: Curves.easeInOut,
       onEnd: () {
@@ -442,10 +446,7 @@ class _AnimatedFloatingBuddyState extends State<AnimatedFloatingBuddy> {
         final scale = 1 + (value.abs() / 130);
         return Transform.translate(
           offset: Offset(0, value),
-          child: Transform.scale(
-            scale: scale,
-            child: child,
-          ),
+          child: Transform.scale(scale: scale, child: child),
         );
       },
       child: widget.child,

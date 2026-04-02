@@ -19,26 +19,79 @@ class _SearchScreenState extends State<SearchScreen> {
   List<StoryModel> _searchResults = [];
   bool _hasSearched = false;
 
-  static const Map<StoryCategory, _CategoryMeta> _categoryMeta = {
-    StoryCategory.filipinoTales: _CategoryMeta(
-      title: 'Filipino Tales',
+  static final List<_BrowseGenreMeta> _browseGenres = [
+    _BrowseGenreMeta(
+      title: 'Filipino Legends & Myths',
       emoji: '🇵🇭',
       color: KuwentoColors.softCoral,
-      route: 'filipino-tales',
+      subtitle: 'Origin legends and mythic Filipino stories',
+      matches: (story) => _containsAnyTitle(story, const [
+        'pinya',
+        'parol',
+        'bulkang mayon',
+      ]),
     ),
-    StoryCategory.adventureJourney: _CategoryMeta(
-      title: 'Adventure Journey',
-      emoji: '🧭',
+    _BrowseGenreMeta(
+      title: 'Filipino Folklore & Nature Tales',
+      emoji: '🌿',
+      color: KuwentoColors.buddyThinking,
+      subtitle: 'Gentle folklore, symbols, and nature-inspired stories',
+      matches: (story) => _containsAnyTitle(story, const [
+        'huni ng duyan',
+        'butil ng tala',
+      ]),
+    ),
+    _BrowseGenreMeta(
+      title: 'Ocean & Travel Adventures',
+      emoji: '🌊',
       color: KuwentoColors.deepTeal,
-      route: 'adventure-journey',
+      subtitle: 'Sea journeys, compass trails, and frozen expeditions',
+      matches: (story) => _containsAnyTitle(story, const [
+        'lia at ang mapa ng mahinhing alon',
+        'the lost compass of lisbon',
+        'the silent ship of the arctic night',
+      ]),
     ),
-    StoryCategory.socialStories: _CategoryMeta(
-      title: 'Social Stories',
-      emoji: '🤝',
+    _BrowseGenreMeta(
+      title: 'Fantasy Quests & Discovery',
+      emoji: '🪄',
+      color: KuwentoColors.buddyHappy,
+      subtitle: 'Magic paths, strange lands, and wonder-filled quests',
+      matches: (story) => _containsAnyTitle(story, const [
+        'the clockmaker',
+        'the journey of alice in the strange land',
+      ]),
+    ),
+    _BrowseGenreMeta(
+      title: 'School & Friendship Stories',
+      emoji: '🏫',
+      color: KuwentoColors.pastelBlue,
+      subtitle: 'Classroom moments, welcome, and everyday kindness',
+      matches: (story) => _containsAnyTitle(story, const [
+        'the empty seat by the window',
+      ]),
+    ),
+    _BrowseGenreMeta(
+      title: 'Everyday Kindness & Responsibility',
+      emoji: '🤲',
       color: KuwentoColors.buddyEncouraging,
-      route: 'social-stories',
+      subtitle: 'Honesty, helpfulness, and small daily choices',
+      matches: (story) => _containsAnyTitle(story, const [
+        'the saturday market list',
+        'a day in the helpful town',
+        'the day maya handled the missing wallet',
+      ]),
     ),
-  };
+    _BrowseGenreMeta(
+      title: 'Ethics & Future Worlds',
+      emoji: '🤖',
+      color: KuwentoColors.buddyThinking,
+      subtitle: 'Future settings, rules, and big moral decisions',
+      matches: (story) => _containsAnyTitle(story, const [
+        'the ethics protocol of raven station',
+      ]),
+    ),
+  ];
 
   @override
   void dispose() {
@@ -57,7 +110,6 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final allStories = _storyService.getAllStories();
-    final currentLibraryStories = _storyService.getRecommendedStories();
 
     return Scaffold(
       body: SafeArea(
@@ -83,8 +135,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Expanded(
                 child: _hasSearched
                     ? _buildSearchResults()
-                    : _buildBrowseCategories(
-                        currentLibraryStories, allStories.length),
+                    : _buildBrowseCategories(allStories, allStories.length),
               ),
             ],
           ),
@@ -371,19 +422,15 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBrowseCategories(
-      List<StoryModel> libraryStories, int totalStoryCount) {
+      List<StoryModel> allStories, int totalStoryCount) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categoryStoryCounts = <StoryCategory, int>{};
-    for (final story in libraryStories) {
-      for (final category in story.categories) {
-        if (!_categoryMeta.containsKey(category)) continue;
-        categoryStoryCounts[category] =
-            (categoryStoryCounts[category] ?? 0) + 1;
-      }
-    }
-    final categories = categoryStoryCounts.keys.toList()
-      ..sort(
-          (a, b) => _categoryMeta[a]!.title.compareTo(_categoryMeta[b]!.title));
+    final genres = _browseGenres
+        .map((genre) {
+          final stories = allStories.where(genre.matches).toList();
+          return _BrowseGenreGroup(meta: genre, stories: stories);
+        })
+        .where((group) => group.stories.isNotEmpty)
+        .toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -408,7 +455,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Browse Categories',
+                          'Browse Genres',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
@@ -442,7 +489,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ]),
               ),
             ),
-            if (categories.isEmpty)
+            if (genres.isEmpty)
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 sliver: SliverToBoxAdapter(
@@ -462,16 +509,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     crossAxisCount: crossAxisCount,
                     mainAxisSpacing: AppSpacing.md,
                     crossAxisSpacing: AppSpacing.md,
-                    childAspectRatio: crossAxisCount == 1 ? 2.6 : 1.8,
+                    mainAxisExtent: crossAxisCount == 1
+                        ? 176
+                        : crossAxisCount == 2
+                            ? 168
+                            : 162,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final category = categories[index];
-                      final meta = _categoryMeta[category]!;
-                      final totalStories = categoryStoryCounts[category] ?? 0;
-                      return _buildCategoryCard(meta, totalStories);
+                      final group = genres[index];
+                      return _buildGenreCard(group);
                     },
-                    childCount: categories.length,
+                    childCount: genres.length,
                   ),
                 ),
               ),
@@ -502,12 +551,22 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildCategoryCard(_CategoryMeta meta, int totalStories) {
+  Widget _buildGenreCard(_BrowseGenreGroup group) {
+    final meta = group.meta;
+    final stories = group.stories;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
-        context.push('/stories/category/${meta.route}?scope=current');
+        final ids = stories.map((story) => story.id).join(',');
+        final uri = Uri(
+          path: '/stories/category/recommended',
+          queryParameters: {
+            'ids': ids,
+            'title': meta.title,
+          },
+        );
+        context.push(uri.toString());
       },
       child: Container(
         decoration: BoxDecoration(
@@ -528,32 +587,58 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ],
         ),
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.sm,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Text(meta.emoji, style: const TextStyle(fontSize: 26)),
-            const Spacer(),
-            Text(
-              meta.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                height: 1.2,
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  meta.title,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    height: 1.2,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
-              _formatStoryCount(totalStories),
+              _formatStoryCount(stories.length),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              meta.subtitle,
+              maxLines: 2,
+              softWrap: true,
+              overflow: TextOverflow.clip,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.82),
+                fontSize: 11,
+                height: 1.1,
               ),
             ),
           ],
@@ -567,16 +652,30 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class _CategoryMeta {
+bool _containsAnyTitle(StoryModel story, List<String> needles) {
+  final title = story.title.toLowerCase();
+  return needles.any((needle) => title.contains(needle.toLowerCase()));
+}
+
+class _BrowseGenreMeta {
   final String title;
   final String emoji;
   final Color color;
-  final String route;
+  final String subtitle;
+  final bool Function(StoryModel story) matches;
 
-  const _CategoryMeta({
+  const _BrowseGenreMeta({
     required this.title,
     required this.emoji,
     required this.color,
-    required this.route,
+    required this.subtitle,
+    required this.matches,
   });
+}
+
+class _BrowseGenreGroup {
+  final _BrowseGenreMeta meta;
+  final List<StoryModel> stories;
+
+  const _BrowseGenreGroup({required this.meta, required this.stories});
 }

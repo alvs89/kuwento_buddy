@@ -89,9 +89,14 @@ class ToastService {
 
   /// Show story completion toast
   void showStoryCompleted(int stars) {
-    final starLabel = stars == 1 ? 'star' : 'stars';
+    final normalizedStars = stars.clamp(0, 3);
+    final starLabel = normalizedStars == 1 ? 'star' : 'stars';
+    final message = normalizedStars == 0
+        ? 'You earned 0 stars! Keep going! ⭐'
+        : 'Amazing! You earned $normalizedStars $starLabel! ⭐';
+
     show(
-      message: 'Amazing! You earned $stars $starLabel! ⭐',
+      message: message,
       type: ToastType.success,
       length: Toast.LENGTH_LONG,
     );

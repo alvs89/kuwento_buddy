@@ -75,82 +75,101 @@ Future<void> openStoryFromCard(BuildContext context, StoryModel story) async {
                   ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Align(
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  IntrinsicWidth(
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.of(dialogContext)
-                            .pop(_StoryLaunchChoice.continueReading);
-                      },
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text(
-                        'Continue Reading',
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: KuwentoColors.deepTeal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.md,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 340;
+
+                Widget buildActionButton(Widget button) {
+                  return isCompact
+                      ? SizedBox(width: double.infinity, child: button)
+                      : IntrinsicWidth(child: button);
+                }
+
+                return Align(
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      buildActionButton(
+                        FilledButton.icon(
+                          onPressed: () {
+                            Navigator.of(dialogContext)
+                                .pop(_StoryLaunchChoice.continueReading);
+                          },
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: const Text(
+                              'Continue Reading',
+                              maxLines: 1,
+                              softWrap: false,
+                            ),
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: KuwentoColors.deepTeal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.md,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  IntrinsicWidth(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(dialogContext)
-                            .pop(_StoryLaunchChoice.startFromBeginning);
-                      },
-                      icon: const Icon(Icons.restart_alt_rounded),
-                      label: const Text(
-                        'Start from Opening Page',
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: KuwentoColors.deepTeal,
-                        side: const BorderSide(color: KuwentoColors.deepTeal),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.md,
+                      const SizedBox(height: AppSpacing.sm),
+                      buildActionButton(
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.of(dialogContext)
+                                .pop(_StoryLaunchChoice.startFromBeginning);
+                          },
+                          icon: const Icon(Icons.restart_alt_rounded),
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: const Text(
+                              'Start from Opening Page',
+                              maxLines: 1,
+                              softWrap: false,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: KuwentoColors.deepTeal,
+                            side:
+                                const BorderSide(color: KuwentoColors.deepTeal),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.md,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  IntrinsicWidth(
-                    child: TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: isDark
-                            ? Colors.white70
-                            : KuwentoColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.md,
+                      const SizedBox(height: AppSpacing.sm),
+                      buildActionButton(
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          style: TextButton.styleFrom(
+                            foregroundColor: isDark
+                                ? Colors.white70
+                                : KuwentoColors.textSecondary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.md,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text(
-                        'Cancel',
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),

@@ -611,9 +611,6 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   String get _continueReadingLabel =>
       _uiText(en: 'Continue Reading ✨', fil: 'Magpatuloy sa Pagbasa ✨');
 
-  String get _openingPageTitleLabel =>
-      _uiText(en: 'Opening Page', fil: 'Pahina ng Pagbubukas');
-
   String get _synopsisLabel => _uiText(en: 'Synopsis', fil: 'Buod');
 
   String get _headsUpLabel => _uiText(en: 'Heads Up', fil: 'Paalala');
@@ -1089,7 +1086,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         _story?.explicitTitleTranslation(_activeLanguageCode);
     final title = localizedStoryTitle?.trim().isNotEmpty == true
         ? localizedStoryTitle!
-        : (_story?.title ?? _openingPageTitleLabel);
+        : (_story?.title ?? '');
     final articleText = displayedSegmentText ?? segment.content;
     final extractedTitle = _extractOpeningFieldAny(articleText, const [
       'Title',
@@ -1203,8 +1200,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   sourceText: sourceValue,
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                SizedBox(
-                  width: double.infinity,
+                Align(
+                  alignment: Alignment.center,
                   child: ElevatedButton.icon(
                     onPressed: _controller!.canGoNext
                         ? () {
@@ -1228,8 +1225,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.lg,
+                        vertical: 14,
                       ),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       elevation: 6,
                       shadowColor:
                           KuwentoColors.pastelBlue.withValues(alpha: 0.35),
@@ -1349,22 +1348,24 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _openingPageTitleLabel,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            height: 1.15,
-                          ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.15,
+                                  ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -1426,16 +1427,19 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 : tint.withValues(alpha: 0.18),
           ),
         ),
-        child: Text(
-          label,
-          maxLines: 2,
-          softWrap: true,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
         ),
       ),
     );

@@ -46,14 +46,14 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   void initState() {
     super.initState();
 
-    _isZeroOutcome = widget.starsEarned == 0 && widget.comprehensionScore == 0;
-    _supportiveTitle = _supportiveMessages[math.Random().nextInt(
-      _supportiveMessages.length,
-    )];
+    _isZeroOutcome = widget.starsEarned == 0;
+    _supportiveTitle =
+        _supportiveMessages[math.Random().nextInt(_supportiveMessages.length)];
 
     // Confetti controller
-    _confettiController =
-        ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
 
     // Scale animation for dialog
     _scaleController = AnimationController(
@@ -102,9 +102,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
         // Background overlay
         GestureDetector(
           onTap: () {},
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.75),
-          ),
+          child: Container(color: Colors.black.withValues(alpha: 0.75)),
         ),
 
         if (!_isZeroOutcome) ...[
@@ -209,37 +207,53 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                   SizedBox(
                     height: _isZeroOutcome ? AppSpacing.xl : AppSpacing.lg,
                   ),
-
-                  // Title (keep supportive messages on a single line)
-                  _isZeroOutcome
-                      ? FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            _supportiveTitle,
-                            maxLines: 1,
-                            softWrap: false,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: KuwentoColors.buddyEncouraging,
-                                ),
-                          ),
-                        )
-                      : Text(
-                          'Magaling! 🎉',
+                  if (_isZeroOutcome)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          _supportiveTitle,
+                          maxLines: 2,
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                           style: Theme.of(context)
                               .textTheme
                               .headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: KuwentoColors.buddyHappy,
+                                fontSize: 20,
+                                color: KuwentoColors.buddyEncouraging,
                               ),
                         ),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.center,
+                          child: Text(
+                            _successTitle,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.visible,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: KuwentoColors.buddyHappy,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
 
                   const SizedBox(height: AppSpacing.xs),
 
@@ -259,33 +273,19 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                   AnimatedBuilder(
                     animation: _starAnimation,
                     builder: (context, child) {
-                      final earnedStars = widget.starsEarned.clamp(0, 3);
-
-                      bool _isFilled(int index) {
-                        return index < earnedStars;
-                      }
+                      final starCount = widget.starsEarned.clamp(0, 3);
 
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(3, (index) {
-                          final isFilled = _isFilled(index);
+                          final fill = _starFillForIndex(starCount, index);
                           final delay = index * 0.2;
                           final animValue =
                               (_starAnimation.value - delay).clamp(0.0, 1.0);
 
-                          return Transform.scale(
-                            scale: isFilled ? animValue : 1.0,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: Icon(
-                                isFilled ? Icons.star : Icons.star_border,
-                                color: isFilled
-                                    ? KuwentoColors.buddyThinking
-                                    : KuwentoColors.buddyThinking,
-                                size: 48,
-                              ),
-                            ),
+                          return _buildScoreStar(
+                            fill: fill,
+                            scale: fill > 0 ? animValue : 1.0,
                           );
                         }),
                       );
@@ -346,8 +346,11 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: widget.onActivity,
-                          icon: const Icon(Icons.extension,
-                              size: 18, color: Colors.white),
+                          icon: const Icon(
+                            Icons.extension,
+                            size: 18,
+                            color: Colors.white,
+                          ),
                           label: const Text(
                             'Activity',
                             style: TextStyle(color: Colors.white),
@@ -416,5 +419,85 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
 
     path.close();
     return path;
+  }
+
+  double _starFillForIndex(int starsEarned, int index) {
+    return index < starsEarned ? 1.0 : 0.0;
+  }
+
+  String get _successTitle {
+    switch (widget.starsEarned.clamp(0, 3)) {
+      case 1:
+        return 'Magaling! ⭐';
+      case 2:
+        return 'Great Job! 🌟';
+      case 3:
+        return 'Excellent! 🏆';
+      default:
+        return 'Magaling! ⭐';
+    }
+  }
+
+  Widget _buildScoreStar({required double fill, required double scale}) {
+    return Transform.scale(
+      scale: scale,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: CustomPaint(
+            painter: _ScoreStarPainter(pathBuilder: _drawStar, fill: fill),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ScoreStarPainter extends CustomPainter {
+  final Path Function(Size) pathBuilder;
+  final double fill;
+
+  const _ScoreStarPainter({required this.pathBuilder, required this.fill});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final starPath = pathBuilder(size);
+    final clampedFill = fill.clamp(0.0, 1.0);
+
+    final basePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = const Color(0xFFFFF59D).withValues(alpha: 0.12);
+    canvas.drawPath(starPath, basePaint);
+
+    if (clampedFill > 0) {
+      canvas.save();
+      canvas.clipPath(starPath);
+      canvas.clipRect(
+        Rect.fromLTWH(0, 0, size.width * clampedFill, size.height),
+      );
+      final fillPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF59D), Color(0xFFFFC107)],
+        ).createShader(Offset.zero & size);
+      canvas.drawPath(starPath, fillPaint);
+      canvas.restore();
+    }
+
+    final outlinePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeJoin = StrokeJoin.round
+      ..color = const Color(0xFFFFD54F).withValues(alpha: 0.55);
+    canvas.drawPath(starPath, outlinePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScoreStarPainter oldDelegate) {
+    return oldDelegate.fill != fill;
   }
 }

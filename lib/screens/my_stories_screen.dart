@@ -655,7 +655,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${(progressPercent * 100).toInt()}% completed',
+                            '${(progressPercent * 100).toInt()}% progress',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: isDark
