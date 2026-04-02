@@ -10,6 +10,7 @@ import 'package:kuwentobuddy/services/auth_service.dart';
 import 'package:kuwentobuddy/services/app_language_service.dart';
 import 'package:kuwentobuddy/services/story_service.dart';
 import 'package:kuwentobuddy/services/tts_service.dart';
+import 'package:kuwentobuddy/controllers/profile_controller.dart';
 
 /// KuwentoBuddy - Interactive Reading Comprehension App
 ///
@@ -45,6 +46,7 @@ void main() async {
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider.value(value: ttsService),
         ChangeNotifierProvider(create: (_) => AppLanguageService()),
+        ChangeNotifierProvider(create: (_) => ProfileController()),
       ],
       child: const KuwentoBuddyApp(),
     ),

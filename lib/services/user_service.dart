@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:kuwentobuddy/models/user_model.dart';
+import 'package:kuwentobuddy/models/child_profile_model.dart';
 
 import 'package:kuwentobuddy/services/story_service.dart';
 
@@ -21,17 +22,33 @@ class UserService {
 
   final String _collection = 'users';
 
+  String? _activeProfileId;
+
+  void setActiveProfileId(String? profileId) {
+    _activeProfileId = profileId;
+  }
+
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
       _firestore.collection(_collection).doc(uid);
 
+  DocumentReference<Map<String, dynamic>> _targetDoc(String uid) {
+    if (_activeProfileId != null) {
+      return _userDoc(uid).collection('profiles').doc(_activeProfileId);
+    }
+    return _userDoc(uid);
+  }
+
   CollectionReference<Map<String, dynamic>> _progressCol(String uid) =>
-      _userDoc(uid).collection('storyProgress');
+      _targetDoc(uid).collection('storyProgress');
 
   CollectionReference<Map<String, dynamic>> _favoritesCol(String uid) =>
-      _userDoc(uid).collection('favorites');
+      _targetDoc(uid).collection('favorites');
 
   CollectionReference<Map<String, dynamic>> _completedCol(String uid) =>
-      _userDoc(uid).collection('completedStories');
+      _targetDoc(uid).collection('completedStories');
+
+  CollectionReference<Map<String, dynamic>> _profilesCol(String uid) =>
+      _userDoc(uid).collection('profiles');
 
   /// Get or create user
 
@@ -1655,5 +1672,25 @@ class UserService {
     } catch (e) {
       debugPrint('Error cleaning up unstarted stories: $e');
     }
+  }
+
+  // --- CHILD PROFILES ---
+  Future<List<ChildProfileModel>> getChildProfiles(String parentUid) async {    
+    final snap = await _firestore.collection('users').doc(parentUid).collection('profiles').get();
+    return snap.docs.map((doc) => ChildProfileModel.fromJson(doc.data(), doc.id)).toList();
+  }
+
+  Future<ChildProfileModel> createChildProfile(String parentUid, String displayName, String avatarAsset) async {
+    final docRef = _firestore.collection('users').doc(parentUid).collection('profiles').doc();
+    final profile = ChildProfileModel(
+      id: docRef.id,
+      parentId: parentUid,
+      displayName: displayName,
+      avatarAsset: avatarAsset,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await docRef.set(profile.toJson());
+    return profile;
   }
 }

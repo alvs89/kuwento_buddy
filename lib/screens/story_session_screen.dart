@@ -1478,7 +1478,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: 36,
@@ -1495,12 +1495,15 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: Text(
-                      label,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color:
-                            isDark ? Colors.white : KuwentoColors.textPrimary,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        label,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color:
+                              isDark ? Colors.white : KuwentoColors.textPrimary,
+                        ),
                       ),
                     ),
                   ),

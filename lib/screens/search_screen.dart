@@ -83,7 +83,8 @@ class _SearchScreenState extends State<SearchScreen> {
               Expanded(
                 child: _hasSearched
                     ? _buildSearchResults()
-                    : _buildBrowseCategories(currentLibraryStories, allStories.length),
+                    : _buildBrowseCategories(
+                        currentLibraryStories, allStories.length),
               ),
             ],
           ),
@@ -369,7 +370,8 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildBrowseCategories(List<StoryModel> libraryStories, int totalStoryCount) {
+  Widget _buildBrowseCategories(
+      List<StoryModel> libraryStories, int totalStoryCount) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoryStoryCounts = <StoryCategory, int>{};
     for (final story in libraryStories) {
@@ -463,11 +465,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     childAspectRatio: crossAxisCount == 1 ? 2.6 : 1.8,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                     (context, index) {
-                       final category = categories[index];
-                       final meta = _categoryMeta[category]!;
-                       final totalStories = categoryStoryCounts[category] ?? 0;
-                       return _buildCategoryCard(meta, totalStories);
+                    (context, index) {
+                      final category = categories[index];
+                      final meta = _categoryMeta[category]!;
+                      final totalStories = categoryStoryCounts[category] ?? 0;
+                      return _buildCategoryCard(meta, totalStories);
                     },
                     childCount: categories.length,
                   ),

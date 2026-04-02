@@ -45,8 +45,23 @@ class AuthService extends ChangeNotifier {
   static const String _authUserCachePrefix = 'auth_user_';
 
   AuthStatus _status = AuthStatus.unknown;
+  UserModel? _parentUser; // Holds the real parent user
   UserModel? _currentUser;
   bool _isLoading = true;
+
+  /// Set the profile view model when a child is selected
+  void switchToProfileView(UserModel profileUser) {
+    _currentUser = profileUser;
+    notifyListeners();
+  }
+
+  /// Switch back to parent view
+  void switchToParentView() {
+    if (_parentUser != null) {
+      _currentUser = _parentUser;
+      notifyListeners();
+    }
+  }
 
   void _attachAuthStateListener() {
     _authStateSubscription = _auth.authStateChanges().listen(
@@ -98,6 +113,7 @@ class AuthService extends ChangeNotifier {
       );
       await _syncAuthenticatedStateWithCloud(firebaseUser.uid);
       if (_currentUser != null) {
+        _parentUser = _currentUser;
         await _cacheAuthenticatedUser(_currentUser!);
       }
       notifyListeners();
@@ -108,8 +124,7 @@ class AuthService extends ChangeNotifier {
   }
 
   AuthStatus get status => _status;
-  UserModel? get currentUser => _currentUser;
-  bool get isLoading => _isLoading;
+  UserModel? get currentUser => _currentUser;    String? get parentUid => _auth.currentUser?.uid;  bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isGuest => _status == AuthStatus.guest;
   bool get _hasFirebaseSession => _auth.currentUser != null;
@@ -222,6 +237,7 @@ class AuthService extends ChangeNotifier {
         if (!cloudProfileReady) {
           try {
             _currentUser = await _ensureCloudProfileReady(firebaseUser);
+            _parentUser = _currentUser;
             cloudProfileReady = _currentUser != null &&
                 _currentUser!.id == firebaseUser.uid &&
                 !_currentUser!.isGuest;
@@ -237,6 +253,7 @@ class AuthService extends ChangeNotifier {
           await _auth.signOut();
           await _googleSignIn.signOut();
           _currentUser = null;
+          _parentUser = null;
           _status = AuthStatus.unauthenticated;
           notifyListeners();
 

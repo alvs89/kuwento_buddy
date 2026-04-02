@@ -10,6 +10,7 @@ import 'package:kuwentobuddy/screens/main_shell.dart';
 import 'package:kuwentobuddy/screens/login_screen.dart';
 import 'package:kuwentobuddy/screens/settings_screen.dart';
 import 'package:kuwentobuddy/screens/sequence_activity_screen.dart';
+import 'package:kuwentobuddy/screens/profile_selection_screen.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/buddy_companion.dart';
@@ -102,6 +103,7 @@ class AppRouter {
       final canAccessApp = isAuthenticated || isGuest;
       final isLoginRoute = state.uri.path == AppRoutes.login;
       final isSplashRoute = state.uri.path == AppRoutes.splash;
+      final isProfileSelection = state.uri.path == AppRoutes.profileSelection;
 
       // Allow splash to handle its own forward navigation.
       if (isSplashRoute) {
@@ -114,6 +116,11 @@ class AppRouter {
           authService.status != AuthStatus.unknown) {
         return AppRoutes.login;
       }
+
+      // Let guest directly access app or logged in access profile selection,
+      // but we shouldn't force redirect all the time from here because ProfileController
+      // is context-based. The splash screen handling logic or login screen handling logic
+      // will redirect to /profile-selection.
 
       return null;
     },
@@ -148,6 +155,18 @@ class AppRouter {
                 'Welcome! Sign in or create an account to start your reading adventure!',
             allowInteraction: true,
           ),
+        ),
+      ),
+
+      // Profile Selection
+      GoRoute(
+        path: AppRoutes.profileSelection,
+        name: 'profile-selection',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          child: const ProfileSelectionScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
         ),
       ),
 
@@ -390,6 +409,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String storiesByLevel = '/stories/level/:level';
   static const String storiesByCategory = '/stories/category/:category';
+  static const String profileSelection = '/profile-selection';
 }
 
 /// Small helper to animate the floating buddy overlay in the login screen

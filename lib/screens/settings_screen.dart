@@ -51,6 +51,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'The app adds checkpoints and short questions while reading so learners think about the story, not just finish it quickly.',
     },
     {
+      'question': 'How are comprehension scores and stars calculated?',
+      'answer':
+          'Your comprehension score is based on the checkpoint questions in the story. Each question is counted the first time you answer it. If you get it right on the first try, it counts as correct; if you miss it first, it still counts as answered, but it does not count as a correct first-try answer.\n\nThe app then calculates the percentage as correct first-try answers divided by total questions, multiplied by 100. After the story ends, that final percentage becomes your stars: 3 stars for 90% or higher, 2 stars for 70% to 89%, 1 star for 50% to 69%, and 0 star below 50%.',
+    },
+    {
       'question': 'Will my progress be saved?',
       'answer':
           'Yes. If you sign in, your stars, completed stories, and favorites can be synced. Guest mode works instantly for quick reading.',
@@ -879,7 +884,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: AppSpacing.xl),
 
                 // Account actions
-                if (!authService.isGuest) ...[
+                if (user != null && !user.isGuest) ...[
                   Text(
                     'Account',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -894,18 +899,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: isDark ? KuwentoColors.cardDark : Colors.white,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.logout,
-                        color: KuwentoColors.softCoral,
-                      ),
-                      title: Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          color: KuwentoColors.softCoral,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(
+                            Icons.switch_account_rounded,
+                            color: KuwentoColors.skyBlue,
+                          ),
+                          title: const Text(
+                            'Switch Profile',
+                            style: TextStyle(
+                              color: KuwentoColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onTap: () {
+                            final authCtx = context.read<AuthService>();
+                            authCtx.switchToParentView();
+                            GoRouter.of(context).go('/profile-selection');
+                          },
                         ),
-                      ),
-                      onTap: () => _confirmAndSignOut(authService),
+                        Divider(
+                          height: 1, 
+                          indent: 56, 
+                          color: isDark ? Colors.white12 : KuwentoColors.creamDark
+                        ),
+                        ListTile(
+                          leading: const Icon(
+                            Icons.logout,
+                            color: KuwentoColors.softCoral,
+                          ),
+                          title: const Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              color: KuwentoColors.softCoral,
+                            ),
+                          ),
+                          onTap: () => _confirmAndSignOut(authService),
+                        ),
+                      ],
                     ),
                   ),
                 ],

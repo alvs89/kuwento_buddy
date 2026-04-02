@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuwentobuddy/theme.dart';
+import 'package:provider/provider.dart';
+import 'package:kuwentobuddy/services/auth_service.dart' as kuwentobuddy;
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -112,8 +114,16 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 4000));
     if (!mounted) return;
 
-    // Always start from login after splash for a consistent entry flow.
-    context.go(_loginRoute);
+    // Use router's redirect logic or explicitly navigate to correct initial state
+    final authService =
+        context.read<kuwentobuddy.AuthService>(); // Need to import this
+    if (authService.isAuthenticated) {
+      context.go('/profile-selection');
+    } else if (authService.isGuest) {
+      context.go('/');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override

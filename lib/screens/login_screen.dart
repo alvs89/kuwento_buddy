@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         _toastService.showWelcome(result.user!.firstName);
-        context.go('/');
+        context.go('/profile-selection');
       } else if (result.wasCancelled && mounted) {
         _toastService.showError('Google authentication was cancelled.');
       } else if (mounted) {

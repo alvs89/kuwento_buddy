@@ -543,11 +543,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                 return _buildInProgressContent(baseFallback);
               }
               final once = futureSnap.data ?? const [];
-              final mergedOnce = _dedupeByStoryId([
-                ...once,
-                ..._cachedProgressEntries,
-                ...cachedFromUser
-              ]);
+              final mergedOnce = _dedupeByStoryId(
+                  [...once, ..._cachedProgressEntries, ...cachedFromUser]);
               _cachedProgressEntries = mergedOnce;
               return _buildInProgressContent(mergedOnce);
             },
@@ -602,9 +599,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: GestureDetector(
-                    onTap: () {
-                      openStoryFromCard(context, story);
-                    },
+              onTap: () {
+                openStoryFromCard(context, story);
+              },
               child: Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
@@ -817,9 +814,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                         StoryCard(
                           story: story,
                           width: cardWidth,
-                              onTap: () {
-                                openStoryFromCard(context, story);
-                              },
+                          onTap: () {
+                            openStoryFromCard(context, story);
+                          },
                         ),
                         Positioned(
                           top: 8,
@@ -972,9 +969,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                             StoryCard(
                               story: story,
                               width: cardWidth,
-                                  onTap: () {
-                                    openStoryFromCard(context, story);
-                                  },
+                              onTap: () {
+                                openStoryFromCard(context, story);
+                              },
                             ),
                             Positioned(
                               top: 8,
@@ -1050,24 +1047,25 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
     final entries = <MapEntry<StoryModel, StoryProgress>>[];
 
-      for (final doc in docs) {
-        final data = doc.data();
-        final appStoryId =
-            (data['appStoryId'] as String?) ?? (data['storyId'] as String?) ?? doc.id;
-        final story = _resolveStoryById(appStoryId) ??
-            _resolveStoryById(data['storyTitle'] as String? ?? '') ??
-            _resolveStoryById(doc.id) ??
-            _placeholderStory(appStoryId, data['storyTitle'] as String?);
+    for (final doc in docs) {
+      final data = doc.data();
+      final appStoryId = (data['appStoryId'] as String?) ??
+          (data['storyId'] as String?) ??
+          doc.id;
+      final story = _resolveStoryById(appStoryId) ??
+          _resolveStoryById(data['storyTitle'] as String? ?? '') ??
+          _resolveStoryById(doc.id) ??
+          _placeholderStory(appStoryId, data['storyTitle'] as String?);
 
       final progress = StoryProgress(
         storyId: appStoryId,
         storyTitle: data['storyTitle'] as String? ?? story.title,
-        currentSegmentIndex:
-            _asInt(data['currentSegmentIndex']) ?? _asInt(data['lastPage']) ?? 0,
+        currentSegmentIndex: _asInt(data['currentSegmentIndex']) ??
+            _asInt(data['lastPage']) ??
+            0,
         totalSegments: _asInt(data['totalSegments']) ?? story.segments.length,
-        isCompleted: data['isCompleted'] as bool? ??
-            data['completed'] as bool? ??
-            false,
+        isCompleted:
+            data['isCompleted'] as bool? ?? data['completed'] as bool? ?? false,
         correctAnswers: _asInt(data['correctAnswers']) ?? 0,
         totalQuestions: _asInt(data['totalQuestions']) ?? 0,
         starsEarned: _asInt(data['starsEarned']) ?? 0,

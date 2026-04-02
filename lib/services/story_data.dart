@@ -676,7 +676,7 @@ Source / Reference:
 Original adventure story
 Adapted for KuwentoBuddy
 Heads Up:
-May checkpoint questions in every section.
+There will be checkpoint questions after each part.
 
 Read carefully and think before answering.
 
@@ -811,7 +811,7 @@ Source / Reference:
 Original adventure story
 Adapted for KuwentoBuddy
 Heads Up:
-May checkpoint questions after each part.
+There will be checkpoint questions after each part.
 
 Read carefully and think before answering.
 
@@ -942,7 +942,7 @@ Source / Reference:
 Original social story
 Adapted for KuwentoBuddy
 Heads Up:
-May checkpoint questions after each part.
+There will be checkpoint questions after each part.
 
 Read carefully and think before answering.
 
@@ -1071,7 +1071,7 @@ Source / Reference:
 Original social story
 Adapted for KuwentoBuddy
 Heads Up:
-May checkpoint questions after each part.
+There will be checkpoint questions after each part.
 
 Read carefully and think before answering.
 

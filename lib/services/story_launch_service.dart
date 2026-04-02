@@ -76,10 +76,10 @@ Future<void> openStoryFromCard(BuildContext context, StoryModel story) async {
             ),
             const SizedBox(height: AppSpacing.lg),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   IntrinsicWidth(
                     child: FilledButton.icon(
