@@ -18,17 +18,11 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final ToastService _toastService = ToastService();
-  bool _previewInEnglish = false;
   final Set<int> _expandedFaqItems = <int>{};
   double _voiceSpeed = 1.0;
   bool _speedInitialized = false;
   bool _savingVoiceSpeed = false;
   bool _isSigningOut = false;
-
-  static const String _filipinoSample =
-      'Mabuti na mayroon tayong Reading Companion.';
-  static const String _englishSample =
-      "It's good that we have a Reading Companion.";
 
   static const List<Map<String, String>> _faqItems = [
     {
@@ -78,19 +72,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     },
   ];
 
-  String get _activePreviewText =>
-      _previewInEnglish ? _englishSample : _filipinoSample;
-
-  String get _activePreviewLocale => _previewInEnglish ? 'en-US' : 'fil-PH';
-
-  Future<void> _playNarratorPreview(TTSService ttsService) async {
-    await ttsService.speak(_activePreviewText, language: _activePreviewLocale);
-  }
-
   void _ensureSpeedInitialized(AuthService authService, TTSService ttsService) {
     if (_speedInitialized) return;
 
-    _voiceSpeed = authService.currentUser?.preferences.voiceSpeed ??
+    _voiceSpeed =
+        authService.currentUser?.preferences.voiceSpeed ??
         ttsService.voiceSpeedMultiplier;
     _voiceSpeed = _voiceSpeed.clamp(0.5, 2.0);
     _speedInitialized = true;
@@ -172,25 +158,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Sign out?',
-                    style: Theme.of(dialogContext)
-                        .textTheme
-                        .titleLarge
+                    style: Theme.of(dialogContext).textTheme.titleLarge
                         ?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color:
-                              isDark ? Colors.white : KuwentoColors.textPrimary,
+                          color: isDark
+                              ? Colors.white
+                              : KuwentoColors.textPrimary,
                         ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Do you want to sign out of your account? You can sign back in anytime.',
-                    style:
-                        Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
-                              color: isDark
-                                  ? Colors.white70
-                                  : KuwentoColors.textSecondary,
-                              height: 1.4,
-                            ),
+                    style: Theme.of(dialogContext).textTheme.bodyMedium
+                        ?.copyWith(
+                          color: isDark
+                              ? Colors.white70
+                              : KuwentoColors.textSecondary,
+                          height: 1.4,
+                        ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   SizedBox(
@@ -326,9 +311,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text(
                               user?.displayName ?? 'Guest Reader',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: isDark
@@ -340,9 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               user?.isGuest == true
                                   ? 'Reading as Guest'
                                   : user?.email ?? '',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: isDark
                                         ? Colors.white70
@@ -371,10 +352,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     'Your Progress',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              isDark ? Colors.white : KuwentoColors.textPrimary,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Row(
@@ -411,10 +391,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   'Voice Settings',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color:
-                            isDark ? Colors.white : KuwentoColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
 
@@ -467,7 +446,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Narrator',
+                                        'Story Narration',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleSmall
@@ -480,7 +459,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Bilingual preview: Filipino and English',
+                                        'Adjust how fast stories are read aloud during playback.',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
@@ -490,120 +469,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   : KuwentoColors.textSecondary,
                                             ),
                                       ),
+                                      const SizedBox(height: AppSpacing.sm),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Sample Script',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: isDark
-                                        ? Colors.white
-                                        : KuwentoColors.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(AppSpacing.md),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.black.withValues(alpha: 0.16)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.md,
-                                ),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.1)
-                                      : KuwentoColors.creamDark,
-                                ),
-                              ),
-                              child: Text(
-                                _activePreviewText,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                      color: isDark
-                                          ? Colors.white
-                                          : KuwentoColors.textPrimary,
-                                      height: 1.5,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () =>
-                                        _playNarratorPreview(ttsService),
-                                    icon: Icon(
-                                      ttsService.isSpeaking
-                                          ? Icons.pause_circle
-                                          : Icons.play_arrow_rounded,
-                                    ),
-                                    label: Text(
-                                      ttsService.isSpeaking
-                                          ? 'Playing...'
-                                          : 'Play',
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: KuwentoColors.pastelBlue,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadius.md,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () {
-                                      setState(() {
-                                        _previewInEnglish = !_previewInEnglish;
-                                      });
-                                    },
-                                    icon: const Icon(Icons.translate_rounded),
-                                    label: Text(
-                                      _previewInEnglish
-                                          ? 'Original'
-                                          : 'Translate',
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: KuwentoColors.pastelBlue,
-                                      side: BorderSide(
-                                        color: KuwentoColors.pastelBlue
-                                            .withValues(alpha: 0.7),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadius.md,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
@@ -736,9 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 child: Text(
                                   'Saving speed preference...',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
                                         color: isDark
                                             ? Colors.white60
@@ -749,9 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: AppSpacing.sm),
                             Text(
                               'Voice quality and gender depend on your device’s installed Text-to-Speech engine and available voices.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: isDark
                                         ? Colors.white60
@@ -770,10 +637,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   'Frequently Asked Questions',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color:
-                            isDark ? Colors.white : KuwentoColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Container(
@@ -789,8 +655,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       return Padding(
                         padding: EdgeInsets.only(
-                          bottom:
-                              index == _faqItems.length - 1 ? 0 : AppSpacing.sm,
+                          bottom: index == _faqItems.length - 1
+                              ? 0
+                              : AppSpacing.sm,
                         ),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 240),
@@ -806,8 +673,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       alpha: 0.5,
                                     )
                                   : (isDark
-                                      ? Colors.white.withValues(alpha: 0.12)
-                                      : KuwentoColors.creamDark),
+                                        ? Colors.white.withValues(alpha: 0.12)
+                                        : KuwentoColors.creamDark),
                             ),
                           ),
                           child: Theme(
@@ -848,9 +715,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               title: Text(
                                 item['question']!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: isDark
@@ -861,9 +726,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 Text(
                                   item['answer']!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         height: 1.5,
                                         color: isDark
@@ -887,10 +750,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     'Account',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              isDark ? Colors.white : KuwentoColors.textPrimary,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Container(
@@ -923,8 +785,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Divider(
                           height: 1,
                           indent: 56,
-                          color:
-                              isDark ? Colors.white12 : KuwentoColors.creamDark,
+                          color: isDark
+                              ? Colors.white12
+                              : KuwentoColors.creamDark,
                         ),
                         ListTile(
                           leading: const Icon(
@@ -993,16 +856,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               value,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : KuwentoColors.textPrimary,
+              ),
             ),
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color:
-                        isDark ? Colors.white70 : KuwentoColors.textSecondary,
-                  ),
+                color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
+              ),
             ),
           ],
         ),

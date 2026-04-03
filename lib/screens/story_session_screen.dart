@@ -43,7 +43,6 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   final ToastService _toastService = ToastService();
   final TranslationService _translationService = TranslationService();
   bool _showBuddyOverlay = false;
-  bool _isTTSEnabled = true;
   bool _showCelebration = false;
   StoryModel? _story;
   int? _recentWrongAnswerIndex;
@@ -244,14 +243,131 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     final ttsService = context.read<TTSService>();
     final segment = _controller!.currentSegment;
     final text = await _getTextForLanguage(segment, _activeLanguageCode);
-    await ttsService.speak(
-      text,
-      language: _activeLanguageCode == 'fil' ? 'fil-PH' : 'en-US',
+    final languageCode = _activeLanguageCode == 'fil' ? 'fil-PH' : 'en-US';
+
+    if (_isOpeningPageSegment(segment, _controller!.currentSegmentIndex)) {
+      await _speakOpeningPageNarration(ttsService, text);
+      return;
+    }
+
+    await ttsService.speak(text, language: languageCode);
+  }
+
+  Future<void> _speakOpeningPageNarration(
+    TTSService ttsService,
+    String articleText,
+  ) async {
+    final narrationLanguage = _activeLanguageCode == 'fil' ? 'fil-PH' : 'en-US';
+    final titleValue = _extractOpeningFieldAny(articleText, const [
+      'Title',
+      'Pamagat',
+    ]);
+    final genreValue = _extractOpeningFieldAny(articleText, const [
+      'Genre',
+      'Uri',
+    ]);
+    final levelValue = _extractOpeningFieldAny(articleText, const [
+      'Level',
+      'Antas',
+    ]);
+    final languageValue = _extractOpeningFieldAny(articleText, const [
+      'Language',
+      'Wika',
+    ]);
+    final synopsisValue = _extractOpeningBlockAny(
+      articleText,
+      const ['Synopsis', 'Buod'],
+      const [
+        'Source / Reference',
+        'Source / Sanggunian',
+        'Pinagmulan / Sanggunian',
+        'Heads Up',
+        'Paalala',
+      ],
     );
+    final headsUpValue = _extractOpeningBlockAny(
+      articleText,
+      const ['Heads Up', 'Paalala'],
+      const [
+        'Source / Reference',
+        'Source / Sanggunian',
+        'Pinagmulan / Sanggunian',
+      ],
+    );
+    final sourceValue = _extractOpeningBlockAny(
+      articleText,
+      const [
+        'Source / Reference',
+        'Source / Sanggunian',
+        'Pinagmulan / Sanggunian',
+      ],
+      const ['Heads Up', 'Paalala'],
+    );
+
+    final narrationParts = <String>[
+      if (titleValue.trim().isNotEmpty)
+        _openingNarrationSection(
+          _uiText(en: 'Title', fil: 'Pamagat'),
+          titleValue,
+        ),
+      if (genreValue.trim().isNotEmpty)
+        _openingNarrationSection(_uiText(en: 'Genre', fil: 'Uri'), genreValue),
+      if (levelValue.trim().isNotEmpty)
+        _openingNarrationSection(
+          _uiText(en: 'Level', fil: 'Antas'),
+          levelValue,
+        ),
+      if (languageValue.trim().isNotEmpty)
+        _openingNarrationSection(
+          _uiText(en: 'Language', fil: 'Wika'),
+          languageValue,
+        ),
+      if (synopsisValue.trim().isNotEmpty)
+        _openingNarrationSection(_synopsisLabel, synopsisValue),
+      if (headsUpValue.trim().isNotEmpty)
+        _openingNarrationSection(_headsUpLabel, headsUpValue),
+      if (sourceValue.trim().isNotEmpty)
+        _openingNarrationSection(_sourceReferenceLabel, sourceValue),
+    ];
+
+    if (narrationParts.isEmpty) return;
+
+    final narrationText = narrationParts.join('\n\n');
+
+    await ttsService.speak(narrationText, language: narrationLanguage);
+  }
+
+  String _openingNarrationSection(String label, String content) {
+    final normalizedContent = content.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final spokenContent = _ensureSentenceEnding(normalizedContent);
+    return '$label. $spokenContent';
+  }
+
+  String _ensureSentenceEnding(String text) {
+    if (text.isEmpty) return text;
+    if (RegExp(r'[.!?…]$').hasMatch(text)) return text;
+    return '$text.';
   }
 
   Future<void> _toggleNarrationPlayback() async {
     final ttsService = context.read<TTSService>();
+
+    if (!ttsService.isTtsEnabled) {
+      _toastService.showWarning('Voice narration is turned off in Settings.');
+      return;
+    }
+
+    if (ttsService.isPaused) {
+      final resumed = await ttsService.resume();
+      if (resumed) {
+        if (!mounted) return;
+        setState(() {
+          _isNarrationPlaying = true;
+        });
+        return;
+      }
+    }
+
     final isCurrentlyPlaying = _isNarrationPlaying || ttsService.isSpeaking;
 
     if (isCurrentlyPlaying) {
@@ -281,15 +397,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     final user = authService.currentUser;
     if (user == null || _story == null) return;
 
-    final isNowFavorite = await authService.toggleFavoriteStory(
+    final isCurrentlyFavorite = user.favoriteStoryIds.contains(_story!.id);
+
+    if (isCurrentlyFavorite) {
+      _toastService.showInfo(_removedFromFavoritesLabel);
+    } else {
+      _toastService.showSuccess(_addedToFavoritesLabel);
+    }
+
+    await authService.toggleFavoriteStory(
       _story!.id,
       storyTitle: _story!.title,
     );
-    if (isNowFavorite) {
-      _toastService.showSuccess(_addedToFavoritesLabel);
-    } else {
-      _toastService.showInfo(_removedFromFavoritesLabel);
-    }
   }
 
   String get _sourceLanguageCode =>
@@ -308,8 +427,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       return text;
     }
 
-    return _translatedQuestionCache[
-            _questionCacheKey(text, _activeLanguageCode)] ??
+    return _translatedQuestionCache[_questionCacheKey(
+          text,
+          _activeLanguageCode,
+        )] ??
         text;
   }
 
@@ -318,12 +439,16 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       return segment.content;
     }
 
-    return _translatedSegmentCache[
-        _translationCacheKey(segment.id, _activeLanguageCode)];
+    return _translatedSegmentCache[_translationCacheKey(
+      segment.id,
+      _activeLanguageCode,
+    )];
   }
 
   Future<String> _getTextForLanguage(
-      StorySegment segment, String languageCode) async {
+    StorySegment segment,
+    String languageCode,
+  ) async {
     if (languageCode == _sourceLanguageCode) {
       return segment.content;
     }
@@ -423,16 +548,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     // Fire-and-forget persistence to keep the exit flow non-blocking
     final controller = _controller;
     final auth = mounted ? context.read<AuthService>() : null;
-    unawaited(Future(() async {
-      try {
-        await controller?.saveProgress(immediate: true);
-        if (auth != null) {
-          await auth.refreshCurrentUserFromCloud();
+    unawaited(
+      Future(() async {
+        try {
+          await controller?.saveProgress(immediate: true);
+          if (auth != null) {
+            await auth.refreshCurrentUserFromCloud();
+          }
+        } catch (e) {
+          debugPrint('Failed to save progress before exit: $e');
         }
-      } catch (e) {
-        debugPrint('Failed to save progress before exit: $e');
-      }
-    }));
+      }),
+    );
 
     if (mounted) {
       GoRouter.of(context).go('/');
@@ -447,9 +574,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       return;
     }
 
-    final tasks = <Future<void>>[
-      _translateStoryTitle(targetLanguage),
-    ];
+    final tasks = <Future<void>>[_translateStoryTitle(targetLanguage)];
 
     for (final segment in story.segments) {
       tasks.add(_getTextForLanguage(segment, targetLanguage).then((_) {}));
@@ -526,10 +651,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   String _skillLabel(QuestionSkill skill) {
     switch (skill) {
       case QuestionSkill.inference:
-        return _uiText(
-          en: 'Understanding Why',
-          fil: 'Pag-unawa sa Dahilan',
-        );
+        return _uiText(en: 'Understanding Why', fil: 'Pag-unawa sa Dahilan');
       case QuestionSkill.prediction:
         return _uiText(
           en: 'Predicting What Happens',
@@ -580,16 +702,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _uiText(en: 'Translating story...', fil: 'Isinasalin ang kuwento...');
 
   String get _switchLanguageTooltip => _uiText(
-        en: 'Switch to ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
-        fil:
-            'Lumipat sa ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
-      );
-
-  String get _voiceEnabledLabel =>
-      _uiText(en: 'Voice enabled', fil: 'Naka-on ang boses');
-
-  String get _voiceDisabledLabel =>
-      _uiText(en: 'Voice disabled', fil: 'Naka-off ang boses');
+    en: 'Switch to ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+    fil: 'Lumipat sa ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+  );
 
   String get _addedToFavoritesLabel =>
       _uiText(en: 'Added to favorites! ❤️', fil: 'Idinagdag sa paborito! ❤️');
@@ -601,9 +716,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _uiText(en: 'Reading Checkpoint!', fil: 'Checkpoint sa Pagbasa!');
 
   String get _readingCheckpointSubtitle => _uiText(
-        en: 'Tap to answer a question before continuing',
-        fil: 'I-tap upang sagutin ang tanong bago magpatuloy',
-      );
+    en: 'Tap to answer a question before continuing',
+    fil: 'I-tap upang sagutin ang tanong bago magpatuloy',
+  );
 
   String get _backToReadStoryLabel =>
       _uiText(en: 'Back to Read Story Again', fil: 'Bumalik sa Pagbasa');
@@ -619,25 +734,23 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _uiText(en: 'Source / Reference', fil: 'Pinagmulan / Sanggunian');
 
   String _hintRemainingText(int remaining) => _uiText(
-        en: remaining == 1 || remaining == 0
-            ? 'hint remaining'
-            : 'hints remaining',
-        fil: 'pahiwatig ang natitira',
-      );
+    en: remaining == 1 || remaining == 0 ? 'hint remaining' : 'hints remaining',
+    fil: 'pahiwatig ang natitira',
+  );
 
   String get _showHintsLabel =>
       _uiText(en: 'Show Hints', fil: 'Ipakita ang Mga Pahiwatig');
 
   String get _usedAllHintsLabel => _uiText(
-        en: 'You\'ve used all available hints',
-        fil: 'Nagamit mo na ang lahat ng pahiwatig',
-      );
+    en: 'You\'ve used all available hints',
+    fil: 'Nagamit mo na ang lahat ng pahiwatig',
+  );
 
   String get _buddyReadyLabel => _uiText(
-        en: 'Checkpoint question is ready soon! Continue reading to keep up the flow.',
-        fil:
-            'Malapit nang lumabas ang checkpoint na tanong! Magpatuloy sa pagbabasa.',
-      );
+    en: 'Checkpoint question is ready soon! Continue reading to keep up the flow.',
+    fil:
+        'Malapit nang lumabas ang checkpoint na tanong! Magpatuloy sa pagbabasa.',
+  );
 
   String get _buddyCheeringLabel =>
       _uiText(en: 'Buddy is cheering you on!', fil: 'Nagmumotivate ang Buddy!');
@@ -675,9 +788,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     if (_story == null || _controller == null) {
       return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
-            color: KuwentoColors.pastelBlue,
-          ),
+          child: CircularProgressIndicator(color: KuwentoColors.pastelBlue),
         ),
       );
     }
@@ -706,9 +817,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   _buildHeader(context, isDark, ttsService, isFavorite),
 
                   // Story content
-                  Expanded(
-                    child: _buildStoryContent(context, isDark),
-                  ),
+                  Expanded(child: _buildStoryContent(context, isDark)),
 
                   // Navigation controls
                   _buildNavigationControls(context, isDark, ttsService),
@@ -770,8 +879,12 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark, TTSService ttsService,
-      bool isFavorite) {
+  Widget _buildHeader(
+    BuildContext context,
+    bool isDark,
+    TTSService ttsService,
+    bool isFavorite,
+  ) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -793,20 +906,20 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                     Text(
                       _readingNowLabel,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: isDark
-                                ? Colors.white54
-                                : KuwentoColors.textMuted,
-                            letterSpacing: 1.2,
-                          ),
+                        color: isDark
+                            ? Colors.white54
+                            : KuwentoColors.textMuted,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                     Text(
                       _displayStoryTitle(),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : KuwentoColors.textPrimary,
-                          ),
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? Colors.white
+                            : KuwentoColors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -833,26 +946,6 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 ),
                 tooltip: _switchLanguageTooltip,
               ),
-              // TTS toggle button
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _isTTSEnabled = !_isTTSEnabled;
-                  });
-                  if (!_isTTSEnabled) {
-                    _stopSpeaking();
-                  }
-                  _toastService.showInfo(
-                    _isTTSEnabled ? _voiceEnabledLabel : _voiceDisabledLabel,
-                  );
-                },
-                icon: Icon(
-                  _isTTSEnabled ? Icons.volume_up : Icons.volume_off,
-                  color: _isTTSEnabled
-                      ? KuwentoColors.pastelBlue
-                      : (isDark ? Colors.white54 : KuwentoColors.textMuted),
-                ),
-              ),
             ],
           ),
 
@@ -865,8 +958,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: _controller!.progress,
-                  backgroundColor:
-                      isDark ? Colors.white12 : KuwentoColors.creamDark,
+                  backgroundColor: isDark
+                      ? Colors.white12
+                      : KuwentoColors.creamDark,
                   valueColor: AlwaysStoppedAnimation(KuwentoColors.pastelBlue),
                   minHeight: 4,
                 ),
@@ -878,9 +972,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   Text(
                     '${_localizedPartLabel()} ${_controller!.currentSegmentIndex + 1}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color:
-                              isDark ? Colors.white54 : KuwentoColors.textMuted,
-                        ),
+                      color: isDark ? Colors.white54 : KuwentoColors.textMuted,
+                    ),
                   ),
                   if (_controller!.correctAnswers > 0)
                     Row(
@@ -893,19 +986,16 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                         const SizedBox(width: 4),
                         Text(
                           '${_controller!.correctAnswers}/${_controller!.totalQuestions}',
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: KuwentoColors.buddyHappy,
-                                  ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: KuwentoColors.buddyHappy),
                         ),
                       ],
                     ),
                   Text(
                     '${_controller!.totalSegments} $_sectionCountLabel',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color:
-                              isDark ? Colors.white54 : KuwentoColors.textMuted,
-                        ),
+                      color: isDark ? Colors.white54 : KuwentoColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -924,9 +1014,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   child: Text(
                     '$_languageLabel: ${_languageDisplayName(_activeLanguageCode)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: KuwentoColors.pastelBlue,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: KuwentoColors.pastelBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -989,10 +1079,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       Text(
                         _translatingLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: isDark
-                                  ? Colors.white70
-                                  : KuwentoColors.textSecondary,
-                            ),
+                          color: isDark
+                              ? Colors.white70
+                              : KuwentoColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -1001,11 +1091,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 Text(
                   displayedSegmentText,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: FontSizes.storyText,
-                        height: 1.8,
-                        color:
-                            isDark ? Colors.white : KuwentoColors.textPrimary,
-                      ),
+                    fontSize: FontSizes.storyText,
+                    height: 1.8,
+                    color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                  ),
                 ),
 
               // Checkpoint indicator
@@ -1082,8 +1171,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     String? displayedSegmentText,
   ) {
     final theme = Theme.of(context);
-    final localizedStoryTitle =
-        _story?.explicitTitleTranslation(_activeLanguageCode);
+    final localizedStoryTitle = _story?.explicitTitleTranslation(
+      _activeLanguageCode,
+    );
     final title = localizedStoryTitle?.trim().isNotEmpty == true
         ? localizedStoryTitle!
         : (_story?.title ?? '');
@@ -1095,8 +1185,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     final titleValue = _activeLanguageCode == _sourceLanguageCode
         ? (extractedTitle.isNotEmpty ? extractedTitle : title)
         : (localizedStoryTitle?.trim().isNotEmpty == true
-            ? localizedStoryTitle!
-            : (extractedTitle.isNotEmpty ? extractedTitle : title));
+              ? localizedStoryTitle!
+              : (extractedTitle.isNotEmpty ? extractedTitle : title));
     final genreValue = _extractOpeningFieldAny(articleText, const [
       'Genre',
       'Uri',
@@ -1125,21 +1215,25 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       const [
         'Source / Reference',
         'Source / Sanggunian',
-        'Pinagmulan / Sanggunian'
+        'Pinagmulan / Sanggunian',
       ],
       const ['Heads Up', 'Paalala'],
     );
-    final headsUpValue = _extractOpeningBlockAny(
-      articleText,
-      const ['Heads Up', 'Paalala'],
-    );
+    final headsUpValue = _extractOpeningBlockAny(articleText, const [
+      'Heads Up',
+      'Paalala',
+    ]);
     return Container(
       decoration: BoxDecoration(
         color: isDark ? KuwentoColors.backgroundDark : const Color(0xFFF7FAFC),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 150),
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          150,
+        ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
@@ -1230,8 +1324,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       minimumSize: const Size(0, 0),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       elevation: 6,
-                      shadowColor:
-                          KuwentoColors.pastelBlue.withValues(alpha: 0.35),
+                      shadowColor: KuwentoColors.pastelBlue.withValues(
+                        alpha: 0.35,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppRadius.xl),
                       ),
@@ -1298,8 +1393,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             fit: StackFit.expand,
             children: [
               ColoredBox(
-                color:
-                    isDark ? KuwentoColors.backgroundDark : KuwentoColors.cream,
+                color: isDark
+                    ? KuwentoColors.backgroundDark
+                    : KuwentoColors.cream,
               ),
               Image.asset(
                 _story!.coverImage,
@@ -1358,12 +1454,12 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    height: 1.15,
-                                  ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                height: 1.15,
+                              ),
                         ),
                       ),
                     ),
@@ -1436,9 +1532,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             overflow: TextOverflow.visible,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: isDark ? Colors.white : KuwentoColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -1505,8 +1601,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                         label,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color:
-                              isDark ? Colors.white : KuwentoColors.textPrimary,
+                          color: isDark
+                              ? Colors.white
+                              : KuwentoColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1516,7 +1613,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
               const SizedBox(height: AppSpacing.md),
               Text(
                 content,
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style:
+                    theme.textTheme.bodyLarge?.copyWith(
                       fontSize: FontSizes.bodyLarge + 1,
                       height: 1.8,
                       color: isDark ? Colors.white : KuwentoColors.textPrimary,
@@ -1579,7 +1677,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           const SizedBox(height: AppSpacing.md),
           Text(
             content,
-            style: theme.textTheme.bodyLarge?.copyWith(
+            style:
+                theme.textTheme.bodyLarge?.copyWith(
                   height: 1.8,
                   color: isDark ? Colors.white : KuwentoColors.textPrimary,
                 ) ??
@@ -1634,7 +1733,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           const SizedBox(height: AppSpacing.sm),
           Text(
             sourceText,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style:
+                theme.textTheme.bodyMedium?.copyWith(
                   height: 1.65,
                   color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
                 ) ??
@@ -1651,7 +1751,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   String _extractOpeningFieldAny(String content, List<String> labels) {
     for (final label in labels) {
       final match = RegExp(
-        '^${RegExp.escape(label)}:\\s*(.+)' r'$',
+        '^${RegExp.escape(label)}:\\s*(.+)'
+        r'$',
         multiLine: true,
       ).firstMatch(content);
       if (match != null) {
@@ -1669,7 +1770,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     RegExpMatch? startMatch;
     for (final label in startLabels) {
       final match = RegExp(
-        '^${RegExp.escape(label)}:\\s*' r'$',
+        '^${RegExp.escape(label)}:\\s*'
+        r'$',
         multiLine: true,
       ).firstMatch(content);
       if (match != null) {
@@ -1689,18 +1791,22 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     int? endIndex;
     for (final label in endLabels) {
       final match = RegExp(
-        '^${RegExp.escape(label)}:\\s*' r'$',
+        '^${RegExp.escape(label)}:\\s*'
+        r'$',
         multiLine: true,
       ).firstMatch(trailingContent);
       if (match != null) {
-        endIndex =
-            endIndex == null || match.start < endIndex ? match.start : endIndex;
+        endIndex = endIndex == null || match.start < endIndex
+            ? match.start
+            : endIndex;
       }
     }
 
     return content
-        .substring(startIndex,
-            endIndex == null ? content.length : startIndex + endIndex)
+        .substring(
+          startIndex,
+          endIndex == null ? content.length : startIndex + endIndex,
+        )
         .trim();
   }
 
@@ -1736,8 +1842,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 width: 52,
                 height: 52,
                 child: MediaQuery(
-                  data:
-                      MediaQuery.of(context).copyWith(disableAnimations: true),
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(disableAnimations: true),
                   child: const Center(
                     child: BuddyCompanion(
                       state: BuddyState.thinking,
@@ -1757,17 +1864,17 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   Text(
                     _readingCheckpointTitle,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: KuwentoColors.pastelBlue,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: KuwentoColors.pastelBlue,
+                    ),
                   ),
                   Text(
                     _readingCheckpointSubtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? Colors.white70
-                              : KuwentoColors.textSecondary,
-                        ),
+                      color: isDark
+                          ? Colors.white70
+                          : KuwentoColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -1784,9 +1891,15 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   }
 
   Widget _buildNavigationControls(
-      BuildContext context, bool isDark, TTSService ttsService) {
+    BuildContext context,
+    bool isDark,
+    TTSService ttsService,
+  ) {
     final isCompleted = _controller!.isCompleted;
-    final isNarrationPlaying = _isNarrationPlaying || ttsService.isSpeaking;
+    final isNarrationPaused = ttsService.isPaused;
+    final isNarrationPlaying =
+        !isNarrationPaused && (_isNarrationPlaying || ttsService.isSpeaking);
+    final isVoiceEnabled = ttsService.isTtsEnabled;
     final isOpeningPage = _isOpeningPageSegment(
       _controller!.currentSegment,
       _controller!.currentSegmentIndex,
@@ -1796,8 +1909,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? KuwentoColors.cardDark : Colors.white,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1825,7 +1939,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
           // Read aloud button
           IconButton(
-            onPressed: _toggleNarrationPlayback,
+            onPressed: isVoiceEnabled ? _toggleNarrationPlayback : null,
             icon: AnimatedSwitcher(
               duration: const Duration(milliseconds: 220),
               switchInCurve: Curves.easeOut,
@@ -1834,10 +1948,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 return ScaleTransition(scale: animation, child: child);
               },
               child: Icon(
-                isNarrationPlaying ? Icons.pause_circle : Icons.play_circle,
+                !isVoiceEnabled
+                    ? Icons.volume_off_rounded
+                    : isNarrationPaused
+                    ? Icons.play_circle
+                    : isNarrationPlaying
+                    ? Icons.pause_circle
+                    : Icons.play_circle,
                 key: ValueKey<bool>(isNarrationPlaying),
                 size: 40,
-                color: KuwentoColors.pastelBlue,
+                color: isVoiceEnabled
+                    ? KuwentoColors.pastelBlue
+                    : KuwentoColors.textMuted,
               ),
             ),
           ),
@@ -1872,9 +1994,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   isCompleted
                       ? Icons.celebration
                       : (_controller!.hasCheckpoint &&
-                              !_controller!.isAnswerCorrect)
-                          ? Icons.quiz
-                          : Icons.arrow_forward,
+                            !_controller!.isAnswerCorrect)
+                      ? Icons.quiz
+                      : Icons.arrow_forward,
                   color: Colors.white,
                   size: 32,
                 ),
@@ -1957,11 +2079,13 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
     final displaySkill = _skillLabel(question.skill);
     final displayQuestion = _translatedQuestionText(question.question);
-    final displayOptions =
-        question.options.map(_translatedQuestionText).toList(growable: false);
+    final displayOptions = question.options
+        .map(_translatedQuestionText)
+        .toList(growable: false);
     final displayHint = _translatedQuestionText(question.hint);
-    final displayEncouragement =
-        _translatedQuestionText(question.encouragement);
+    final displayEncouragement = _translatedQuestionText(
+      question.encouragement,
+    );
 
     return GestureDetector(
       onTap: () {},
@@ -1970,10 +2094,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         child: SafeArea(
           child: AnimatedBuilder(
             animation: _overlayAnimation,
-            builder: (context, child) => Transform.scale(
-              scale: _overlayAnimation.value,
-              child: child,
-            ),
+            builder: (context, child) =>
+                Transform.scale(scale: _overlayAnimation.value, child: child),
             child: Stack(
               children: [
                 Center(
@@ -1989,15 +2111,14 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                             vertical: AppSpacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                KuwentoColors.pastelBlue.withValues(alpha: 0.2),
+                            color: KuwentoColors.pastelBlue.withValues(
+                              alpha: 0.2,
+                            ),
                             borderRadius: BorderRadius.circular(AppRadius.xl),
                           ),
                           child: Text(
                             displaySkill,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   color: KuwentoColors.pastelBlue,
                                   fontWeight: FontWeight.w600,
@@ -2012,8 +2133,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           width: double.infinity,
                           padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
-                            color:
-                                isDark ? KuwentoColors.cardDark : Colors.white,
+                            color: isDark
+                                ? KuwentoColors.cardDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(AppRadius.xl),
                           ),
                           child: Column(
@@ -2021,9 +2143,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                             children: [
                               Text(
                                 displayQuestion,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: isDark
@@ -2063,8 +2183,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                         child: OutlinedButton(
                                           onPressed:
                                               _controller!.hasHintAttemptsLeft
-                                                  ? _handleShowHintsTap
-                                                  : null,
+                                              ? _handleShowHintsTap
+                                              : null,
                                           style: OutlinedButton.styleFrom(
                                             side: const BorderSide(
                                               color: KuwentoColors.pastelBlue,
@@ -2175,7 +2295,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                         () {
                                           _pageController.nextPage(
                                             duration: const Duration(
-                                                milliseconds: 300),
+                                              milliseconds: 300,
+                                            ),
                                             curve: Curves.easeInOut,
                                           );
                                           _controller!.continueAfterCorrect();
@@ -2185,7 +2306,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: KuwentoColors.buddyHappy,
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 16),
+                                        vertical: 16,
+                                      ),
                                     ),
                                     child: Text(
                                       _continueReadingLabel,
@@ -2215,8 +2337,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           ? BuddyState.sympathetic
                           : BuddyState.thinking,
                       message: displayHint,
-                      size:
-                          MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
+                      size: MediaQuery.of(context).size.width < 360
+                          ? 50.0
+                          : 54.0,
                       showSpeechBubble: true,
                       enableTapSpeechBubble: false,
                     ),
@@ -2228,8 +2351,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                     child: BuddyCompanion(
                       state: BuddyState.happy,
                       message: displayEncouragement,
-                      size:
-                          MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
+                      size: MediaQuery.of(context).size.width < 360
+                          ? 50.0
+                          : 54.0,
                       showSpeechBubble: true,
                       enableTapSpeechBubble: false,
                     ),
@@ -2338,10 +2462,11 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 child: Text(
                   option,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: textColor,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
+                    color: textColor,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
                 ),
               ),
             ],

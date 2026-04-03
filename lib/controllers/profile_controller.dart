@@ -66,6 +66,12 @@ class ProfileController extends ChangeNotifier {
         try {
           _currentProfile = _profiles.firstWhere((p) => p.id == lastProfileId);
           _userService.setActiveProfileId(_currentProfile!.id);
+
+          // Restore the full profile-backed user view so the app keeps the
+          // selected profile's story progress, favorites, and completion data.
+          AuthService().switchToProfileView(
+            _profileToUserModel(parentUid, _currentProfile!),
+          );
         } catch (_) {
           _currentProfile = null;
         }
@@ -107,6 +113,23 @@ class ProfileController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('active_profile_$parentUid', profile.id);
     notifyListeners();
+  }
+
+  UserModel _profileToUserModel(String parentUid, ChildProfileModel profile) {
+    return UserModel(
+      id: parentUid, // Keep parent UUID for Firebase rule passes
+      email: null,
+      displayName: profile.displayName,
+      photoUrl: profile.avatarAsset,
+      totalStars: profile.totalStars,
+      storiesCompleted: profile.storiesCompleted,
+      favoriteStoryIds: profile.favoriteStoryIds,
+      storyProgress: profile.storyProgress,
+      preferences: profile.preferences,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+      isGuest: false,
+    );
   }
 
   Future<ChildProfileModel> createProfile(

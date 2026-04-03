@@ -35,14 +35,13 @@ class StoryProgress {
     this.hintAttemptsUsed = 0,
   });
 
-  double get progressPercent =>
-      totalSegments > 0
-          ? (() {
-              final rawPercent = (currentSegmentIndex + 1) / totalSegments;
-              if (isCompleted) return 1.0;
-              return rawPercent >= 1.0 ? 0.99 : rawPercent;
-            })()
-          : 0;
+  double get progressPercent => totalSegments > 0
+      ? (() {
+          final rawPercent = (currentSegmentIndex + 1) / totalSegments;
+          if (isCompleted) return 1.0;
+          return rawPercent >= 1.0 ? 0.99 : rawPercent;
+        })()
+      : 0;
   double get comprehensionScore =>
       totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
 

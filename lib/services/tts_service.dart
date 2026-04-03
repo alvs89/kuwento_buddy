@@ -35,12 +35,23 @@ class TTSService extends ChangeNotifier {
   final FlutterTts _flutterTts = FlutterTts();
   bool _isInitialized = false;
   bool _isSpeaking = false;
+  bool _isPaused = false;
+  bool _pauseRequested = false;
+  bool _pauseInProgress = false;
+  bool _ttsEnabled = true;
   String _currentLanguage = 'fil-PH';
   double _speechRate = 0.5;
   double _voiceSpeedMultiplier = 1.0;
   double _pitch = 1.05;
   String _selectedPersonaId = 'kuya_kiko';
   String _voiceOverLanguage = 'fil';
+  String? _currentSpeechText;
+  String? _currentSpeechLanguage;
+  int _currentSpeechStart = 0;
+  int _speechBaseOffset = 0;
+  String? _pausedSpeechText;
+  String? _pausedSpeechLanguage;
+  int _pausedSpeechStart = 0;
 
   static const List<VoicePersona> _personas = [
     VoicePersona(
@@ -84,6 +95,8 @@ class TTSService extends ChangeNotifier {
   ];
 
   bool get isSpeaking => _isSpeaking;
+  bool get isPaused => _isPaused;
+  bool get isTtsEnabled => _ttsEnabled;
   String get currentLanguage => _currentLanguage;
   String get selectedPersonaId => _selectedPersonaId;
   String get voiceOverLanguage => _voiceOverLanguage;
@@ -100,26 +113,80 @@ class TTSService extends ChangeNotifier {
 
     try {
       await _flutterTts.setSharedInstance(true);
+      await _flutterTts.awaitSpeakCompletion(true);
 
       // Set callbacks
+      _flutterTts.setProgressHandler((text, start, end, word) {
+        // Only update progress if we're actually speaking (not paused)
+        if (_isSpeaking) {
+          // Keep an absolute character offset for where speech has reached.
+          // Some engines provide weak offsets, so fall back to spoken-word matching.
+          final absoluteOffset = _resolveAbsoluteProgressOffset(
+            text,
+            start,
+            end,
+            word,
+          );
+          if (absoluteOffset > _currentSpeechStart) {
+            _currentSpeechStart = absoluteOffset;
+          }
+        }
+      });
+
       _flutterTts.setStartHandler(() {
         _isSpeaking = true;
+        _isPaused = false;
+        _pauseRequested = false;
         notifyListeners();
       });
 
       _flutterTts.setCompletionHandler(() {
         _isSpeaking = false;
+        _isPaused = false;
+        _pauseRequested = false;
+        _speechBaseOffset = 0;
+        _clearSpeechSnapshot();
+        notifyListeners();
+      });
+
+      _flutterTts.setPauseHandler(() {
+        _capturePausedSpeechSnapshot();
+
+        _isSpeaking = false;
+        _isPaused = true;
+        _pauseRequested = false;
+        notifyListeners();
+      });
+
+      _flutterTts.setContinueHandler(() {
+        _isSpeaking = true;
+        _isPaused = false;
+        _pauseRequested = false;
         notifyListeners();
       });
 
       _flutterTts.setCancelHandler(() {
         _isSpeaking = false;
+        final shouldRemainPaused = _pauseRequested || _pauseInProgress;
+        if (shouldRemainPaused) {
+          _isPaused = true;
+        } else {
+          _isPaused = false;
+          _speechBaseOffset = 0;
+          _clearSpeechSnapshot();
+        }
+        _pauseRequested = false;
+        _pauseInProgress = false;
         notifyListeners();
       });
 
       _flutterTts.setErrorHandler((msg) {
         debugPrint('TTS Error: $msg');
         _isSpeaking = false;
+        _isPaused = false;
+        _pauseRequested = false;
+        _speechBaseOffset = 0;
+        _clearSpeechSnapshot();
         notifyListeners();
       });
 
@@ -134,6 +201,7 @@ class TTSService extends ChangeNotifier {
   Future<void> applyPreferences(UserPreferences preferences) async {
     _voiceSpeedMultiplier = _clampVoiceSpeed(preferences.voiceSpeed);
     _voiceOverLanguage = preferences.language == 'en' ? 'en' : 'fil';
+    _ttsEnabled = true;
     _currentLanguage = _effectiveVoiceLocale;
     await _applySettings();
     notifyListeners();
@@ -156,8 +224,10 @@ class TTSService extends ChangeNotifier {
       _currentLanguage = accentLocale;
       final personaBaseRate = _selectedPersona.speechRate;
       final userPreferredRate = _mapSpeedToRate(_voiceSpeedMultiplier);
-      _speechRate =
-          ((personaBaseRate + userPreferredRate) / 2).clamp(0.28, 0.70);
+      _speechRate = ((personaBaseRate + userPreferredRate) / 2).clamp(
+        0.28,
+        0.70,
+      );
       await _flutterTts.setSpeechRate(_speechRate);
       _pitch = _selectedPersona.pitch;
       await _flutterTts.setPitch(_pitch);
@@ -221,8 +291,9 @@ class TTSService extends ChangeNotifier {
   Future<void> _applySystemFallbackVoice(String preferredLocale) async {
     final normalized = _normalizeLocale(preferredLocale);
     try {
-      await _flutterTts
-          .setLanguage(normalized.startsWith('fil') ? 'fil-PH' : 'en-US');
+      await _flutterTts.setLanguage(
+        normalized.startsWith('fil') ? 'fil-PH' : 'en-US',
+      );
     } catch (_) {
       await _flutterTts.setLanguage('en-US');
     }
@@ -236,8 +307,9 @@ class TTSService extends ChangeNotifier {
     if (rawVoices == null) return null;
 
     final voices = List<Map<String, dynamic>>.from(
-      List<dynamic>.from(rawVoices)
-          .map((v) => Map<String, dynamic>.from(v as Map)),
+      List<dynamic>.from(
+        rawVoices,
+      ).map((v) => Map<String, dynamic>.from(v as Map)),
     );
 
     final genderMatched = voices.where(
@@ -254,8 +326,8 @@ class TTSService extends ChangeNotifier {
     final candidates = genderMatched.isNotEmpty
         ? genderMatched.toList()
         : manualGenderMatched.isNotEmpty
-            ? manualGenderMatched.toList()
-            : voices; // ultimate fallback if device voices lack gender labels
+        ? manualGenderMatched.toList()
+        : voices; // ultimate fallback if device voices lack gender labels
 
     final normalizedLocale = _normalizeLocale(locale);
 
@@ -268,8 +340,7 @@ class TTSService extends ChangeNotifier {
           persona: persona,
         ),
       );
-    }).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    }).toList()..sort((a, b) => b.value.compareTo(a.value));
 
     if (scored.isEmpty) return null;
 
@@ -288,11 +359,10 @@ class TTSService extends ChangeNotifier {
     }
 
     // Keep character choices distinct when multiple voices score equally.
-    final characterIndex = _personas.indexWhere(
-      (c) => c.id == persona.id,
-    );
-    final pickIndex =
-        characterIndex < 0 ? 0 : characterIndex % topCandidates.length;
+    final characterIndex = _personas.indexWhere((c) => c.id == persona.id);
+    final pickIndex = characterIndex < 0
+        ? 0
+        : characterIndex % topCandidates.length;
 
     return topCandidates[pickIndex];
   }
@@ -300,8 +370,9 @@ class TTSService extends ChangeNotifier {
   bool _matchesGender(Map<String, dynamic> voice, String personaGender) {
     final gender = (voice['gender'] ?? '').toString().toLowerCase();
     final name = (voice['name'] ?? '').toString().toLowerCase();
-    final id =
-        (voice['identifier'] ?? voice['id'] ?? '').toString().toLowerCase();
+    final id = (voice['identifier'] ?? voice['id'] ?? '')
+        .toString()
+        .toLowerCase();
 
     final target = personaGender.toLowerCase();
     if (target == 'male') {
@@ -328,8 +399,9 @@ class TTSService extends ChangeNotifier {
     String personaGender,
   ) {
     final name = (voice['name'] ?? '').toString().toLowerCase();
-    final id =
-        (voice['identifier'] ?? voice['id'] ?? '').toString().toLowerCase();
+    final id = (voice['identifier'] ?? voice['id'] ?? '')
+        .toString()
+        .toLowerCase();
 
     const maleMarkers = [
       'male',
@@ -396,8 +468,9 @@ class TTSService extends ChangeNotifier {
   bool _looksMale(Map<String, dynamic> voice) {
     final name = (voice['name'] ?? '').toString().toLowerCase();
     final gender = (voice['gender'] ?? '').toString().toLowerCase();
-    final id =
-        (voice['identifier'] ?? voice['id'] ?? '').toString().toLowerCase();
+    final id = (voice['identifier'] ?? voice['id'] ?? '')
+        .toString()
+        .toLowerCase();
 
     const maleMarkers = [
       'male',
@@ -423,8 +496,9 @@ class TTSService extends ChangeNotifier {
   bool _isFilipinoFluentVoice(Map<String, dynamic> voice) {
     final locale = _normalizeLocale((voice['locale'] ?? '').toString());
     final name = (voice['name'] ?? '').toString().toLowerCase();
-    final id =
-        (voice['identifier'] ?? voice['id'] ?? '').toString().toLowerCase();
+    final id = (voice['identifier'] ?? voice['id'] ?? '')
+        .toString()
+        .toLowerCase();
 
     return locale.startsWith('fil') ||
         locale.startsWith('tl') ||
@@ -441,8 +515,9 @@ class TTSService extends ChangeNotifier {
   }) {
     final locale = _normalizeLocale((voice['locale'] ?? '').toString());
     final name = (voice['name'] ?? '').toString().toLowerCase();
-    final id =
-        (voice['identifier'] ?? voice['id'] ?? '').toString().toLowerCase();
+    final id = (voice['identifier'] ?? voice['id'] ?? '')
+        .toString()
+        .toLowerCase();
     final languagePrefix = normalizedLocale.split('-').first;
 
     var score = 0;
@@ -481,6 +556,7 @@ class TTSService extends ChangeNotifier {
   /// Speak text with automatic language detection
   Future<void> speak(String text, {String? language}) async {
     if (!_isInitialized) await initialize();
+    if (!_ttsEnabled) return;
 
     try {
       if (_isSpeaking) {
@@ -495,6 +571,14 @@ class TTSService extends ChangeNotifier {
       _currentLanguage = playbackVoiceLocale;
       await _setVoiceForLocale(playbackVoiceLocale);
 
+      _currentSpeechText = text;
+      _currentSpeechLanguage = playbackVoiceLocale;
+      _currentSpeechStart = 0;
+      _speechBaseOffset = 0;
+      _pauseInProgress = false;
+      _clearPausedSpeechSnapshot();
+      _isPaused = false;
+
       await _flutterTts.speak(text);
     } catch (e) {
       debugPrint('TTS speak error: $e');
@@ -507,9 +591,82 @@ class TTSService extends ChangeNotifier {
     }
   }
 
+  /// Resume the most recently paused utterance.
+  /// Extracts remaining text from saved position and re-speaks it.
+  /// Returns true when a resume playback request is started.
+  Future<bool> resume() async {
+    if (!_isInitialized) await initialize();
+    if (!_ttsEnabled || !_isPaused) return false;
+
+    if (_pausedSpeechText == null || _pausedSpeechText!.isEmpty) {
+      // Heal stale paused state so callers can fall back to a fresh speak.
+      _isPaused = false;
+      _pauseRequested = false;
+      _pauseInProgress = false;
+      _speechBaseOffset = 0;
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final resumeLanguage = _pausedSpeechLanguage ?? _currentLanguage;
+      final normalizedLang = _normalizeLocale(resumeLanguage);
+      final playbackVoiceLocale = _resolvePlaybackVoiceLocale(normalizedLang);
+
+      // Safely clamp the resume position to valid text boundaries
+      final resumeStart = _normalizeResumeStart(
+        _pausedSpeechText!,
+        _pausedSpeechStart,
+      );
+
+      // Extract remaining text from the paused position
+      final textToSpeak = resumeStart < _pausedSpeechText!.length
+          ? _pausedSpeechText!.substring(resumeStart)
+          : '';
+
+      if (textToSpeak.isEmpty) {
+        _isSpeaking = false;
+        _isPaused = false;
+        _pauseRequested = false;
+        _pauseInProgress = false;
+        _speechBaseOffset = 0;
+        _clearPausedSpeechSnapshot();
+        notifyListeners();
+        return false;
+      }
+
+      _currentLanguage = playbackVoiceLocale;
+      await _setVoiceForLocale(playbackVoiceLocale);
+
+      // Set state for playback
+      _currentSpeechText = _pausedSpeechText;
+      _currentSpeechLanguage = playbackVoiceLocale;
+      _currentSpeechStart = resumeStart;
+      _speechBaseOffset = resumeStart;
+      _pauseInProgress = false;
+      _isSpeaking = true;
+      _isPaused = false;
+      notifyListeners();
+
+      // Speak the remaining text from the saved offset
+      await _flutterTts.speak(textToSpeak);
+      _clearPausedSpeechSnapshot();
+      return true;
+    } catch (e) {
+      debugPrint('TTS resume error: $e');
+      _isSpeaking = false;
+      _isPaused = false;
+      _pauseRequested = false;
+      _pauseInProgress = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Speak with SSML for Filipino pronunciation
   Future<void> speakWithSSML(String ssmlText) async {
     if (!_isInitialized) await initialize();
+    if (!_ttsEnabled) return;
 
     try {
       await stop();
@@ -520,7 +677,7 @@ class TTSService extends ChangeNotifier {
           .replaceAll(RegExp(r'\s+'), ' ')
           .trim();
 
-      await _flutterTts.speak(plainText);
+      await speak(plainText, language: _currentLanguage);
     } catch (e) {
       debugPrint('TTS SSML speak error: $e');
     }
@@ -531,6 +688,11 @@ class TTSService extends ChangeNotifier {
     try {
       await _flutterTts.stop();
       _isSpeaking = false;
+      _isPaused = false;
+      _pauseRequested = false;
+      _speechBaseOffset = 0;
+      _pauseInProgress = false;
+      _clearSpeechSnapshot();
       notifyListeners();
     } catch (e) {
       debugPrint('TTS stop error: $e');
@@ -540,18 +702,103 @@ class TTSService extends ChangeNotifier {
   /// Pause speaking
   Future<void> pause() async {
     try {
-      await _flutterTts.pause();
+      if (!_ttsEnabled || !_isSpeaking) return;
+      if (_isPaused) return;
+
+      _pauseInProgress = true;
+      _pauseRequested = true;
+
+      // Capture current playback state before pausing
+      _capturePausedSpeechSnapshot();
+
+      // Hard stop playback so it cannot continue in the background.
       _isSpeaking = false;
+      await _flutterTts.stop();
+      _capturePausedSpeechSnapshot();
+
+      _isSpeaking = false;
+      _isPaused = true;
+      _pauseRequested = false;
+      _pauseInProgress = false;
+
       notifyListeners();
     } catch (e) {
       debugPrint('TTS pause error: $e');
+      _isSpeaking = false;
+      _isPaused = true;
+      _pauseRequested = false;
+      _pauseInProgress = false;
+      notifyListeners();
     }
+  }
+
+  void _capturePausedSpeechSnapshot() {
+    _pausedSpeechText = _currentSpeechText;
+    _pausedSpeechLanguage = _currentSpeechLanguage ?? _currentLanguage;
+    final activeText = _pausedSpeechText;
+    if (activeText == null || activeText.isEmpty) {
+      _pausedSpeechStart = 0;
+      return;
+    }
+    _pausedSpeechStart = _normalizeResumeStart(activeText, _currentSpeechStart);
+  }
+
+  int _resolveAbsoluteProgressOffset(
+    String text,
+    int start,
+    int end,
+    String word,
+  ) {
+    var localOffset = end > start ? end : start;
+    final trimmedWord = word.trim();
+
+    if (localOffset <= 0 && trimmedWord.isNotEmpty && text.isNotEmpty) {
+      final normalizedText = text.toLowerCase();
+      final normalizedWord = trimmedWord.toLowerCase();
+
+      var searchFrom = _currentSpeechStart - _speechBaseOffset;
+      if (searchFrom < 0) {
+        searchFrom = 0;
+      } else if (searchFrom > text.length) {
+        searchFrom = text.length;
+      }
+
+      var wordIndex = normalizedText.indexOf(normalizedWord, searchFrom);
+      if (wordIndex < 0 && searchFrom > 0) {
+        wordIndex = normalizedText.indexOf(normalizedWord);
+      }
+
+      if (wordIndex >= 0) {
+        localOffset = wordIndex + trimmedWord.length;
+      }
+    }
+
+    final totalLength = _currentSpeechText?.length ?? text.length;
+    var absoluteOffset = localOffset + _speechBaseOffset;
+    if (absoluteOffset < 0) {
+      absoluteOffset = 0;
+    } else if (absoluteOffset > totalLength) {
+      absoluteOffset = totalLength;
+    }
+
+    return absoluteOffset;
+  }
+
+  int _normalizeResumeStart(String text, int candidateStart) {
+    if (text.isEmpty) return 0;
+    return candidateStart.clamp(0, text.length);
+  }
+
+  Future<void> setTtsEnabled(bool enabled) async {
+    _ttsEnabled = true;
+    notifyListeners();
   }
 
   /// Set language
   Future<void> setLanguage(String language) async {
     await setVoiceOverLanguage(
-        _normalizeLocale(language).startsWith('fil') ? 'fil' : 'en');
+      _normalizeLocale(language).startsWith('fil') ? 'fil' : 'en',
+    );
   }
 
   Future<void> setVoiceOverLanguage(String languageCode) async {
@@ -588,5 +835,19 @@ class TTSService extends ChangeNotifier {
     _flutterTts.stop();
     _isInitialized = false;
     super.dispose();
+  }
+
+  void _clearSpeechSnapshot() {
+    _currentSpeechText = null;
+    _currentSpeechLanguage = null;
+    _currentSpeechStart = 0;
+    _speechBaseOffset = 0;
+    _pauseInProgress = false;
+  }
+
+  void _clearPausedSpeechSnapshot() {
+    _pausedSpeechText = null;
+    _pausedSpeechLanguage = null;
+    _pausedSpeechStart = 0;
   }
 }

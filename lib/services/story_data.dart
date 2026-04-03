@@ -10,9 +10,7 @@ final List<StoryModel> filipinoTalesData = [
     coverImage: 'assets/images/alamat_ng_pinya_cover_photo.jpg', // Placeholder
     description:
         'Isang kuwento tungkol sa batang si Pinya na hindi marunong makinig sa kanyang ina. Sa kanyang karanasan, matututuhan ang kahalagahan ng pagsunod, sipag, at pagmamahal sa magulang.',
-    localizedTitles: {
-      'en': 'The Legend of Pineapple (Mother Matters)',
-    },
+    localizedTitles: {'en': 'The Legend of Pineapple (Mother Matters)'},
     level: StoryLevel.beginner,
     categories: [StoryCategory.filipinoTales],
     estimatedMinutes: 5,
@@ -30,10 +28,11 @@ final List<StoryModel> filipinoTalesData = [
       StorySegment(
         id: 'pinya-opening',
         content:
-            'Page 1 (Opening Page)\nTitle: Ang Alamat ng Pinya (Inang Mahalaga)\nGenre: Filipino Tale\nLevel: Beginner\nLanguage: Filipino\nSynopsis:\nIsang kuwento tungkol sa batang si Pinya na hindi marunong makinig sa kanyang ina. Sa kanyang karanasan, matututuhan ang kahalagahan ng pagsunod, sipag, at pagmamahal sa magulang.\nSource / Reference:\nTraditional Filipino Folktale – Public Domain\nAdapted for KuwentoBuddy\nHeads Up:\nAng kuwento ay may checkpoint questions sa bawat bahagi.\n\nBasahin nang mabuti at pag-isipan ang bawat pangyayari bago magpatuloy.\n\nPinakamainam para sa gabay na panimulang pagkatuto',
+            'Page 1 (Opening Page)\nTitle: Ang Alamat ng Pinya (Inang Mahalaga)\nGenre: Filipino Tale\nLevel: Beginner\nLanguage: Filipino\nSynopsis:\nIsang kuwento tungkol sa batang si Pinya na hindi marunong makinig sa kanyang ina. Sa kanyang karanasan, matututuhan ang kahalagahan ng pagsunod, sipag, at pagmamahal sa magulang.\nSource / Reference:\nTraditional Filipino Folktale – Public Domain\nAdapted for KuwentoBuddy\nHeads Up:\nAng kuwento ay may checkpoint questions sa bawat bahagi.\n\nBasahin nang mabuti at pag-isipan ang bawat pangyayari bago magpatuloy.\n\nPinakamainam para sa gabay na panimulang pagkatuto.',
       ),
       StorySegment(
         id: 'pinya-1',
+        image: 'assets/images/alamat-ng-pinya-page2.png',
         content:
             'Sa isang maliit at tahimik na baryo, may mag-inang nakatira sa isang simpleng kubo na gawa sa kahoy. Ang ina ay kilala sa kanilang lugar bilang isang masipag at mapagmahal na magulang na hindi napapagod sa pag-aasikaso sa kanilang tahanan. Araw-araw, maaga siyang gumigising upang magluto ng pagkain, maglinis ng bahay, at siguraduhing maayos ang lahat para sa kanilang araw.\n\nSamantala, ang kanyang anak na si Pinya ay isang batang maganda ngunit tamad at hindi palatulong sa gawaing-bahay. Kadalasan, makikita siyang nakahiga lamang sa banig, naglalaro, o nakatingin sa labas ng bintana habang abalang-abala ang kanyang ina sa mga gawain.\n\n“Pinya, anak, pakitulungan mo naman ako sa paghahanda ng pagkain,” sabi ng kanyang ina habang abala sa pagluluto.\n\nNgunit hindi sumunod si Pinya. Ipinagpatuloy niya ang kanyang ginagawa at hindi niya pinansin ang pagod at pakiusap ng kanyang ina.',
         question: QuestionModel(
@@ -44,7 +43,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Dahil masipag siyang tumulong sa kanyang ina araw-araw.',
             'Dahil hindi siya tumutulong at hindi siya nakikinig sa kanyang ina.',
-            'Dahil palagi siyang abala sa pag-aaral sa loob ng bahay.'
+            'Dahil palagi siyang abala sa pag-aaral sa loob ng bahay.',
           ],
           correctAnswerIndex: 1,
           hint: 'Ano ang ginagawa ni Pinya habang abala ang kanyang ina?',
@@ -66,7 +65,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Maaaring makaramdam ng saya ang ina sa ginawa ni Pinya.',
             'Maaaring makaramdam ng pagkainis o galit ang ina dahil hindi nagsisikap si Pinya.',
-            'Maaaring matuwa ang ina sa sagot ni Pinya.'
+            'Maaaring matuwa ang ina sa sagot ni Pinya.',
           ],
           correctAnswerIndex: 1,
           hint:
@@ -89,7 +88,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Nakaramdam ng matinding lungkot at pagsisisi ang ina sa nangyari sa kanyang anak.',
             'Nakaramdam ng saya ang ina dahil nawala si Pinya.',
-            'Wala siyang naramdamang kahit ano sa pagkawala ni Pinya.'
+            'Wala siyang naramdamang kahit ano sa pagkawala ni Pinya.',
           ],
           correctAnswerIndex: 0,
           hint:
@@ -110,7 +109,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Mahalagang makinig at tumulong ang mga anak sa kanilang mga magulang.',
             'Mas mabuti na maging tamad at iwasan ang mga gawain sa bahay.',
-            'Dapat umiwas ang mga bata sa pagtulong sa kanilang pamilya.'
+            'Dapat umiwas ang mga bata sa pagtulong sa kanilang pamilya.',
           ],
           correctAnswerIndex: 0,
           hint:
@@ -145,7 +144,7 @@ final List<StoryModel> filipinoTalesData = [
       'Nagsimulang gumawa ng parol ang mga kabataan at mga tao.',
       'Unti-unting tumulong ang buong bayan sa paggawa ng parol.',
       'Nagliwanag ang parol at nagbigay ng pag-asa sa lahat.',
-      'Naging simbolo ito ng pagkakaisa at pag-asa ng bayan.'
+      'Naging simbolo ito ng pagkakaisa at pag-asa ng bayan.',
     ],
     segments: [
       StorySegment(
@@ -165,7 +164,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Dahil nagiging magulo at walang tao sa bayan',
             'Dahil unti-unting nawawala ang pagtutulungan ng mga tao',
-            'Dahil ayaw na niyang tumira sa bayan'
+            'Dahil ayaw na niyang tumira sa bayan',
           ],
           correctAnswerIndex: 1,
           hint: 'Ano ang napansin niya sa ugali ng mga tao sa araw-araw?',
@@ -187,7 +186,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Natakot at umiwas sa isa’t isa',
             'Masaya at muling nagkakaisa',
-            'Naiinis at nag-away'
+            'Naiinis at nag-away',
           ],
           correctAnswerIndex: 1,
           hint:
@@ -210,7 +209,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Ang parol ay simbolo ng yaman at kayamanan',
             'Ang parol ay simbolo ng pagkakaisa at pag-asa',
-            'Ang parol ay simbolo ng takot sa dilim'
+            'Ang parol ay simbolo ng takot sa dilim',
           ],
           correctAnswerIndex: 1,
           hint: 'Ano ang naramdaman ng mga tao nang sila ay nagtulungan?',
@@ -232,7 +231,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Dahil ito ay maganda lamang tingnan',
             'Dahil ito ay paalala ng pagkakaisa at pagtutulungan',
-            'Dahil ito ay mahal at bihira'
+            'Dahil ito ay mahal at bihira',
           ],
           correctAnswerIndex: 1,
           hint: 'Ano ang natutunan ng mga tao mula sa kanilang karanasan?',
@@ -270,7 +269,7 @@ final List<StoryModel> filipinoTalesData = [
       'Hindi nakaligtas si Panganoron sa kanyang sugat.',
       'Sa labis na kalungkutan, sumunod at pumanaw si Magayon.',
       'Inilagay sila sa iisang lugar bilang simbolo ng kanilang pag-ibig.',
-      'Sa paglipas ng panahon, nabuo ang Bulkang Mayon sa lugar ng kanilang libingan.'
+      'Sa paglipas ng panahon, nabuo ang Bulkang Mayon sa lugar ng kanilang libingan.',
     ],
     segments: [
       StorySegment(
@@ -290,7 +289,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Ayaw niya sa datu dahil ito ay mahirap at walang kapangyarihan.',
             'Ayaw niya sa datu dahil hindi niya ito tunay na minamahal.',
-            'Ayaw niya sa datu dahil hindi niya ito kilala.'
+            'Ayaw niya sa datu dahil hindi niya ito kilala.',
           ],
           correctAnswerIndex: 1,
           hint:
@@ -313,7 +312,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Nakaramdam siya ng saya sa nangyari kay Panganoron .',
             'Nakaramdam siya ng matinding lungkot at galit sa sinapit ng kanyang minamahal.',
-            'Wala siyang naramdamang emosyon sa pangyayari.'
+            'Wala siyang naramdamang emosyon sa pangyayari.',
           ],
           correctAnswerIndex: 1,
           hint:
@@ -335,7 +334,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Ipinapakita nito ang kasiyahan at katahimikan ng lugar.',
             'Ipinapahiwatig nito ang matinding damdamin at alaala ng kanilang pag-ibig.',
-            'Ipinapakita nito na walang nangyaring mahalagang kuwento sa lugar.'
+            'Ipinapakita nito na walang nangyaring mahalagang kuwento sa lugar.',
           ],
           correctAnswerIndex: 1,
           hint:
@@ -358,7 +357,7 @@ final List<StoryModel> filipinoTalesData = [
           options: [
             'Ang kuwento ay nagpapakita ng pag-ibig at sakripisyo ng dalawang tao.',
             'Ang kuwento ay tungkol sa paghahanap ng kayamanan.',
-            'Ang kuwento ay nakatuon lamang sa katatawanan.'
+            'Ang kuwento ay nakatuon lamang sa katatawanan.',
           ],
           correctAnswerIndex: 0,
           hint:
@@ -378,9 +377,7 @@ final List<StoryModel> filipinoTalesData = [
     coverImage: 'assets/images/alamat_ng_pinya_cover_photo.jpg',
     description:
         'Isang batang nakaririnig ng mahinhing huni mula sa lumang duyan at natututuhan na ang kabutihan at pagtutulungan ay may sariling himig.',
-    localizedTitles: {
-      'en': 'The Hum of the Bamboo Cradle',
-    },
+    localizedTitles: {'en': 'The Hum of the Bamboo Cradle'},
     level: StoryLevel.beginner,
     categories: [StoryCategory.filipinoTales],
     estimatedMinutes: 5,
@@ -511,9 +508,7 @@ Ngumiti si Laya. Naunawaan niyang ang duyan ay hindi lamang gamit sa pagtulog. I
         'assets/images/magical_forest_fairy_tale_children_book_illustration_null_1773063134827.jpg',
     description:
         'Dalawang magkapatid ang sumusunod sa liwanag sa ilalim ng balete at natutuhang ang pag-aalaga sa tubig at pangako ay mas mahalaga kaysa sa pag-angkin.',
-    localizedTitles: {
-      'en': 'The Star Seed Beneath the Balete Tree',
-    },
+    localizedTitles: {'en': 'The Star Seed Beneath the Balete Tree'},
     level: StoryLevel.advanced,
     categories: [StoryCategory.filipinoTales],
     estimatedMinutes: 7,
@@ -647,9 +642,7 @@ At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Is
         'assets/images/tropical_jungle_adventure_children_illustration_null_1773063139698.jpg',
     description:
         'Sinundan ni Lia ang isang lumang mapa sa tabing-dagat at natutuhan niyang ang pag-usisa ay mas ligtas kapag may pag-iingat at malasakit sa kasama.',
-    localizedTitles: {
-      'en': 'Lia and the Map of Whispering Waves',
-    },
+    localizedTitles: {'en': 'Lia and the Map of Whispering Waves'},
     level: StoryLevel.beginner,
     categories: [StoryCategory.adventureJourney],
     estimatedMinutes: 5,
@@ -782,9 +775,7 @@ Lia looked at the shell map again and understood: a journey can lead to discover
         'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
     description:
         'Naglakad si Rafael sa mahamog na daan upang maihatid ang mga piyesa ng orasan ng kanyang lolo at natutuhan niyang ang pag-iingat ay mahalaga sa gitna ng hamon.',
-    localizedTitles: {
-      'fil': 'Ang Landas ng Relohero Patungo sa Ulap na Gulod',
-    },
+    localizedTitles: {'fil': 'Ang Landas ng Relohero Patungo sa Ulap na Gulod'},
     level: StoryLevel.intermediate,
     categories: [StoryCategory.adventureJourney],
     estimatedMinutes: 6,
@@ -913,9 +904,7 @@ Rafael realized the clock was not simply a family treasure. It was a promise tha
         'assets/images/rice_terraces_Philippines_landscape_beautiful_null_1773063138652.jpg',
     description:
         'Isang bagong mag-aaral ang dumarating sa klase, at natututuhan ni Mara na ang simpleng pagbati at pagbabahagi ay maaaring magpaluwag ng kaba ng iba.',
-    localizedTitles: {
-      'fil': 'Ang Bakanteng Upuan sa Bintana',
-    },
+    localizedTitles: {'fil': 'Ang Bakanteng Upuan sa Bintana'},
     level: StoryLevel.beginner,
     categories: [StoryCategory.socialStories],
     estimatedMinutes: 5,
@@ -1334,9 +1323,7 @@ Every new place she discovered taught her something important. She learned that 
         'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
     description:
         'A young apprentice sailor named Elias discovers an unusual compass and must use it to survive a dangerous sea journey and uncover hidden truths.',
-    localizedTitles: {
-      'fil': 'Ang Nawawalang Kompas ng Lisbon',
-    },
+    localizedTitles: {'fil': 'Ang Nawawalang Kompas ng Lisbon'},
     level: StoryLevel.intermediate,
     categories: [StoryCategory.adventureJourney],
     estimatedMinutes: 6,
@@ -1713,9 +1700,7 @@ final List<StoryModel> socialStoriesData = [
         'assets/images/rice_terraces_Philippines_landscape_beautiful_null_1773063138652.jpg',
     description:
         'A kind young boy named Oliver learns how small acts of kindness, sharing, and listening can make a big difference in his community.',
-    localizedTitles: {
-      'fil': 'Isang Araw sa Matulunging Bayan',
-    },
+    localizedTitles: {'fil': 'Isang Araw sa Matulunging Bayan'},
     level: StoryLevel.beginner,
     categories: [StoryCategory.socialStories],
     estimatedMinutes: 5,
@@ -2029,9 +2014,7 @@ That evening, a message was sent through the school group chat. The wallet had b
         'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
     description:
         'At a deep-space research station orbiting Europa, Dr. Elara Vance must decide how to respond when a signal beneath the ice may be either the greatest discovery in human history or a dangerous unknown.',
-    localizedTitles: {
-      'fil': 'Ang Protokol ng Etika ng Istasyon Raven',
-    },
+    localizedTitles: {'fil': 'Ang Protokol ng Etika ng Istasyon Raven'},
     level: StoryLevel.advanced,
     categories: [StoryCategory.socialStories],
     estimatedMinutes: 8,

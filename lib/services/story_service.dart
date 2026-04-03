@@ -10,7 +10,7 @@ class StoryService {
   }
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final List<StoryModel> _localStories = [
+  List<StoryModel> get _localStories => [
     ...filipinoTalesData,
     ...adventureJourneyData,
     ...socialStoriesData,
@@ -41,9 +41,15 @@ class StoryService {
     _isInitialized = true;
   }
 
-  List<StoryModel> getAllStories() => _stories;
+  List<StoryModel> getAllStories() => _mergeStories(_localStories, _stories);
 
   StoryModel? getStoryById(String id) {
+    try {
+      return _localStories.firstWhere((s) => s.id == id);
+    } catch (_) {
+      // Fall through to cached/remote stories.
+    }
+
     try {
       return _stories.firstWhere((s) => s.id == id);
     } catch (_) {
@@ -154,10 +160,12 @@ class StoryService {
     }
 
     return _stories
-        .where((story) =>
-            story.title.toLowerCase().contains(lowerQuery) ||
-            story.description.toLowerCase().contains(lowerQuery) ||
-            story.author.toLowerCase().contains(lowerQuery))
+        .where(
+          (story) =>
+              story.title.toLowerCase().contains(lowerQuery) ||
+              story.description.toLowerCase().contains(lowerQuery) ||
+              story.author.toLowerCase().contains(lowerQuery),
+        )
         .toList();
   }
 }
