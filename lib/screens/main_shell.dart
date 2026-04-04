@@ -8,6 +8,9 @@ class MainShell extends StatelessWidget {
   final Widget child;
   final int currentIndex;
 
+  static const String _searchBuddyMessage =
+      'Browse the genres for quick picks.';
+
   const MainShell({
     super.key,
     required this.child,
@@ -24,12 +27,12 @@ class MainShell extends StatelessWidget {
       case 1:
         return (
           BuddyState.thinking,
-          'Looking for something fun? Search by title, level, or category.',
+          _searchBuddyMessage,
         );
       case 2:
         return (
           BuddyState.encouraging,
-          'Welcome to your library! Revisit favorites or continue where you left off.',
+          'Welcome to your library! Revisit favorites, completed stories, or continue where you left off.',
         );
       default:
         return (BuddyState.idle, 'Hi! I am here if you need reading tips.');

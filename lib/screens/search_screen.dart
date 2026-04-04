@@ -47,7 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
       color: KuwentoColors.deepTeal,
       subtitle: 'Sea journeys, compass trails, and frozen expeditions',
       matches: (story) => _containsAnyTitle(story, const [
-        'lia at ang mapa ng mahinhing alon',
+        'lia and the map of whispering waves',
         'the lost compass of lisbon',
         'the silent ship of the arctic night',
       ]),
@@ -164,9 +164,10 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Find stories by title, author, or explore by genre.',
+            'Find stories by title, author, or synopsis.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
+                  fontSize: 12,
                 ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -194,9 +195,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 color: isDark ? Colors.white : KuwentoColors.textPrimary,
               ),
               decoration: InputDecoration(
-                hintText: 'Search stories, authors...',
+                hintText: 'Search title, author, synopsis',
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : KuwentoColors.textMuted,
+                  fontSize: 14,
                 ),
                 prefixIcon: Icon(
                   Icons.search,
@@ -301,27 +303,33 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Hero(
-                  tag: 'story_cover_${story.id}',
-                  child: Container(
-                    width: imageSize,
-                    height: imageSize,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Image.asset(
-                      story.coverImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: KuwentoColors.deepTeal.withValues(alpha: 0.2),
-                        child: const Icon(
-                          Icons.auto_stories,
-                          color: KuwentoColors.deepTeal,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Hero(
+                      tag: 'story_cover_${story.id}',
+                      child: Container(
+                        width: imageSize,
+                        height: imageSize,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          story.coverImage,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color:
+                                KuwentoColors.deepTeal.withValues(alpha: 0.2),
+                            child: const Icon(
+                              Icons.auto_stories,
+                              color: KuwentoColors.deepTeal,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
                 SizedBox(width: contentGap),
                 Expanded(

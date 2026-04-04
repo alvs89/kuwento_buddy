@@ -35,19 +35,15 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       debugPrint('MyStoriesScreen: Refreshing user from cloud on init');
-      context
-          .read<AuthService>()
-          .refreshCurrentUserFromCloud()
-          .then((_) {
-            if (!mounted) return;
-            final user = context.read<AuthService>().currentUser;
-            debugPrint(
-              'MyStoriesScreen: Loaded user with ${user?.storyProgress.length ?? 0} progress entries',
-            );
-          })
-          .catchError((e) {
-            debugPrint('MyStoriesScreen: Refresh failed: $e');
-          });
+      context.read<AuthService>().refreshCurrentUserFromCloud().then((_) {
+        if (!mounted) return;
+        final user = context.read<AuthService>().currentUser;
+        debugPrint(
+          'MyStoriesScreen: Loaded user with ${user?.storyProgress.length ?? 0} progress entries',
+        );
+      }).catchError((e) {
+        debugPrint('MyStoriesScreen: Refresh failed: $e');
+      });
     });
   }
 
@@ -135,7 +131,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                                 if (user != null)
                                   Text(
                                     '${_countLabel(user.storiesCompleted, 'story', 'stories')} • ${_countLabel(user.totalStars, 'star', 'stars')} • ${_countLabel(favoritesCount, 'favorite', 'favorites')}',
-                                    style: Theme.of(context).textTheme.bodySmall
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
                                         ?.copyWith(
                                           color: isDark
                                               ? Colors.white70
@@ -240,8 +238,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       // Primary source: answered questions. Fallback: persisted score/stars data
       // for legacy completed records that may not include question counters.
       final hasQuestionMetrics = progress.totalQuestions > 0;
-      final hasFallbackMetrics =
-          progress.starsEarned > 0 ||
+      final hasFallbackMetrics = progress.starsEarned > 0 ||
           progress.correctAnswers > 0 ||
           progress.totalSegments > 0;
 
@@ -258,9 +255,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       }
     }
 
-    final averageScore = completedCount > 0
-        ? (totalScore / completedCount)
-        : 0.0;
+    final averageScore =
+        completedCount > 0 ? (totalScore / completedCount) : 0.0;
 
     // Get performance level and color
     String performanceLevel;
@@ -317,9 +313,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                   Text(
                     '${averageScore.toStringAsFixed(0)}%',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: performanceColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: performanceColor,
+                        ),
                   ),
                 ],
               ),
@@ -343,11 +339,11 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                         maxLines: 2,
                         softWrap: true,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors.white
-                              : KuwentoColors.textPrimary,
-                        ),
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : KuwentoColors.textPrimary,
+                            ),
                       ),
                     ),
                   ],
@@ -356,16 +352,17 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                 Text(
                   performanceLevel,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: performanceColor,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: performanceColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Based on ${_countLabel(completedCount, 'completed story', 'completed stories')}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isDark ? Colors.white54 : KuwentoColors.textMuted,
-                  ),
+                        color:
+                            isDark ? Colors.white54 : KuwentoColors.textMuted,
+                      ),
                 ),
               ],
             ),
@@ -392,15 +389,12 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       correctEmotion += progress.skillCorrect['emotion'] ?? 0;
     }
 
-    final inferenceMastery = totalInference > 0
-        ? (correctInference / totalInference)
-        : 0.0;
-    final predictionMastery = totalPrediction > 0
-        ? (correctPrediction / totalPrediction)
-        : 0.0;
-    final emotionMastery = totalEmotion > 0
-        ? (correctEmotion / totalEmotion)
-        : 0.0;
+    final inferenceMastery =
+        totalInference > 0 ? (correctInference / totalInference) : 0.0;
+    final predictionMastery =
+        totalPrediction > 0 ? (correctPrediction / totalPrediction) : 0.0;
+    final emotionMastery =
+        totalEmotion > 0 ? (correctEmotion / totalEmotion) : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -419,9 +413,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
               Text(
                 'Comprehension Skills',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                    ),
               ),
             ],
           ),
@@ -474,9 +468,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         Text(
           '${(value * 100).toInt()}%',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
         ),
         const SizedBox(height: 4),
         ClipRRect(
@@ -492,8 +486,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: isDark ? Colors.white54 : KuwentoColors.textMuted,
-          ),
+                color: isDark ? Colors.white54 : KuwentoColors.textMuted,
+              ),
         ),
       ],
     );
@@ -573,11 +567,10 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     List<MapEntry<StoryModel, StoryProgress>> entries,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inProgress =
-        entries
-            .where((entry) => _isStoryInProgress(entry.value, entry.key))
-            .toList()
-          ..sort((a, b) => b.value.updatedAt.compareTo(a.value.updatedAt));
+    final inProgress = entries
+        .where((entry) => _isStoryInProgress(entry.value, entry.key))
+        .toList()
+      ..sort((a, b) => b.value.updatedAt.compareTo(a.value.updatedAt));
 
     debugPrint(
       'MyStoriesScreen: In Progress tab will show ${inProgress.length} cards',
@@ -626,26 +619,31 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                   children: [
                     Hero(
                       tag: 'story_cover_${story.id}',
-                      child: Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.asset(
-                          story.coverImage,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: KuwentoColors.pastelBlue.withValues(
-                              alpha: 0.2,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
                             ),
-                            child: const Icon(
-                              Icons.auto_stories,
-                              color: KuwentoColors.pastelBlue,
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              story.coverImage,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: KuwentoColors.pastelBlue.withValues(
+                                  alpha: 0.2,
+                                ),
+                                child: const Icon(
+                                  Icons.auto_stories,
+                                  color: KuwentoColors.pastelBlue,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -658,7 +656,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                             story.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: isDark
@@ -669,12 +669,12 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                           const SizedBox(height: 4),
                           Text(
                             '${(progressPercent * 100).toInt()}% progress',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : KuwentoColors.textSecondary,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: isDark
+                                          ? Colors.white70
+                                          : KuwentoColors.textSecondary,
+                                    ),
                           ),
                           const SizedBox(height: 8),
                           ClipRRect(
@@ -739,14 +739,14 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         final columns = constraints.maxWidth >= 840
             ? 3
             : constraints.maxWidth >= 560
-            ? 2
-            : 1;
+                ? 2
+                : 1;
         final horizontalPadding = AppSpacing.md;
         final spacing = AppSpacing.md;
         final totalSpacing = spacing * (columns - 1);
         final cardWidth =
             (constraints.maxWidth - (horizontalPadding * 2) - totalSpacing) /
-            columns;
+                columns;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -795,19 +795,19 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                       child: Text(
                         'Completed Stories',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? Colors.white
-                              : KuwentoColors.textPrimary,
-                        ),
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? Colors.white
+                                  : KuwentoColors.textPrimary,
+                            ),
                       ),
                     ),
                     Text(
                       '${completed.length}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: KuwentoColors.buddyHappy,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: KuwentoColors.buddyHappy,
+                          ),
                     ),
                   ],
                 ),
@@ -899,14 +899,14 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         final columns = constraints.maxWidth >= 840
             ? 3
             : constraints.maxWidth >= 560
-            ? 2
-            : 1;
+                ? 2
+                : 1;
         final horizontalPadding = AppSpacing.md;
         final spacing = AppSpacing.md;
         final totalSpacing = spacing * (columns - 1);
         final cardWidth =
             (constraints.maxWidth - (horizontalPadding * 2) - totalSpacing) /
-            columns;
+                columns;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -953,19 +953,19 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                       child: Text(
                         'Your Favorite Stories',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? Colors.white
-                              : KuwentoColors.textPrimary,
-                        ),
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? Colors.white
+                                  : KuwentoColors.textPrimary,
+                            ),
                       ),
                     ),
                     Text(
                       '${favorites.length}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
                     ),
                   ],
                 ),
@@ -1042,8 +1042,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     final byStoryId = <String, MapEntry<StoryModel, StoryProgress>>{};
     for (final entry in user.storyProgress.entries) {
       final progress = entry.value;
-      final story =
-          _resolveStoryById(entry.key) ??
+      final story = _resolveStoryById(entry.key) ??
           _resolveStoryById(progress.storyId) ??
           _resolveStoryById(progress.storyTitle ?? '') ??
           _placeholderStory(progress.storyId, progress.storyTitle);
@@ -1067,12 +1066,10 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
 
     for (final doc in docs) {
       final data = doc.data();
-      final appStoryId =
-          (data['appStoryId'] as String?) ??
+      final appStoryId = (data['appStoryId'] as String?) ??
           (data['storyId'] as String?) ??
           doc.id;
-      final story =
-          _resolveStoryById(appStoryId) ??
+      final story = _resolveStoryById(appStoryId) ??
           _resolveStoryById(data['storyTitle'] as String? ?? '') ??
           _resolveStoryById(doc.id) ??
           _placeholderStory(appStoryId, data['storyTitle'] as String?);
@@ -1080,8 +1077,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
       final progress = StoryProgress(
         storyId: appStoryId,
         storyTitle: data['storyTitle'] as String? ?? story.title,
-        currentSegmentIndex:
-            _asInt(data['currentSegmentIndex']) ??
+        currentSegmentIndex: _asInt(data['currentSegmentIndex']) ??
             _asInt(data['lastPage']) ??
             0,
         totalSegments: _asInt(data['totalSegments']) ?? story.segments.length,
@@ -1295,16 +1291,17 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
-              ),
+                    color:
+                        isDark ? Colors.white70 : KuwentoColors.textSecondary,
+                  ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isDark ? Colors.white54 : KuwentoColors.textMuted,
-              ),
+                    color: isDark ? Colors.white54 : KuwentoColors.textMuted,
+                  ),
             ),
             if (authService.isGuest) ...[
               const SizedBox(height: AppSpacing.lg),
@@ -1312,8 +1309,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                 'To save your stories forever,\ncreate an account! 🌟',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: KuwentoColors.pastelBlue,
-                ),
+                      color: KuwentoColors.pastelBlue,
+                    ),
               ),
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton(

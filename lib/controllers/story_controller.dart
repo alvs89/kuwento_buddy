@@ -41,6 +41,7 @@ class StoryController extends ChangeNotifier {
 
   // Track wrong answers to allow retry (don't lock out options)
   Set<int> _wrongAnswers = {};
+  List<int> _optionOrder = [];
 
   // Session statistics
   int _correctAnswers = 0;
@@ -78,6 +79,10 @@ class StoryController extends ChangeNotifier {
   int get starsEarned => _starsEarned;
   Set<int> get wrongAnswers => _wrongAnswers;
   bool get isReplayMode => _replayMode;
+  List<int> get optionOrder {
+    _ensureOptionOrder();
+    return List.unmodifiable(_optionOrder);
+  }
 
   /// Current segment
   StorySegment get currentSegment => story.segments[_currentSegmentIndex];
@@ -298,6 +303,38 @@ class StoryController extends ChangeNotifier {
   String _normalizeStoryKey(String value) =>
       value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
 
+  void _ensureOptionOrder() {
+    final question = currentQuestion;
+    if (question == null) {
+      _optionOrder = [];
+      return;
+    }
+
+    if (_optionOrder.length != question.options.length) {
+      _optionOrder =
+          List<int>.generate(question.options.length, (index) => index);
+    }
+  }
+
+  void _swapWrongOptionIntoNewPosition(int wrongOptionIndex) {
+    final question = currentQuestion;
+    if (question == null || question.options.length < 2) return;
+
+    _ensureOptionOrder();
+    final currentPosition = _optionOrder.indexOf(wrongOptionIndex);
+    if (currentPosition < 0) return;
+
+    final random = math.Random();
+    var swapPosition = random.nextInt(question.options.length - 1);
+    if (swapPosition >= currentPosition) {
+      swapPosition++;
+    }
+
+    final swappedValue = _optionOrder[swapPosition];
+    _optionOrder[swapPosition] = _optionOrder[currentPosition];
+    _optionOrder[currentPosition] = swappedValue;
+  }
+
   /// Navigate to next segment
   void goToNext() {
     if (!canGoNext) return;
@@ -434,14 +471,8 @@ class StoryController extends ChangeNotifier {
     } else {
       // Wrong answer - track it but allow retry
       _answeredFirstTry = false;
-
-      // Auto-show Buddy only after the learner has used all allowed answer attempts.
-      const int attemptsBeforeHint = 3;
-      if (_currentAttempts >= attemptsBeforeHint && hasHintAttemptsLeft) {
-        _showHint = true;
-      } else if (!hasHintAttemptsLeft) {
-        _showHint = false;
-      }
+      _wrongAnswers.add(answerIndex);
+      _swapWrongOptionIntoNewPosition(answerIndex);
 
       // Clear selected answer to allow retry
       _selectedAnswerIndex = null;
@@ -496,6 +527,9 @@ class StoryController extends ChangeNotifier {
     _isAnswerCorrect = false;
     _wrongAnswers = {};
     _answeredFirstTry = true;
+    _optionOrder = currentQuestion == null
+        ? []
+        : List<int>.generate(currentQuestion!.options.length, (index) => index);
   }
 
   /// Reset entire session

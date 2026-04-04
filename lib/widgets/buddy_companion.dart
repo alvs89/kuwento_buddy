@@ -27,6 +27,7 @@ class BuddyCompanion extends StatefulWidget {
   final bool enableTapSpeechBubble;
   final Duration speechBubbleAutoHideDuration;
   final String? speechTitle;
+  final bool speechBubbleInitiallyVisible;
   final bool disableHighlightEffects;
   final Color? bodyColor;
 
@@ -41,6 +42,7 @@ class BuddyCompanion extends StatefulWidget {
     this.enableTapSpeechBubble = false,
     this.speechBubbleAutoHideDuration = const Duration(seconds: 4),
     this.speechTitle,
+    this.speechBubbleInitiallyVisible = false,
     this.disableHighlightEffects = false,
     this.bodyColor,
   });
@@ -68,6 +70,7 @@ class _BuddyCompanionState extends State<BuddyCompanion>
   @override
   void initState() {
     super.initState();
+    _isSpeechBubbleVisible = widget.speechBubbleInitiallyVisible;
     _initAnimations();
   }
 
@@ -162,6 +165,11 @@ class _BuddyCompanionState extends State<BuddyCompanion>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state != widget.state) {
       _handleStateChange();
+    }
+
+    if (oldWidget.speechBubbleInitiallyVisible !=
+        widget.speechBubbleInitiallyVisible) {
+      _isSpeechBubbleVisible = widget.speechBubbleInitiallyVisible;
     }
 
     if (!widget.enableTapSpeechBubble) {
@@ -307,19 +315,19 @@ class _BuddyCompanionState extends State<BuddyCompanion>
           : 'Assistant companion',
       child: Material(
         color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(32),
-        hoverColor:
-            widget.disableHighlightEffects ? Colors.transparent : null,
-        focusColor:
-            widget.disableHighlightEffects ? Colors.transparent : null,
-        highlightColor:
-            widget.disableHighlightEffects ? Colors.transparent : null,
-        splashColor:
-            widget.disableHighlightEffects ? Colors.transparent : null,
-        overlayColor: widget.disableHighlightEffects
-            ? WidgetStateProperty.all(Colors.transparent)
-            : null,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(32),
+          hoverColor:
+              widget.disableHighlightEffects ? Colors.transparent : null,
+          focusColor:
+              widget.disableHighlightEffects ? Colors.transparent : null,
+          highlightColor:
+              widget.disableHighlightEffects ? Colors.transparent : null,
+          splashColor:
+              widget.disableHighlightEffects ? Colors.transparent : null,
+          overlayColor: widget.disableHighlightEffects
+              ? WidgetStateProperty.all(Colors.transparent)
+              : null,
           onTap: () {
             HapticFeedback.selectionClick();
             _toggleSpeechBubble();
@@ -394,14 +402,14 @@ class _BuddyCompanionState extends State<BuddyCompanion>
                               key: ValueKey<String>(
                                 '${widget.state.name}:${_activeSpeechText ?? ''}',
                               ),
-                      child: BuddySpeechBubble(
-                        message: _activeSpeechText ?? '',
-                        state: widget.state,
-                        alignLeft: false,
-                        arrowOnLowerRight: true,
-                        maxWidth: bubbleMaxWidth,
-                        titleOverride: widget.speechTitle,
-                      ),
+                              child: BuddySpeechBubble(
+                                message: _activeSpeechText ?? '',
+                                state: widget.state,
+                                alignLeft: false,
+                                arrowOnLowerRight: true,
+                                maxWidth: bubbleMaxWidth,
+                                titleOverride: widget.speechTitle,
+                              ),
                             )
                           : const SizedBox.shrink(),
                     ),
@@ -767,6 +775,8 @@ class BuddySpeechBubble extends StatelessWidget {
       color: isDark ? Colors.white : KuwentoColors.textPrimary,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.2,
+      fontSize: compactScreen ? 11.0 : (wideScreen ? 12.0 : 11.5),
+      height: 1.0,
     );
     final messageStyle = theme.textTheme.bodyMedium?.copyWith(
       color: isDark ? Colors.white : KuwentoColors.textPrimary,
@@ -837,8 +847,8 @@ class BuddySpeechBubble extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                      Container(
-                        width: compactScreen ? 28 : 30,
+                    Container(
+                      width: compactScreen ? 28 : 30,
                       height: compactScreen ? 28 : 30,
                       decoration: BoxDecoration(
                         color: _bubbleColor.withValues(
@@ -853,9 +863,9 @@ class BuddySpeechBubble extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            titleText,
+                    Flexible(
+                      child: Text(
+                        titleText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: titleStyle,

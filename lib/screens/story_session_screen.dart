@@ -14,6 +14,7 @@ import 'package:kuwentobuddy/services/toast_service.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
 import 'package:kuwentobuddy/services/translation_service.dart';
 import 'package:kuwentobuddy/theme.dart';
+import 'package:kuwentobuddy/widgets/ai_generated_image_note.dart';
 import 'package:kuwentobuddy/widgets/buddy_companion.dart';
 import 'package:kuwentobuddy/widgets/celebration_overlay.dart';
 
@@ -702,9 +703,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _uiText(en: 'Translating story...', fil: 'Isinasalin ang kuwento...');
 
   String get _switchLanguageTooltip => _uiText(
-    en: 'Switch to ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
-    fil: 'Lumipat sa ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
-  );
+        en: 'Switch to ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+        fil:
+            'Lumipat sa ${_targetLanguageCode == 'fil' ? 'Filipino' : 'English'}',
+      );
 
   String get _addedToFavoritesLabel =>
       _uiText(en: 'Added to favorites! ❤️', fil: 'Idinagdag sa paborito! ❤️');
@@ -716,9 +718,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _uiText(en: 'Reading Checkpoint!', fil: 'Checkpoint sa Pagbasa!');
 
   String get _readingCheckpointSubtitle => _uiText(
-    en: 'Tap to answer a question before continuing',
-    fil: 'I-tap upang sagutin ang tanong bago magpatuloy',
-  );
+        en: 'Tap to answer a question before continuing',
+        fil: 'I-tap upang sagutin ang tanong bago magpatuloy',
+      );
 
   String get _backToReadStoryLabel =>
       _uiText(en: 'Back to Read Story Again', fil: 'Bumalik sa Pagbasa');
@@ -734,23 +736,29 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _uiText(en: 'Source / Reference', fil: 'Pinagmulan / Sanggunian');
 
   String _hintRemainingText(int remaining) => _uiText(
-    en: remaining == 1 || remaining == 0 ? 'hint remaining' : 'hints remaining',
-    fil: 'pahiwatig ang natitira',
-  );
+        en: remaining == 1 || remaining == 0
+            ? 'hint remaining'
+            : 'hints remaining',
+        fil: 'pahiwatig ang natitira',
+      );
+
+  String _stripChoicePrefix(String text) {
+    return text.replaceFirst(RegExp(r'^\s*[A-Ca-c][\.)]\s*'), '');
+  }
 
   String get _showHintsLabel =>
       _uiText(en: 'Show Hints', fil: 'Ipakita ang Mga Pahiwatig');
 
   String get _usedAllHintsLabel => _uiText(
-    en: 'You\'ve used all available hints',
-    fil: 'Nagamit mo na ang lahat ng pahiwatig',
-  );
+        en: 'You\'ve used all available hints',
+        fil: 'Nagamit mo na ang lahat ng pahiwatig',
+      );
 
   String get _buddyReadyLabel => _uiText(
-    en: 'Checkpoint question is ready soon! Continue reading to keep up the flow.',
-    fil:
-        'Malapit nang lumabas ang checkpoint na tanong! Magpatuloy sa pagbabasa.',
-  );
+        en: 'Checkpoint question is ready soon! Continue reading to keep up the flow.',
+        fil:
+            'Malapit nang lumabas ang checkpoint na tanong! Magpatuloy sa pagbabasa.',
+      );
 
   String get _buddyCheeringLabel =>
       _uiText(en: 'Buddy is cheering you on!', fil: 'Nagmumotivate ang Buddy!');
@@ -906,20 +914,20 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                     Text(
                       _readingNowLabel,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: isDark
-                            ? Colors.white54
-                            : KuwentoColors.textMuted,
-                        letterSpacing: 1.2,
-                      ),
+                            color: isDark
+                                ? Colors.white54
+                                : KuwentoColors.textMuted,
+                            letterSpacing: 1.2,
+                          ),
                     ),
                     Text(
                       _displayStoryTitle(),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? Colors.white
-                            : KuwentoColors.textPrimary,
-                      ),
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.white
+                                : KuwentoColors.textPrimary,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -958,9 +966,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: _controller!.progress,
-                  backgroundColor: isDark
-                      ? Colors.white12
-                      : KuwentoColors.creamDark,
+                  backgroundColor:
+                      isDark ? Colors.white12 : KuwentoColors.creamDark,
                   valueColor: AlwaysStoppedAnimation(KuwentoColors.pastelBlue),
                   minHeight: 4,
                 ),
@@ -972,8 +979,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   Text(
                     '${_localizedPartLabel()} ${_controller!.currentSegmentIndex + 1}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: isDark ? Colors.white54 : KuwentoColors.textMuted,
-                    ),
+                          color:
+                              isDark ? Colors.white54 : KuwentoColors.textMuted,
+                        ),
                   ),
                   if (_controller!.correctAnswers > 0)
                     Row(
@@ -986,7 +994,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                         const SizedBox(width: 4),
                         Text(
                           '${_controller!.correctAnswers}/${_controller!.totalQuestions}',
-                          style: Theme.of(context).textTheme.labelSmall
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
                               ?.copyWith(color: KuwentoColors.buddyHappy),
                         ),
                       ],
@@ -994,8 +1004,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   Text(
                     '${_controller!.totalSegments} $_sectionCountLabel',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: isDark ? Colors.white54 : KuwentoColors.textMuted,
-                    ),
+                          color:
+                              isDark ? Colors.white54 : KuwentoColors.textMuted,
+                        ),
                   ),
                 ],
               ),
@@ -1014,9 +1025,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   child: Text(
                     '$_languageLabel: ${_languageDisplayName(_activeLanguageCode)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: KuwentoColors.pastelBlue,
-                      fontWeight: FontWeight.w600,
-                    ),
+                          color: KuwentoColors.pastelBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ),
@@ -1079,10 +1090,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                       Text(
                         _translatingLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isDark
-                              ? Colors.white70
-                              : KuwentoColors.textSecondary,
-                        ),
+                              color: isDark
+                                  ? Colors.white70
+                                  : KuwentoColors.textSecondary,
+                            ),
                       ),
                     ],
                   ),
@@ -1091,10 +1102,11 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 Text(
                   displayedSegmentText,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontSize: FontSizes.storyText,
-                    height: 1.8,
-                    color: isDark ? Colors.white : KuwentoColors.textPrimary,
-                  ),
+                        fontSize: FontSizes.storyText,
+                        height: 1.8,
+                        color:
+                            isDark ? Colors.white : KuwentoColors.textPrimary,
+                      ),
                 ),
 
               // Checkpoint indicator
@@ -1125,34 +1137,40 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   Widget _buildSegmentImage(StorySegment segment, int index) {
     final imagePath = _resolveSegmentImage(segment, index);
 
-    final card = Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: KuwentoColors.pastelBlue.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    final card = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: [
+              BoxShadow(
+                color: KuwentoColors.pastelBlue.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            color: KuwentoColors.pastelBlue.withValues(alpha: 0.2),
-            child: const Icon(
-              Icons.auto_stories,
-              size: 64,
-              color: KuwentoColors.pastelBlue,
+          clipBehavior: Clip.antiAlias,
+          child: AspectRatio(
+            aspectRatio: 16 / 10,
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: KuwentoColors.pastelBlue.withValues(alpha: 0.2),
+                child: const Icon(
+                  Icons.auto_stories,
+                  size: 64,
+                  color: KuwentoColors.pastelBlue,
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        const AiGeneratedImageNote(),
+      ],
     );
 
     // Removed the Hero widget wrapper to prevent layout exceptions or
@@ -1185,8 +1203,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     final titleValue = _activeLanguageCode == _sourceLanguageCode
         ? (extractedTitle.isNotEmpty ? extractedTitle : title)
         : (localizedStoryTitle?.trim().isNotEmpty == true
-              ? localizedStoryTitle!
-              : (extractedTitle.isNotEmpty ? extractedTitle : title));
+            ? localizedStoryTitle!
+            : (extractedTitle.isNotEmpty ? extractedTitle : title));
     final genreValue = _extractOpeningFieldAny(articleText, const [
       'Genre',
       'Uri',
@@ -1368,133 +1386,141 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     required String level,
     required String language,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? KuwentoColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : KuwentoColors.creamDark,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        child: AspectRatio(
-          aspectRatio: 16 / 10,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ColoredBox(
-                color: isDark
-                    ? KuwentoColors.backgroundDark
-                    : KuwentoColors.cream,
-              ),
-              Image.asset(
-                _story!.coverImage,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                filterQuality: FilterQuality.high,
-                gaplessPlayback: true,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        KuwentoColors.pastelBlue.withValues(alpha: 0.2),
-                        KuwentoColors.skyBlue.withValues(alpha: 0.45),
-                      ],
-                    ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.menu_book_rounded,
-                      size: 72,
-                      color: KuwentoColors.pastelBlueDark,
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.04),
-                      Colors.black.withValues(alpha: 0.0),
-                      Colors.black.withValues(alpha: 0.45),
-                    ],
-                    stops: const [0.0, 0.58, 1.0],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: AppSpacing.md,
-                left: AppSpacing.md,
-                right: AppSpacing.md,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.visible,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                height: 1.15,
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _buildOpeningHeroBadge(
-                          context,
-                          label: genre,
-                          isDark: true,
-                          accent: KuwentoColors.pastelBlue,
-                        ),
-                        _buildOpeningHeroBadge(
-                          context,
-                          label: level,
-                          isDark: true,
-                          accent: KuwentoColors.softCoral,
-                        ),
-                        _buildOpeningHeroBadge(
-                          context,
-                          label: language,
-                          isDark: true,
-                          accent: KuwentoColors.buddyThinking,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? KuwentoColors.cardDark : Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : KuwentoColors.creamDark,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            child: AspectRatio(
+              aspectRatio: 16 / 10.5,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(
+                    color: isDark
+                        ? KuwentoColors.backgroundDark
+                        : KuwentoColors.cream,
+                  ),
+                  Image.asset(
+                    _story!.coverImage,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    filterQuality: FilterQuality.high,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, __, ___) => Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            KuwentoColors.pastelBlue.withValues(alpha: 0.2),
+                            KuwentoColors.skyBlue.withValues(alpha: 0.45),
+                          ],
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.menu_book_rounded,
+                          size: 72,
+                          color: KuwentoColors.pastelBlueDark,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.04),
+                          Colors.black.withValues(alpha: 0.0),
+                          Colors.black.withValues(alpha: 0.45),
+                        ],
+                        stops: const [0.0, 0.58, 1.0],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: AppSpacing.md,
+                    left: AppSpacing.md,
+                    right: AppSpacing.md,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.15,
+                                  ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _buildOpeningHeroBadge(
+                              context,
+                              label: genre,
+                              isDark: true,
+                              accent: KuwentoColors.pastelBlue,
+                            ),
+                            _buildOpeningHeroBadge(
+                              context,
+                              label: level,
+                              isDark: true,
+                              accent: KuwentoColors.softCoral,
+                            ),
+                            _buildOpeningHeroBadge(
+                              context,
+                              label: language,
+                              isDark: true,
+                              accent: KuwentoColors.buddyThinking,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
+        const AiGeneratedImageNote(),
+      ],
     );
   }
 
@@ -1532,9 +1558,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             overflow: TextOverflow.visible,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: isDark ? Colors.white : KuwentoColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+                  color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
       ),
@@ -1601,9 +1627,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                         label,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? Colors.white
-                              : KuwentoColors.textPrimary,
+                          color:
+                              isDark ? Colors.white : KuwentoColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1613,8 +1638,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
               const SizedBox(height: AppSpacing.md),
               Text(
                 content,
-                style:
-                    theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.bodyLarge?.copyWith(
                       fontSize: FontSizes.bodyLarge + 1,
                       height: 1.8,
                       color: isDark ? Colors.white : KuwentoColors.textPrimary,
@@ -1677,8 +1701,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           const SizedBox(height: AppSpacing.md),
           Text(
             content,
-            style:
-                theme.textTheme.bodyLarge?.copyWith(
+            style: theme.textTheme.bodyLarge?.copyWith(
                   height: 1.8,
                   color: isDark ? Colors.white : KuwentoColors.textPrimary,
                 ) ??
@@ -1733,8 +1756,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           const SizedBox(height: AppSpacing.sm),
           Text(
             sourceText,
-            style:
-                theme.textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.65,
                   color: isDark ? Colors.white70 : KuwentoColors.textSecondary,
                 ) ??
@@ -1796,9 +1818,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         multiLine: true,
       ).firstMatch(trailingContent);
       if (match != null) {
-        endIndex = endIndex == null || match.start < endIndex
-            ? match.start
-            : endIndex;
+        endIndex =
+            endIndex == null || match.start < endIndex ? match.start : endIndex;
       }
     }
 
@@ -1864,17 +1885,17 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   Text(
                     _readingCheckpointTitle,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: KuwentoColors.pastelBlue,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: KuwentoColors.pastelBlue,
+                        ),
                   ),
                   Text(
                     _readingCheckpointSubtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isDark
-                          ? Colors.white70
-                          : KuwentoColors.textSecondary,
-                    ),
+                          color: isDark
+                              ? Colors.white70
+                              : KuwentoColors.textSecondary,
+                        ),
                   ),
                 ],
               ),
@@ -1951,10 +1972,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 !isVoiceEnabled
                     ? Icons.volume_off_rounded
                     : isNarrationPaused
-                    ? Icons.play_circle
-                    : isNarrationPlaying
-                    ? Icons.pause_circle
-                    : Icons.play_circle,
+                        ? Icons.play_circle
+                        : isNarrationPlaying
+                            ? Icons.pause_circle
+                            : Icons.play_circle,
                 key: ValueKey<bool>(isNarrationPlaying),
                 size: 40,
                 color: isVoiceEnabled
@@ -1994,9 +2015,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   isCompleted
                       ? Icons.celebration
                       : (_controller!.hasCheckpoint &&
-                            !_controller!.isAnswerCorrect)
-                      ? Icons.quiz
-                      : Icons.arrow_forward,
+                              !_controller!.isAnswerCorrect)
+                          ? Icons.quiz
+                          : Icons.arrow_forward,
                   color: Colors.white,
                   size: 32,
                 ),
@@ -2079,8 +2100,13 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
     final displaySkill = _skillLabel(question.skill);
     final displayQuestion = _translatedQuestionText(question.question);
-    final displayOptions = question.options
-        .map(_translatedQuestionText)
+    final optionOrder = _controller!.optionOrder;
+    final displayOptions = optionOrder
+        .map(
+          (optionIndex) => _stripChoicePrefix(
+            _translatedQuestionText(question.options[optionIndex]),
+          ),
+        )
         .toList(growable: false);
     final displayHint = _translatedQuestionText(question.hint);
     final displayEncouragement = _translatedQuestionText(
@@ -2118,7 +2144,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           ),
                           child: Text(
                             displaySkill,
-                            style: Theme.of(context).textTheme.labelSmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
                                 ?.copyWith(
                                   color: KuwentoColors.pastelBlue,
                                   fontWeight: FontWeight.w600,
@@ -2133,9 +2161,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           width: double.infinity,
                           padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
-                            color: isDark
-                                ? KuwentoColors.cardDark
-                                : Colors.white,
+                            color:
+                                isDark ? KuwentoColors.cardDark : Colors.white,
                             borderRadius: BorderRadius.circular(AppRadius.xl),
                           ),
                           child: Column(
@@ -2143,7 +2170,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                             children: [
                               Text(
                                 displayQuestion,
-                                style: Theme.of(context).textTheme.titleMedium
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: isDark
@@ -2155,12 +2184,13 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
                               // Answer options
                               ...List.generate(
-                                question.options.length,
-                                (index) => _buildAnswerOption(
+                                optionOrder.length,
+                                (visibleIndex) => _buildAnswerOption(
                                   context,
                                   isDark,
-                                  index,
-                                  displayOptions[index],
+                                  visibleIndex,
+                                  optionOrder[visibleIndex],
+                                  displayOptions[visibleIndex],
                                   question,
                                 ),
                               ),
@@ -2183,8 +2213,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                         child: OutlinedButton(
                                           onPressed:
                                               _controller!.hasHintAttemptsLeft
-                                              ? _handleShowHintsTap
-                                              : null,
+                                                  ? _handleShowHintsTap
+                                                  : null,
                                           style: OutlinedButton.styleFrom(
                                             side: const BorderSide(
                                               color: KuwentoColors.pastelBlue,
@@ -2206,50 +2236,110 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                                               Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.center,
-                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                mainAxisSize: MainAxisSize.max,
                                                 children: [
-                                                  const Text(
-                                                    '💡',
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Flexible(
-                                                    child: Text(
-                                                      _showHintsLabel,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      softWrap: true,
-                                                      maxLines: 2,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        color: KuwentoColors
-                                                            .pastelBlue,
-                                                        fontWeight:
-                                                            FontWeight.w600,
+                                                  const SizedBox(
+                                                    width: 22,
+                                                    child: Center(
+                                                      child: Text(
+                                                        '💡',
+                                                        style: TextStyle(
+                                                          fontSize: 18,
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '${_controller!.remainingHintAttempts} ${_hintRemainingText(_controller!.remainingHintAttempts)}',
-                                                textAlign: TextAlign.center,
-                                                maxLines: 2,
-                                                softWrap: true,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .labelMedium
-                                                    ?.copyWith(
-                                                      color: KuwentoColors
-                                                          .pastelBlue,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                  const SizedBox(width: 8),
+                                                  Flexible(
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          alignment:
+                                                              Alignment.center,
+                                                          child: Text(
+                                                            _showHintsLabel,
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            maxLines: 1,
+                                                            softWrap: false,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .visible,
+                                                            style:
+                                                                const TextStyle(
+                                                              color: KuwentoColors
+                                                                  .pastelBlue,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 4,
+                                                        ),
+                                                        Text.rich(
+                                                          TextSpan(
+                                                            children: [
+                                                              TextSpan(
+                                                                text:
+                                                                    '${_controller!.remainingHintAttempts}',
+                                                                style: Theme.of(
+                                                                  context,
+                                                                )
+                                                                    .textTheme
+                                                                    .labelMedium
+                                                                    ?.copyWith(
+                                                                      color: KuwentoColors
+                                                                          .coralDark,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w800,
+                                                                    ),
+                                                              ),
+                                                              TextSpan(
+                                                                text: ' ',
+                                                              ),
+                                                              TextSpan(
+                                                                text:
+                                                                    _hintRemainingText(
+                                                                  _controller!
+                                                                      .remainingHintAttempts,
+                                                                ),
+                                                                style: Theme.of(
+                                                                  context,
+                                                                )
+                                                                    .textTheme
+                                                                    .labelMedium
+                                                                    ?.copyWith(
+                                                                      color: KuwentoColors
+                                                                          .coralDark,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w800,
+                                                                    ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          maxLines: 2,
+                                                          softWrap: true,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ],
                                                     ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
@@ -2337,9 +2427,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           ? BuddyState.sympathetic
                           : BuddyState.thinking,
                       message: displayHint,
-                      size: MediaQuery.of(context).size.width < 360
-                          ? 50.0
-                          : 54.0,
+                      size:
+                          MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
                       showSpeechBubble: true,
                       enableTapSpeechBubble: false,
                     ),
@@ -2351,9 +2440,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                     child: BuddyCompanion(
                       state: BuddyState.happy,
                       message: displayEncouragement,
-                      size: MediaQuery.of(context).size.width < 360
-                          ? 50.0
-                          : 54.0,
+                      size:
+                          MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
                       showSpeechBubble: true,
                       enableTapSpeechBubble: false,
                     ),
@@ -2369,13 +2457,14 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   Widget _buildAnswerOption(
     BuildContext context,
     bool isDark,
-    int index,
+    int visibleIndex,
+    int optionIndex,
     String option,
     QuestionModel question,
   ) {
-    final isSelected = _controller!.selectedAnswerIndex == index;
-    final isCorrect = question.isCorrect(index);
-    final isTemporarilyWrong = _recentWrongAnswerIndex == index;
+    final isSelected = _controller!.selectedAnswerIndex == optionIndex;
+    final isCorrect = question.isCorrect(optionIndex);
+    final isTemporarilyWrong = _recentWrongAnswerIndex == optionIndex;
     final hasAnsweredCorrectly = _controller!.isAnswerCorrect;
 
     Color backgroundColor;
@@ -2412,10 +2501,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             ? null
             : () {
                 HapticFeedback.selectionClick();
-                _controller!.submitAnswer(index);
-                if (!question.isCorrect(index)) {
+                _controller!.submitAnswer(optionIndex);
+                if (!question.isCorrect(optionIndex)) {
                   _wrongAnswerHighlightTimer?.cancel();
-                  setState(() => _recentWrongAnswerIndex = index);
+                  setState(() => _recentWrongAnswerIndex = optionIndex);
                   _wrongAnswerHighlightTimer = Timer(
                     const Duration(milliseconds: 650),
                     () {
@@ -2448,7 +2537,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   child: iconData != null
                       ? Icon(iconData, color: textColor, size: 16)
                       : Text(
-                          String.fromCharCode(65 + index),
+                          String.fromCharCode(65 + visibleIndex),
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: textColor,
                             fontWeight: FontWeight.bold,
@@ -2462,11 +2552,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                 child: Text(
                   option,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: textColor,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
+                        color: textColor,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
                 ),
               ),
             ],

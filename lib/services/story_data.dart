@@ -7,7 +7,7 @@ final List<StoryModel> filipinoTalesData = [
     id: 'alamat-ng-pinya',
     title: 'Ang Alamat ng Pinya (Inang Mahalaga)',
     author: 'Traditional Filipino Folktale',
-    coverImage: 'assets/images/alamat_ng_pinya_cover_photo.jpg', // Placeholder
+    coverImage: 'assets/images/alamat_ng_pinya_cover_photo.png', // Placeholder
     description:
         'Isang kuwento tungkol sa batang si Pinya na hindi marunong makinig sa kanyang ina. Sa kanyang karanasan, matututuhan ang kahalagahan ng pagsunod, sipag, at pagmamahal sa magulang.',
     localizedTitles: {'en': 'The Legend of Pineapple (Mother Matters)'},
@@ -27,6 +27,7 @@ final List<StoryModel> filipinoTalesData = [
     segments: [
       StorySegment(
         id: 'pinya-opening',
+        image: 'assets/images/alamat-ng-pinya-page1.png',
         content:
             'Page 1 (Opening Page)\nTitle: Ang Alamat ng Pinya (Inang Mahalaga)\nGenre: Filipino Tale\nLevel: Beginner\nLanguage: Filipino\nSynopsis:\nIsang kuwento tungkol sa batang si Pinya na hindi marunong makinig sa kanyang ina. Sa kanyang karanasan, matututuhan ang kahalagahan ng pagsunod, sipag, at pagmamahal sa magulang.\nSource / Reference:\nTraditional Filipino Folktale – Public Domain\nAdapted for KuwentoBuddy\nHeads Up:\nAng kuwento ay may checkpoint questions sa bawat bahagi.\n\nBasahin nang mabuti at pag-isipan ang bawat pangyayari bago magpatuloy.\n\nPinakamainam para sa gabay na panimulang pagkatuto.',
       ),
@@ -55,6 +56,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'pinya-2',
+        image: 'assets/images/alamat-ng-pinya-page3.png',
         content:
             'Isang mainit na hapon, abala ang ina sa pagluluto. Ramdam ang init ng kalan at ang pagod sa kanyang katawan habang patuloy niyang hinahalo ang niluluto upang maiwasang masunog.\n\n“Pinya, anak, pakikuha mo nga ang sandok sa kusina,” sabi niya habang patuloy sa pagluluto.\n\nMabagal na tumayo si Pinya mula sa kanyang hinihigaan at dahan-dahang pumunta sa kusina. Ngunit ilang sandali lang ay bumalik siya sa ina.\n\n“Inay, hindi ko po makita,” sagot niya kahit ang sandok ay nasa malinaw na nakikitang lugar lamang.\n\nNapatigil ang ina at napatingin sa direksyon ng kusina. Napansin niyang ang sandok ay nasa mismong harap lamang ng mesa. Pinilit ng ina na pigilan ang nararamdamang inis.',
         question: QuestionModel(
@@ -78,6 +80,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'pinya-3',
+        image: 'assets/images/alamat-ng-pinya-page4.png',
         content:
             'Dahil sa matinding pagod, at bigat ng kanyang nararamdaman, hindi na napigilan ng ina ang kanyang sarili.\n\n“Pinya! Sana magkaroon ka ng maraming mata para makita mo ang hinahanap mo!” sabi niya nang may halong pagod at lungkot.\n\nBiglang natahimik ang paligid. Sa isang saglit, nawala si Pinya at hindi na siya makita sa loob ng kanilang bahay. Hinanap siya ng kanyang ina sa bawat sulok—sa kusina, sa likod ng bahay, at sa bakuran—ngunit wala na siya.\n\nLumipas ang mga araw at sa kanilang bakuran ay may tumubong kakaibang halaman. Lumaki ito hanggang sa mamunga, at nang makita ng ina ang bunga, napansin niyang ito ay may maraming “mata.”\n\nDoon niya unti-unting naunawaan ang nangyari—tila si Pinya ay naging bahagi ng halaman na iyon.',
         question: QuestionModel(
@@ -99,6 +102,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'pinya-4',
+        image: 'assets/images/alamat-ng-pinya-page5.png',
         content:
             'Araw-araw, inaalagaan ng ina ang halaman bilang alaala ng kanyang anak. Dinidiligan niya ito at tinitingnan nang may pagmamahal at pag-alala. Sa tuwing nakikita niya ang pinya, naaalala niya ang mga oras na hindi sila nagkaintindihan at ang mga salitang nasabi niya dahil sa kanyang pagod.\n\nSimula noon, naging paalala ang pinya sa lahat—lalo na sa mga bata—na mahalagang makinig sa magulang, tumulong sa mga gawain, at pahalagahan sila habang sila ay naroon pa.',
         question: QuestionModel(
@@ -126,9 +130,9 @@ final List<StoryModel> filipinoTalesData = [
   StoryModel(
     id: 'alamat-ng-parol',
     title: 'Ang Alamat ng Parol ng Bayan',
-    author: 'KuwentoBuddy',
+    author: 'Kuwento Buddy',
     coverImage:
-        'assets/images/tropical_jungle_adventure_children_illustration_null_1773063139698.jpg', // Placeholder
+        'assets/images/alamat-ng-parol-ng-bayan-cover-photo.png', // Placeholder
     description:
         'Isang kuwento tungkol sa isang maliit na bayang natutong magtulungan, at kung paano naging simbolo ang parol ng kanilang pagkakaisa.',
     level: StoryLevel.intermediate,
@@ -149,11 +153,13 @@ final List<StoryModel> filipinoTalesData = [
     segments: [
       StorySegment(
         id: 'parol-opening',
+        image: 'assets/images/alamat-ng-parol-page1.png',
         content:
             'Page 1 (Opening Page)\nTitle: Ang Alamat ng Parol ng Bayan\nGenre: Filipino Tale\nLevel: Intermediate\nLanguage: Filipino\nSynopsis:\nIsang kuwento tungkol sa isang maliit na bayang napapalibutan ng mga burol, ilog, at malalawak na bukirin. Sa kabila ng tahimik at payapang pamumuhay, dumating ang isang pagsubok na nagpaiba sa kanilang samahan. Sa gitna ng dilim at problema, natutunan ng mga tao ang kahalagahan ng pagtutulungan, pag-asa, at pagkakaisa. Mula sa isang simpleng parol na kanilang ginawa, ito ay naging simbolo ng liwanag na nagbubuklod sa buong komunidad.\nSource / Reference:\nOriginal Filipino-inspired folktale – Adapted for KuwentoBuddy\nHeads Up:\nAng kuwento ay may checkpoint questions sa bawat bahagi.\n\nBasahin nang mabuti at unawain ang damdamin at pangyayari sa kuwento bago sumagot.\n\nPinakamainam para sa gabay na pagdedesisyon.',
       ),
       StorySegment(
         id: 'parol-1',
+        image: 'assets/images/alamat-ng-parol-page2.png',
         content:
             'Noong unang panahon, may isang maliit na bayang tahimik na napapalibutan ng mga burol, ilog, at mga punongkahoy. Ang mga tao rito ay simple lamang ang pamumuhay ngunit masayahin at likas na marunong magtulungan sa araw-araw na gawain tulad ng paglilinis, pagtatanim, at pag-aalaga sa kanilang paligid.\n\nSa gitna ng bayang ito ay may isang batang nagngangalang Lira. Siya ay kilala sa pagiging masipag, matulungin, at laging handang umalalay sa iba, lalo na kapag may problema sa kanilang komunidad.\n\nHabang lumilipas ang mga araw, napansin ni Lira na unti-unting nagbabago ang samahan ng mga tao. May mga hindi na nagkakakilala, ang iba ay abala sa sarili, at may ilan na hindi na nagtutulungan tulad ng dati.\n\nDahil dito, nakaramdam si Lira ng pag-aalala. Alam niya na kapag nawala ang pagtutulungan, mahihirapan ang buong bayan.\n\nKaya’t nag-isip siya ng paraan kung paano muling mapaglapit ang mga tao sa kanilang lugar.',
         question: QuestionModel(
@@ -176,6 +182,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'parol-2',
+        image: 'assets/images/alamat-ng-parol-page3.png',
         content:
             'Isang gabi, habang malakas ang ulan at umiihip ang hangin, biglang nawalan ng ilaw ang buong bayan. Naging madilim ang paligid at mas lalo itong nagdulot ng takot sa ilang tao, lalo na sa mga bata at matatanda.\n\nDahil sa pangyayaring ito, nagtipon si Lira kasama ang ilang kabataan sa kanilang lugar. Nagdala sila ng mga simpleng gamit tulad ng lumang bote, papel, pandikit, at kandila upang makagawa ng parol na maaaring magbigay ng liwanag.\n\nHabang sila ay gumagawa, unti-unting lumabas ang ibang tao upang tumulong. May nagdala ng karagdagang kandila, may nag-gupit ng papel, at may tumulong sa pagbuo ng disenyo.\n\nSa hindi inaasahan, habang abala sila sa paggawa ng parol, muling nabuhay ang pag-uusap, tawanan, at pagtutulungan sa buong bayan.',
         question: QuestionModel(
@@ -199,6 +206,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'parol-3',
+        image: 'assets/images/alamat-ng-parol-page4.png',
         content:
             'Pagkatapos ng mahabang gabi ng pagtutulungan, natapos nila ang parol na gawa sa simpleng materyales. Bagama’t simple lamang ito sa anyo, nang ito ay sindihan, nagliwanag ito nang mas maliwanag kaysa sa inaasahan ng lahat.\n\nAng liwanag ng parol ay hindi lamang nagtanggal ng dilim sa kanilang paligid, kundi nagbigay rin ng pakiramdam ng pag-asa at kapanatagan sa mga tao.\n\nMula noon, naging bahagi na ng kanilang kaugalian ang paggawa ng parol tuwing may pagsubok. Ginagamit nila ito bilang paalala na sa pamamagitan ng pagtutulungan, anumang problema ay mas madaling malalampasan.',
         question: QuestionModel(
@@ -221,6 +229,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'parol-4',
+        image: 'assets/images/alamat-ng-parol-page5.png',
         content:
             'Sa paglipas ng maraming taon, ang parol ay naging mahalagang bahagi ng kanilang kultura at tradisyon. Hindi lamang ito ginagamit tuwing may selebrasyon, kundi nagsisilbi rin itong paalala ng kanilang pinagsamahan bilang isang bayan.\n\nHanggang ngayon, ang liwanag ng parol ay patuloy na sumisimbolo sa pag-asa. Ipinapaalala nito na kahit may dilim, bagyo, o problema sa buhay, mas nagiging matatag ang mga tao kapag sila ay nagkakaisa at nagtutulungan.',
         question: QuestionModel(
@@ -250,7 +259,7 @@ final List<StoryModel> filipinoTalesData = [
     title: 'Ang Alamat ng Bulkang Mayon',
     author: 'Bicolano Folktale',
     coverImage:
-        'assets/images/magical_forest_fairy_tale_children_book_illustration_null_1773063134827.jpg', // Placeholder
+        'assets/images/alamat-ng-bulkang-mayon-cover-photo.png', // Placeholder
     description:
         'Isang alamat tungkol sa pag-ibig nina Daragang Magayon at Panganoron. Ipinapakita nito ang lakas ng damdamin, kapalaran, at pagbuo ng Bulkang Mayon.',
     level: StoryLevel.advanced,
@@ -274,11 +283,13 @@ final List<StoryModel> filipinoTalesData = [
     segments: [
       StorySegment(
         id: 'mayon-opening',
+        image: 'assets/images/alamat-ng-bulkang-mayon-page1.png',
         content:
             'Page 1 (Opening Page)\nTitle: Ang Alamat ng Bulkang Mayon\nGenre: Filipino Tale\nLevel: Advanced\nLanguage: Filipino\nSynopsis:\nIsang alamat tungkol sa pag-ibig nina Daragang Magayon at Panganoron. Ipinapakita nito ang lakas ng damdamin, kapalaran, at pagbuo ng Bulkang Mayon bilang simbolo ng kanilang kuwento.\nSource / Reference:\nBicolano Folktale – Public Domain\nAdapted for KuwentoBuddy\nHeads Up:\nAng kuwentong ito ay may mas malalim na damdamin at pangyayari.\n\nMagbasa nang mabuti at pag-isipan ang bawat desisyon at emosyon ng mga tauhan.\n\nPinakamainam para sa gabay na pagkatuto at mas malalim na pagninilay.',
       ),
       StorySegment(
         id: 'mayon-1',
+        image: 'assets/images/alamat-ng-bulkang-mayon-page1.png',
         content:
             'Sa malayong lupain ng Bicol, sa paanan ng mga bundok at baybayin na dinarayo ng hangin mula sa dagat, nakatira ang isang dalagang kilala sa pangalang Daragang Magayon. Siya ay hindi lamang hinahangaan dahil sa kanyang pambihirang kagandahan, kundi pati na rin sa kanyang kabutihang-loob at pagiging mapagpakumbaba sa kabila ng kanyang katanyagan.\n\nDahil dito, maraming datu, mandirigma, at makapangyarihang lalaki sa iba’t ibang kaharian ang nagnanais na mapasakanya. Bawat isa ay nag-aalok ng kayamanan, kapangyarihan, at impluwensiya. Ngunit sa kabila ng lahat ng ito, isang tao lamang ang tunay na nakakuha ng kanyang puso—si Panganoron, isang mandirigmang kilala sa tapang, dangal, at katapatan.\n\nNgunit hindi lahat ay nasiyahan sa kanilang pagmamahalan. May isang makapangyarihang datu na matagal nang naghahangad kay Magayon at hindi matanggap ang kanyang pagtanggi, kahit pa malinaw na hindi ito sinuklian ng damdamin.',
         question: QuestionModel(
@@ -302,6 +313,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'mayon-2',
+        image: 'assets/images/alamat-ng-bulkang-mayon-page2.png',
         content:
             'Hindi matanggap ng datu ang matinding pagtanggi sa kanya. Ang kanyang pagmamataas ay nasugatan, kaya’t sa halip na tanggapin ito, pinili niyang maghasik ng galit. Dahil dito, nauwi sa tensyon at pag-aaway sa pagitan ng kanilang mga tauhan at ni Panganoron.\n\nSa gitna ng kaguluhan, habang pilit na lumalaban si Panganoron upang protektahan si Magayon, isang ligaw na pana ang tumama sa kanya, kaya siya ay napahina. Hindi niya ito inaasahan. Sa isang iglap, bumagsak siya sa lupa.\n\nSa di-kalayuan, nakita ito ni Magayon at napaluhod sa gulat at matinding takot. Hawak ang kanyang dibdib, hindi niya lubos maisip ang nangyayari sa harap niya.',
         question: QuestionModel(
@@ -324,6 +336,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'mayon-3',
+        image: 'assets/images/alamat-ng-bulkang-mayon-page3.png',
         content:
             'Hindi nagtagal matapos ang trahedya, hindi na rin kinaya ni Magayon ang bigat ng kanyang nararamdaman. Sa labis na kalungkutan, pinili niyang manatili sa lugar kung saan sila huling magkasama, dala ang matinding kalungkutan.\n\nSa paglipas ng panahon, nagbago ang lugar at napapalibutan ng damo at mga puno. Walang ingay, walang gulo—tanging katahimikan lamang ang naiwan.\n\nSa paglipas ng panahon, ang lugar na iyon ay unti-unting nagbago. Ang lupa ay umangat, at mula rito ay nabuo ang isang kahanga-hangang anyo ng bundok na may perpektong hugis kono—ang Bulkang Mayon.\n\nSinasabi ng mga tao na ang anyo ng bulkan ay sumasalamin sa damdaming hindi kailanman nawala sa kanilang pag-ibig.',
         question: QuestionModel(
@@ -347,6 +360,7 @@ final List<StoryModel> filipinoTalesData = [
       ),
       StorySegment(
         id: 'mayon-4',
+        image: 'assets/images/alamat-ng-bulkang-mayon-page4.png',
         content:
             'Hanggang sa kasalukuyan, ang Bulkang Mayon ay patuloy na hinahangaan hindi lamang dahil sa kagandahan nito, kundi dahil sa alamat na nakaugnay dito. Kapag ito ay nag-aalburuto, sinasabi ng ilan na ito ay paalala ng damdaming hindi kailanman namamatay—ang pag-ibig nina Magayon at Panganoron.\n\nSa mata ng mga tao, ang bulkan ay hindi lamang anyo ng kalikasan, kundi isang paalala ng sakripisyo, kapalaran, at pag-ibig na lumampas sa hangganan ng buhay.',
         question: QuestionModel(
@@ -373,8 +387,8 @@ final List<StoryModel> filipinoTalesData = [
   StoryModel(
     id: 'huni-ng-duyan-sa-punong-kawayan',
     title: 'Ang Huni ng Duyan sa Punong Kawayan',
-    author: 'KuwentoBuddy Original',
-    coverImage: 'assets/images/alamat_ng_pinya_cover_photo.jpg',
+    author: 'Kuwento Buddy Original',
+    coverImage: 'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
     description:
         'Isang batang nakaririnig ng mahinhing huni mula sa lumang duyan at natututuhan na ang kabutihan at pagtutulungan ay may sariling himig.',
     localizedTitles: {'en': 'The Hum of the Bamboo Cradle'},
@@ -393,6 +407,7 @@ final List<StoryModel> filipinoTalesData = [
     segments: [
       StorySegment(
         id: 'huni-duyan-opening',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: Ang Huni ng Duyan sa Punong Kawayan
 Genre: Filipino Tale
@@ -412,6 +427,7 @@ Pinakamainam para sa gabay na panimulang pagkatuto.''',
       ),
       StorySegment(
         id: 'huni-duyan-1',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
         content:
             '''Tuwing hapon, matapos ang maiinit na gawain sa bukid, umuupo si Laya sa ilalim ng kubong kawayan ng kanyang lola. Doon niya unang narinig ang mahinhing huni. Hindi ito malakas, ngunit tila may dalang lambing na pumapawi sa pagod.
 
@@ -441,6 +457,7 @@ Napaisip si Laya. Ang salitang himig ay bago sa kanya, pero sa paraan ng pagtugo
       ),
       StorySegment(
         id: 'huni-duyan-2',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page2.png',
         content:
             '''Kinabukasan, may kapitbahay na dumating upang humiram ng bigas dahil may bisita silang inaasikaso. Sa mismong oras na iyon, abala si Laya sa paglalaro at gusto na sana niyang tumakbo palayo. Ngunit nakita niya ang pagod sa mukha ng kanyang lola at ang pag-aalala ng kapitbahay.
 
@@ -472,6 +489,7 @@ Nalaman ni Laya na ang alalay ay hindi lamang pagbubuhat ng gamit. Ito rin ay pa
       ),
       StorySegment(
         id: 'huni-duyan-3',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page3.png',
         content:
             '''Sa gabi ng munting pagdiriwang sa barangay, dinala ng mga tao ang pagkaing inihanda nila. Ang duyan sa kubo ni Laya ay hindi na payapa lamang na nakasabit; tila sumasabay ito sa tawa, kuwentuhan, at pagdalo ng mga kapitbahay.
 
@@ -503,9 +521,9 @@ Ngumiti si Laya. Naunawaan niyang ang duyan ay hindi lamang gamit sa pagtulog. I
   StoryModel(
     id: 'butil-ng-tala-sa-ilalim-ng-balete',
     title: 'Ang Butil ng Tala sa Ilalim ng Balete',
-    author: 'KuwentoBuddy Original',
+    author: 'Kuwento Buddy Original',
     coverImage:
-        'assets/images/magical_forest_fairy_tale_children_book_illustration_null_1773063134827.jpg',
+        'assets/images/butil-ng-tala-sa-ilalim-ng-balete-cover-photo.png',
     description:
         'Dalawang magkapatid ang sumusunod sa liwanag sa ilalim ng balete at natutuhang ang pag-aalaga sa tubig at pangako ay mas mahalaga kaysa sa pag-angkin.',
     localizedTitles: {'en': 'The Star Seed Beneath the Balete Tree'},
@@ -525,6 +543,8 @@ Ngumiti si Laya. Naunawaan niyang ang duyan ay hindi lamang gamit sa pagtulog. I
     segments: [
       StorySegment(
         id: 'butil-tala-opening',
+        image:
+            'assets/images/butil-ng-tala-sa-ilalim-ng-balete-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: Ang Butil ng Tala sa Ilalim ng Balete
 Genre: Filipino Tale
@@ -544,6 +564,7 @@ Pinakamainam para sa gabay na pagninilay at mas malalim na pag-unawa.''',
       ),
       StorySegment(
         id: 'butil-tala-1',
+        image: 'assets/images/butil-ng-tala-sa-ilalim-ng-balete-page1.png',
         content:
             '''Gabi na nang mapansin nina Tano at Selya na halos wala nang tubig sa sapa. Ang mga dahon ay kulubot, at ang mga palay sa bakuran ay nakayuko na parang pagod na pagod. Habang naglalakad sila pauwi, may nakita silang maliit na sinag na galing sa ilalim ng lumang balete.
 
@@ -575,6 +596,7 @@ Napaisip si Selya. Ang salitang dahilan ay tila may bigat na nagsasabing ang baw
       ),
       StorySegment(
         id: 'butil-tala-2',
+        image: 'assets/images/butil-ng-tala-sa-ilalim-ng-balete-page2.png',
         content:
             '''Kinabukasan, may dumating na matatandang kapitbahay na humihingi ng kaunting tubig para sa mga batang may lagnat. Sa bahay nila, iisa na lamang ang tapayang halos kalahati na lang ang laman.
 
@@ -607,6 +629,8 @@ Ang salitang pahiram ay hindi na lamang simpleng pag-abot ng salok. Isa na itong
       ),
       StorySegment(
         id: 'butil-tala-3',
+        image:
+            'assets/images/lia-and-the-map-of-whispering-waves-cover-photo.png',
         content:
             '''Nang sumunod na gabi, ibinalik ng mga kapitbahay ang lalagyan at dinalhan sila ng mga punlang gulay at ilang pirasong prutas mula sa mataas na bahagi ng baryo. Sa pag-uwi nila, muli silang dumaan sa balete at nakita na ang liwanag ng butil ay naging manipis na sinag na papalapit sa lupa.
 
@@ -636,13 +660,17 @@ At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Is
   ),
   StoryModel(
     id: 'lia-at-ang-mapa-ng-mahinhing-alon',
-    title: 'Lia at ang Mapa ng Mahinhing Alon',
-    author: 'KuwentoBuddy Original',
+    title: 'Lia and the Map of Whispering Waves',
+    author: 'Kuwento Buddy Original',
     coverImage:
-        'assets/images/tropical_jungle_adventure_children_illustration_null_1773063139698.jpg',
+        'assets/images/lia-and-the-map-of-whispering-waves-cover-photo.png',
     description:
-        'Sinundan ni Lia ang isang lumang mapa sa tabing-dagat at natutuhan niyang ang pag-usisa ay mas ligtas kapag may pag-iingat at malasakit sa kasama.',
-    localizedTitles: {'en': 'Lia and the Map of Whispering Waves'},
+        'Lia follows an old map by the shore and learns that curiosity is safer when guided by caution and care for others.',
+    localizedTitles: {'fil': 'Lia at ang Mapa ng Mahinhing Alon'},
+    localizedDescriptions: {
+      'fil':
+          'Sinundan ni Lia ang isang lumang mapa sa tabing-dagat at natutuhan niyang ang pag-usisa ay mas ligtas kapag may pag-iingat at malasakit sa kasama.',
+    },
     level: StoryLevel.beginner,
     categories: [StoryCategory.adventureJourney],
     estimatedMinutes: 5,
@@ -650,16 +678,18 @@ At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Is
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
     sequenceActivity: [
-      'Nakakita si Lia ng lumang mapa sa loob ng kabibe.',
-      'Sinundan niya ang mga palatandaan sa daan ng buhangin at kawayan.',
-      'Tinulungan niya ang batang pinsan na maglakad sa tulay na lumiliyad.',
-      'Natagpuan niya ang nawawalang kompas ng mangingisda sa isang lihim na look.',
+      'Lia found an old map inside a shell.',
+      'She followed the clues along the sand and bamboo path.',
+      'She helped her younger cousin cross the swaying bridge.',
+      'She found the fisherman\'s missing compass in a hidden cove.',
     ],
     segments: [
       StorySegment(
         id: 'lia-map-opening',
+        image:
+            'assets/images/lia-and-the-map-of-whispering-waves-cover-photo.png',
         content: '''Page 1 (Opening Page)
-Title: Lia at ang Mapa ng Mahinhing Alon
+Title: Lia and the Map of Whispering Waves
 Genre: Adventure & Journey Story
 Level: Beginner
 Language: English
@@ -677,6 +707,7 @@ Best for guided introduction.''',
       ),
       StorySegment(
         id: 'lia-map-1',
+        image: 'assets/images/lia-and-the-map-of-whispering-waves-page1.png',
         content:
             '''Lia was helping her grandmother sort shells when she noticed a tiny map rolled into a shell box. The paper was soft at the edges, and one line could still be read: “Follow the hush after the rain.”
 
@@ -704,6 +735,7 @@ She tucked the map into her pocket and looked toward the path that curved behind
       ),
       StorySegment(
         id: 'lia-map-2',
+        image: 'assets/images/lia-and-the-map-of-whispering-waves-page2.png',
         content:
             '''A narrow bamboo bridge led across a shallow stream before the path climbed toward the cove. Lia’s younger cousin, Pio, had followed her without asking. At first, he laughed and ran ahead, but the bridge swayed under his feet.
 
@@ -734,6 +766,7 @@ Her map still pointed forward, but now she understood that the companion beside 
       ),
       StorySegment(
         id: 'lia-map-3',
+        image: 'assets/images/lia-and-the-map-of-whispering-waves-page3.png',
         content:
             '''At the cove, Lia found an old fisherman sitting beside a net with a broken knot. He smiled when he saw the shell box in her hand.
 
@@ -770,12 +803,16 @@ Lia looked at the shell map again and understood: a journey can lead to discover
   StoryModel(
     id: 'daan-ng-orasan-sa-ulap-na-gulod',
     title: 'The Clockmaker’s Path to Cloud Ridge',
-    author: 'KuwentoBuddy Original',
+    author: 'Kuwento Buddy Original',
     coverImage:
-        'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
+        'assets/images/clockmaker’s-path-to-cloud-ridge-cover-photo.png',
     description:
-        'Naglakad si Rafael sa mahamog na daan upang maihatid ang mga piyesa ng orasan ng kanyang lolo at natutuhan niyang ang pag-iingat ay mahalaga sa gitna ng hamon.',
+        'Rafael walks a foggy path to deliver his grandfather’s clock parts and learns that caution matters in the middle of a challenge.',
     localizedTitles: {'fil': 'Ang Landas ng Relohero Patungo sa Ulap na Gulod'},
+    localizedDescriptions: {
+      'fil':
+          'Naglakad si Rafael sa mahamog na daan upang maihatid ang mga piyesa ng orasan ng kanyang lolo at natutuhan niyang ang pag-iingat ay mahalaga sa gitna ng hamon.',
+    },
     level: StoryLevel.intermediate,
     categories: [StoryCategory.adventureJourney],
     estimatedMinutes: 6,
@@ -783,14 +820,15 @@ Lia looked at the shell map again and understood: a journey can lead to discover
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
     sequenceActivity: [
-      'Tinanggap ni Rafael ang sira-sirang orasan mula sa kanyang lolo.',
-      'Umakyat siya sa daan papunta sa Cloud Ridge.',
-      'Nabanaag niya ang dalawang landas sa gitna ng hamog.',
-      'Pinili niyang sumunod sa ligtas na bakas at natapos ang paglalakbay.',
+      'Rafael received the broken clock from his grandfather.',
+      'He climbed the path toward Cloud Ridge.',
+      'He saw two paths through the fog.',
+      'He chose the safer trail and finished the journey.',
     ],
     segments: [
       StorySegment(
         id: 'clockmaker-opening',
+        image: 'assets/images/clockmaker’s-path-to-cloud-ridge-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Clockmaker’s Path to Cloud Ridge
 Genre: Adventure & Journey Story
@@ -810,6 +848,7 @@ Best for guided decision-making.''',
       ),
       StorySegment(
         id: 'clockmaker-1',
+        image: 'assets/images/clockmaker’s-path-to-cloud-ridge-page1.png',
         content:
             '''Rafael held the broken clock parts carefully in a cloth wrapped by his grandfather. The hands had stopped at 5:30, and his grandfather explained that the village bell had once been set to that time to warn farmers when the fog usually began to thicken on the ridge.
 
@@ -838,6 +877,7 @@ Rafael looked at the pieces again and noticed a tiny crack near the gear. It was
       ),
       StorySegment(
         id: 'clockmaker-2',
+        image: 'assets/images/clockmaker’s-path-to-cloud-ridge-page2.png',
         content:
             '''As Rafael climbed toward Cloud Ridge, the fog rolled in earlier than expected. He saw two paths: one was narrow and looked quicker, while the other was longer but had small stones painted white along the edge.
 
@@ -859,14 +899,14 @@ By choosing the safer path, he did not save time. He saved himself from a mistak
           ],
           correctAnswerIndex: 2,
           hint: 'Look at the white stones and the cliffside grass.',
-          encouragement:
-              'Tama! Pinili ni Rafael ang pag-iingat kaysa sa pagmamadali.',
+          encouragement: 'Correct! Rafael chose caution over rushing.',
           buddyHintParagraph:
               'He noticed that the shortcut would have taken him too close to the edge.',
         ),
       ),
       StorySegment(
         id: 'clockmaker-3',
+        image: 'assets/images/clockmaker’s-path-to-cloud-ridge-page3.png',
         content:
             '''When Rafael reached the top, the old tower bell was silent. Inside the tower room, he found a tiny note tucked behind the clock face: “The bell keeps time, but the mountain keeps memory.”
 
@@ -899,9 +939,8 @@ Rafael realized the clock was not simply a family treasure. It was a promise tha
   StoryModel(
     id: 'empty-seat-by-the-window',
     title: 'The Empty Seat by the Window',
-    author: 'KuwentoBuddy Original',
-    coverImage:
-        'assets/images/rice_terraces_Philippines_landscape_beautiful_null_1773063138652.jpg',
+    author: 'Kuwento Buddy Original',
+    coverImage: 'assets/images/empty-seat-by-the-window-cover-photo.png',
     description:
         'Isang bagong mag-aaral ang dumarating sa klase, at natututuhan ni Mara na ang simpleng pagbati at pagbabahagi ay maaaring magpaluwag ng kaba ng iba.',
     localizedTitles: {'fil': 'Ang Bakanteng Upuan sa Bintana'},
@@ -920,6 +959,7 @@ Rafael realized the clock was not simply a family treasure. It was a promise tha
     segments: [
       StorySegment(
         id: 'window-seat-opening',
+        image: 'assets/images/empty-seat-by-the-window-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Empty Seat by the Window
 Genre: Real-Life / Social Story
@@ -939,6 +979,7 @@ Best for guided introduction.''',
       ),
       StorySegment(
         id: 'window-seat-1',
+        image: 'assets/images/empty-seat-by-the-window-page1.png',
         content:
             '''Mara placed her bag on the chair beside the window and noticed the boy glance around the classroom. He held his notebook close to his chest, and his shoulders looked stiff, as if he were bracing for something unknown.
 
@@ -967,6 +1008,7 @@ Mara thought of the empty seat beside her. It suddenly felt less empty and more 
       ),
       StorySegment(
         id: 'window-seat-2',
+        image: 'assets/images/empty-seat-by-the-window-page2.png',
         content:
             '''During art time, the teacher passed out crayons. Ben only had a pencil and one short crayon in his bag. Mara noticed that he paused each time the class needed a color.
 
@@ -995,6 +1037,7 @@ The classroom seemed brighter, even though nothing had changed on the walls.''',
       ),
       StorySegment(
         id: 'window-seat-3',
+        image: 'assets/images/empty-seat-by-the-window-page3.png',
         content:
             '''By the end of the day, the class was working on a map poster that showed the places they came from. Ben drew a small river and a market from his old town. He finally spoke in a clear voice, adding one detail after another.
 
@@ -1026,9 +1069,8 @@ She understood that kindness is often quiet at the beginning but can grow loud i
   StoryModel(
     id: 'saturday-market-list',
     title: 'The Saturday Market List',
-    author: 'KuwentoBuddy Original',
-    coverImage:
-        'assets/images/dragon_castle_fantasy_children_illustration_null_1773063135821.jpg',
+    author: 'Kuwento Buddy Original',
+    coverImage: 'assets/images/saturday-market-list-cover-photo.png',
     description:
         'Pinagkakatiwalaang bumili ni Jun ng mga pangangailangan sa palengke, at natutuhan niyang ang pagbabalik ng sobrang sukli ay bumubuo ng tiwala.',
     localizedTitles: {
@@ -1049,6 +1091,7 @@ She understood that kindness is often quiet at the beginning but can grow loud i
     segments: [
       StorySegment(
         id: 'market-list-opening',
+        image: 'assets/images/saturday-market-list-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Saturday Market List
 Genre: Real-Life / Social Story
@@ -1068,6 +1111,7 @@ Best for guided decision-making.''',
       ),
       StorySegment(
         id: 'market-list-1',
+        image: 'assets/images/saturday-market-list-page1.png',
         content:
             '''Jun folded the market list and slipped the exact money into his pocket. His mother reminded him, “The amount is just right. If there is change, bring it back.”
 
@@ -1096,6 +1140,7 @@ The market noise moved around him like a river, but Jun’s decision felt still.
       ),
       StorySegment(
         id: 'market-list-2',
+        image: 'assets/images/saturday-market-list-page2.png',
         content:
             '''As Jun walked past a stall selling warm bread, the smell made his stomach growl. He thought about the sweet bun he had wanted for days. With the extra coins, he could buy one and still go home with enough to make the errand feel easier.
 
@@ -1126,6 +1171,7 @@ The seller blinked, then smiled with relief.''',
       ),
       StorySegment(
         id: 'market-list-3',
+        image: 'assets/images/saturday-market-list-page3.png',
         content:
             '''When Jun reached home, he handed his mother the vegetables, the soap, and the exact change. He also told her about the extra coins and how he returned them.
 
@@ -1162,8 +1208,7 @@ final List<StoryModel> adventureJourneyData = [
     id: 'alice-strange-land',
     title: 'The Journey of Alice in the Strange Land',
     author: 'Lewis Carroll / KuwentoBuddy Adaptation',
-    coverImage:
-        'assets/images/magical_forest_fairy_tale_children_book_illustration_null_1773063134827.jpg',
+    coverImage: 'assets/images/alice-strange-land-cover-photo.png',
     description:
         'A simplified public domain adventure story about Alice entering a strange world, learning to think carefully, make smart decisions, and stay brave.',
     level: StoryLevel.beginner,
@@ -1182,6 +1227,7 @@ final List<StoryModel> adventureJourneyData = [
     segments: [
       StorySegment(
         id: 'alice-opening',
+        image: 'assets/images/alice-strange-land-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Journey of Alice in the Strange Land
 Genre: Adventure & Journey Stories
@@ -1201,6 +1247,7 @@ Best for guided introduction''',
       ),
       StorySegment(
         id: 'alice-1',
+        image: 'assets/images/alice-strange-land-page1.png',
         content:
             '''One quiet afternoon, a young girl named Alice was sitting by the riverbank, watching the gentle flow of water and the clouds above. She felt bored because nothing interesting seemed to be happening around her. She was about to close her eyes when something unusual caught her attention.
 
@@ -1232,6 +1279,7 @@ Without hesitation, Alice followed the rabbit into the hole.''',
       ),
       StorySegment(
         id: 'alice-2',
+        image: 'assets/images/alice-strange-land-page2.png',
         content:
             '''As soon as Alice entered the hole, she began falling down a long, deep tunnel. She carefully looked around while falling and noticed strange things along the walls—shelves, books, and small doors passing by slowly as she went deeper and deeper.
 
@@ -1262,6 +1310,7 @@ She felt both curious and unsure about what would happen next.''',
       ),
       StorySegment(
         id: 'alice-3',
+        image: 'assets/images/alice-strange-land-page3.png',
         content:
             '''While exploring the room, Alice found a small golden key lying on a table. She became excited and tried to see what it could open. She walked around and tried opening every door she could find, but most of them were either locked or too small for her to pass through.
 
@@ -1290,6 +1339,7 @@ However, when she tried to enter, she realized she was too big to fit through th
       ),
       StorySegment(
         id: 'alice-4',
+        image: 'assets/images/alice-strange-land-page4.png',
         content:
             '''Alice continued to explore the strange world around her instead of giving up. Even though she felt confused at times and some things did not always make sense, she stayed curious and kept trying to understand her surroundings.
 
@@ -1319,8 +1369,7 @@ Every new place she discovered taught her something important. She learned that 
     id: 'lost-compass-lisbon',
     title: 'The Lost Compass of Lisbon',
     author: 'Public Domain Adventure Tradition / KuwentoBuddy Adaptation',
-    coverImage:
-        'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
+    coverImage: 'assets/images/lost-compass-lisbon-cover-photo.png',
     description:
         'A young apprentice sailor named Elias discovers an unusual compass and must use it to survive a dangerous sea journey and uncover hidden truths.',
     localizedTitles: {'fil': 'Ang Nawawalang Kompas ng Lisbon'},
@@ -1342,6 +1391,7 @@ Every new place she discovered taught her something important. She learned that 
     segments: [
       StorySegment(
         id: 'lisbon-opening',
+        image: 'assets/images/lost-compass-lisbon-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Lost Compass of Lisbon
 Genre: Adventure & Journey Story
@@ -1361,6 +1411,7 @@ Best for guided decision-making''',
       ),
       StorySegment(
         id: 'lisbon-1',
+        image: 'assets/images/lost-compass-lisbon-page1.png',
         content:
             '''Elias had always dreamed of becoming a great sailor like his father, who once crossed the Atlantic Ocean and went missing at sea. At just sixteen, he joined a trading ship leaving Lisbon, carrying nothing but a small bag and an old brass compass given by his father before he disappeared.
 
@@ -1392,6 +1443,7 @@ Elias looked at his compass. It was spinning slowly, then suddenly stopped—poi
       ),
       StorySegment(
         id: 'lisbon-2',
+        image: 'assets/images/lost-compass-lisbon-page2.png',
         content:
             '''The captain ordered the crew to follow Elias’s direction, even though many doubted him. As they changed course, the storm intensified. Waves rose very high above the ship, crashing against it.
 
@@ -1425,6 +1477,7 @@ The captain looked at Elias with shock. “You... may have just saved us.”''',
       ),
       StorySegment(
         id: 'lisbon-3',
+        image: 'assets/images/lost-compass-lisbon-page3.png',
         content:
             '''The island was covered in dense forests and strange ruins. The crew decided to explore while repairing the ship. Elias, still holding the compass, noticed something unusual—the needle no longer spun randomly. It now pointed steadily toward the center of the island.
 
@@ -1455,6 +1508,7 @@ Elias paused. The wind grew colder.''',
       ),
       StorySegment(
         id: 'lisbon-4',
+        image: 'assets/images/lost-compass-lisbon-page4.png',
         content:
             '''Elias chose to follow the compass deeper into the island. At its center, he discovered an old lighthouse still faintly glowing, even though no fire burned inside it.
 
@@ -1489,8 +1543,7 @@ He stood quietly, knowing his journey had only just begun.''',
     id: 'silent-ship-arctic-night',
     title: 'The Silent Ship of the Arctic Night',
     author: 'Public Domain Exploration Tradition / KuwentoBuddy Adaptation',
-    coverImage:
-        'assets/images/dragon_castle_fantasy_children_illustration_null_1773063135821.jpg',
+    coverImage: 'assets/images/silent-ship-arctic-night-cover-photo.png',
     description:
         'A scientific Arctic expedition encounters a magnetic storm, psychological strain, and a hidden structure beneath the ice that changes the meaning of the mission.',
     level: StoryLevel.advanced,
@@ -1514,6 +1567,7 @@ He stood quietly, knowing his journey had only just begun.''',
     segments: [
       StorySegment(
         id: 'arctic-opening',
+        image: 'assets/images/silent-ship-arctic-night-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Silent Ship of the Arctic Night
 Genre: Adventure & Journey Story
@@ -1535,6 +1589,7 @@ Best for guided learning and deeper reflection.''',
       ),
       StorySegment(
         id: 'arctic-1',
+        image: 'assets/images/silent-ship-arctic-night-page1.png',
         content:
             '''The expedition began with strict scientific discipline and careful optimism. Dr. Adrian Wells, a respected polar researcher known for surviving two previous Arctic missions, led a six-member international team into the Arctic Circle. Their objective was to document unusual fluctuations in the Earth’s magnetic field that satellite data could not fully explain.
 
@@ -1570,6 +1625,7 @@ He did not speak. But he did not turn away either.''',
       ),
       StorySegment(
         id: 'arctic-2',
+        image: 'assets/images/silent-ship-arctic-night-page2.png',
         content:
             '''Days turned into an indistinguishable stretch of darkness. In the Arctic night, the absence of sunlight distorted all sense of time. The ship became a sealed world of cold metal, weak light, and growing psychological strain. Supplies were carefully rationed, but morale weakened faster than provisions.
 
@@ -1603,6 +1659,7 @@ Adrian stood beside him for a long moment. For the first time since the expediti
       ),
       StorySegment(
         id: 'arctic-3',
+        image: 'assets/images/silent-ship-arctic-night-page3.png',
         content:
             '''On the seventh night following the storm, the Arctic ice began to shift in unnatural ways. Deep cracks formed beneath the ship, producing low, rhythmic vibrations that echoed through the hull like distant machinery awakening.
 
@@ -1647,6 +1704,7 @@ And it was active.''',
       ),
       StorySegment(
         id: 'arctic-4',
+        image: 'assets/images/silent-ship-arctic-night-page4.png',
         content:
             '''As the crew approached the structure, an unsettling silence spread across the ice. Even the wind seemed to fade, as if the environment itself was listening. The compass in Adrian’s hand suddenly stopped functioning altogether.
 
@@ -1696,8 +1754,7 @@ final List<StoryModel> socialStoriesData = [
     id: 'helpful-town-day',
     title: 'A Day in the Helpful Town',
     author: 'Public Domain Moral Story Tradition / KuwentoBuddy Adaptation',
-    coverImage:
-        'assets/images/rice_terraces_Philippines_landscape_beautiful_null_1773063138652.jpg',
+    coverImage: 'assets/images/helpful-town-day-cover-photo.png',
     description:
         'A kind young boy named Oliver learns how small acts of kindness, sharing, and listening can make a big difference in his community.',
     localizedTitles: {'fil': 'Isang Araw sa Matulunging Bayan'},
@@ -1717,6 +1774,7 @@ final List<StoryModel> socialStoriesData = [
     segments: [
       StorySegment(
         id: 'helpful-town-day-opening',
+        image: 'assets/images/helpful-town-day-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: A Day in the Helpful Town
 Genre: Real-Life / Social Story
@@ -1736,6 +1794,7 @@ Best for guided introduction''',
       ),
       StorySegment(
         id: 'helpful-town-day-1',
+        image: 'assets/images/helpful-town-day-page1.png',
         content:
             '''In a small and peaceful town, there was a young boy named Oliver who lived with his grandmother. Every morning, he would walk to the nearby market to buy fresh bread and help his grandmother prepare breakfast.
 
@@ -1765,6 +1824,7 @@ The woman smiled warmly and nodded.''',
       ),
       StorySegment(
         id: 'helpful-town-day-2',
+        image: 'assets/images/helpful-town-day-page2.png',
         content:
             '''As Oliver carried the basket, the woman thanked him many times. Her voice sounded soft but full of gratitude. People in the market began to notice Oliver’s action.
 
@@ -1794,6 +1854,7 @@ Oliver smiled, feeling happy and calm.''',
       ),
       StorySegment(
         id: 'helpful-town-day-3',
+        image: 'assets/images/helpful-town-day-page3.png',
         content:
             '''Later that day, Oliver walked past a small bakery. He saw a younger child standing outside, looking at the bread inside with hungry eyes.
 
@@ -1824,6 +1885,7 @@ But then he remembered how it felt when someone helped him before.''',
       ),
       StorySegment(
         id: 'helpful-town-day-4',
+        image: 'assets/images/helpful-town-day-page4.png',
         content:
             '''Oliver gently approached the child and asked what was wrong. After hearing the child’s situation, he decided to share part of his own money to buy a small loaf of bread.
 
@@ -1857,8 +1919,7 @@ Oliver simply nodded and said, “Yes, Grandma. I learned something important to
     id: 'maya-missing-wallet',
     title: 'The Day Maya Handled the Missing Wallet',
     author: 'Public Domain Moral Story Tradition / KuwentoBuddy Adaptation',
-    coverImage:
-        'assets/images/dragon_castle_fantasy_children_illustration_null_1773063135821.jpg',
+    coverImage: 'assets/images/maya-missing-wallet-cover.png',
     description:
         'Maya finds a lost wallet on the bus and must decide what to do with it, learning about honesty and responsibility.',
     localizedTitles: {
@@ -1882,6 +1943,7 @@ Oliver simply nodded and said, “Yes, Grandma. I learned something important to
     segments: [
       StorySegment(
         id: 'maya-missing-wallet-opening',
+        image: 'assets/images/maya-missing-wallet-cover.png',
         content: '''Page 1 (Opening Page)
 Title: The Day Maya Handled the Missing Wallet
 Genre: Real-Life / Social Story
@@ -1901,6 +1963,7 @@ Best for guided decision-making''',
       ),
       StorySegment(
         id: 'maya-missing-wallet-1',
+        image: 'assets/images/maya-missing-wallet-page1.png',
         content:
             '''Maya finished her last class feeling exhausted but relieved that the school day was finally over. She boarded her usual public bus and sat near the window, putting on her earphones while watching the streets slowly pass by. At first, the ride was calm, and she was simply thinking about going home and resting.
 
@@ -1928,6 +1991,7 @@ She slowly picked up the wallet. It felt heavier than she thought, and that feel
       ),
       StorySegment(
         id: 'maya-missing-wallet-2',
+        image: 'assets/images/maya-missing-wallet-page2.png',
         content:
             '''Maya opened the wallet slightly, just enough to see what was inside. She found an ID card, a small amount of cash, and a student identification card that showed the owner was a young college student. Seeing the photo made her realize this wallet definitely belonged to someone who would be worried about losing it.
 
@@ -1955,6 +2019,7 @@ Maya nodded slightly but did not speak. She tightened her grip on the wallet, fe
       ),
       StorySegment(
         id: 'maya-missing-wallet-3',
+        image: 'assets/images/maya-missing-wallet-page3.png',
         content:
             '''As the bus continued forward, it began slowing down as it approached Maya’s stop. She realized she had only a short amount of time left to make a decision. Her thoughts became even more intense as she weighed her choices carefully.
 
@@ -1980,6 +2045,7 @@ Maya slowly stood up while still holding the wallet. She felt nervous but decide
       ),
       StorySegment(
         id: 'maya-missing-wallet-4',
+        image: 'assets/images/maya-missing-wallet-page4.png',
         content:
             '''Maya reached the front of the bus and handed the wallet to the driver. She calmly explained what happened and where she found it. The driver nodded and thanked her for being honest. He announced that they would try to return it to the rightful owner at the next stop.
 
@@ -2010,8 +2076,7 @@ That evening, a message was sent through the school group chat. The wallet had b
     id: 'ethics-protocol-raven-station',
     title: 'The Ethics Protocol of Raven Station',
     author: 'Public Domain Science Ethics Tradition / KuwentoBuddy Adaptation',
-    coverImage:
-        'assets/images/underwater_ocean_mermaid_children_story_null_1773063136715.png',
+    coverImage: 'assets/images/ethics-protocol-raven-station-cover-photo.png',
     description:
         'At a deep-space research station orbiting Europa, Dr. Elara Vance must decide how to respond when a signal beneath the ice may be either the greatest discovery in human history or a dangerous unknown.',
     localizedTitles: {'fil': 'Ang Protokol ng Etika ng Istasyon Raven'},
@@ -2036,6 +2101,7 @@ That evening, a message was sent through the school group chat. The wallet had b
     segments: [
       StorySegment(
         id: 'raven-station-opening',
+        image: 'assets/images/ethics-protocol-raven-station-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: The Ethics Protocol of Raven Station
 Genre: Real-Life / Social Story (Scientific Ethics & Crisis Decision-Making)
@@ -2059,6 +2125,7 @@ Best for guided learning and deeper reflection.''',
       ),
       StorySegment(
         id: 'raven-station-1',
+        image: 'assets/images/ethics-protocol-raven-station-page1.png',
         content:
             '''Raven Station had operated for 14 months without incident. Located in permanent orbit above Europa’s frozen surface, it functioned as both a research laboratory and a planetary monitoring hub. Dr. Elara Vance had led strict protocol enforcement since arrival, ensuring that all biological sampling from Europa followed isolation procedures established by international space law.
 
@@ -2092,6 +2159,7 @@ She closed her tablet slowly. If this were communication, then protocol demanded
       ),
       StorySegment(
         id: 'raven-station-2',
+        image: 'assets/images/ethics-protocol-raven-station-page2.png',
         content:
             '''Within 48 hours, the station atmosphere shifted. Continuous signal feedback from Europa intensified, and some crew members had trouble sleeping. Some researchers reported unusual sounds that some crew members found difficult to explain, which seemed synchronized with station systems.
 
@@ -2125,6 +2193,7 @@ Her hands remained still above the console. For the first time, she questioned w
       ),
       StorySegment(
         id: 'raven-station-3',
+        image: 'assets/images/ethics-protocol-raven-station-page3.png',
         content:
             '''A critical decision point was reached when Europa’s subsurface readings triggered a station-wide system response. All external instruments synchronized briefly with the same signal pattern, locking internal systems into temporary alignment with the anomaly.
 
@@ -2160,6 +2229,7 @@ Elara stood at the center of the debate. Then she made a decision that required 
       ),
       StorySegment(
         id: 'raven-station-4',
+        image: 'assets/images/ethics-protocol-raven-station-page4.png',
         content:
             '''Elara authorized a controlled interface channel—limited, isolated, and monitored. The moment activation occurred, the Europa signal stabilized completely. The system responded not as noise, but as a structured exchange.
 

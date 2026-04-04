@@ -94,13 +94,13 @@ class _SplashScreenState extends State<SplashScreen>
       curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
     );
 
-    _textSlide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
+    _textSlide =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
 
     _controller.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) => _navigateNext());
@@ -111,8 +111,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     // Use router's redirect logic or explicitly navigate to correct initial state
-    final authService = context
-        .read<kuwentobuddy.AuthService>(); // Need to import this
+    final authService =
+        context.read<kuwentobuddy.AuthService>(); // Need to import this
     if (authService.isAuthenticated) {
       context.go('/profile-selection');
     } else if (authService.isGuest) {
@@ -224,72 +224,23 @@ class _SplashScreenState extends State<SplashScreen>
                       opacity: _logoFade.value,
                       child: Transform.scale(
                         scale: _logoScale.value,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 44,
-                            vertical: 40,
-                          ),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: isDark
-                                  ? [
-                                      Colors.white.withValues(alpha: 0.08),
-                                      Colors.white.withValues(alpha: 0.03),
-                                    ]
-                                  : [
-                                      Colors.white,
-                                      Colors.white.withValues(alpha: 0.92),
-                                    ],
+                        child: SizedBox(
+                          width: 124,
+                          height: 124,
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/Buddy.png',
+                              fit: BoxFit.cover,
+                              width: 124,
+                              height: 124,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: glowColor,
-                                blurRadius: 30 + _glowPulse.value,
-                                spreadRadius: 1,
-                              ),
-                              BoxShadow(
-                                color: Colors.black.withValues(
-                                  alpha: isDark ? 0.35 : 0.12,
-                                ),
-                                blurRadius: 22,
-                                offset: const Offset(0, 14),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: Colors.white.withValues(
-                                alpha: isDark ? 0.12 : 0.36,
-                              ),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Text(
-                            'KB',
-                            style:
-                                theme.textTheme.displaySmall?.copyWith(
-                                  color: isDark
-                                      ? Colors.white
-                                      : KuwentoColors.textPrimary,
-                                  letterSpacing: 6,
-                                  fontWeight: FontWeight.w700,
-                                ) ??
-                                TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? Colors.white
-                                      : KuwentoColors.textPrimary,
-                                  letterSpacing: 6,
-                                ),
                           ),
                         ),
                       ),
                     );
                   },
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 6),
                 FadeTransition(
                   opacity: _textFade,
                   child: SlideTransition(

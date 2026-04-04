@@ -52,6 +52,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final recommended = _recommendedStories.isNotEmpty
         ? _recommendedStories
         : _shuffleRecommended();
+    final kuwentoBuddyOriginals =
+        _storyService.getKuwentoBuddyOriginalStories();
     final filipinoTales = _storyService.getFilipinoTales();
     final adventureJourney = _storyService.getAdventureJourneyStories();
     final socialStories = _storyService.getSocialStories();
@@ -329,6 +331,34 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       onStoryTap: _navigateToStory,
                       onSeeAll: () =>
                           context.push('/stories/category/social-stories'),
+                    ),
+                  ),
+                ),
+
+              // Kuwento Buddy Originals Section
+              if (kuwentoBuddyOriginals.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: StoryRow(
+                      title: 'Kuwento Buddy Originals',
+                      emoji: '📚',
+                      stories: kuwentoBuddyOriginals,
+                      onStoryTap: _navigateToStory,
+                      onSeeAll: () {
+                        final ids = kuwentoBuddyOriginals
+                            .map((story) => story.id)
+                            .join(',');
+                        context.push(
+                          Uri(
+                            path: '/stories/category/recommended',
+                            queryParameters: {
+                              'ids': ids,
+                              'title': 'Kuwento Buddy Originals',
+                            },
+                          ).toString(),
+                        );
+                      },
                     ),
                   ),
                 ),

@@ -168,11 +168,18 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: KuwentoColors.softCoral,
-                foregroundColor: Colors.white,
+              style: TextButton.styleFrom(
+                foregroundColor: KuwentoColors.softCoral,
+                backgroundColor: KuwentoColors.softCoral.withValues(alpha: 0.12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
               ),
               child: const Text('Sign out'),
             ),
@@ -505,7 +512,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
             const SizedBox(height: AppSpacing.xs),
             Text(
               controller.lastErrorMessage ??
-                  'Create a reader profile to keep each child\'s progress separate.',
+                  'Create a reader profile to keep each progress separate.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white70,
@@ -943,21 +950,21 @@ class _ProfileFormDialogState extends State<_ProfileFormDialog> {
 
   static const List<_AvatarOption> _avatarOptions = [
     _AvatarOption(
-      source: 'assets/images/Theodore.jpg',
-      label: 'Theodore',
+      source: 'assets/images/Buddy.png',
+      label: 'Buddy',
     ),
-    _AvatarOption(source: 'assets/images/Baymax.jpg', label: 'Baymax'),
+    _AvatarOption(source: 'assets/images/Hiraya.png', label: 'Hiraya'),
     _AvatarOption(
-      source: 'assets/images/Symon.jpg',
-      label: 'Symon',
-    ),
-    _AvatarOption(
-      source: 'assets/images/Alvin.jpg',
-      label: 'Alvin',
+      source: 'assets/images/Sinag.png',
+      label: 'Sinag',
     ),
     _AvatarOption(
-      source: 'assets/images/Brittany.jpg',
-      label: 'Brittany',
+      source: 'assets/images/Felix.png',
+      label: 'Felix',
+    ),
+    _AvatarOption(
+      source: 'assets/images/Toby.png',
+      label: 'Toby',
     ),
     _AvatarOption(source: null, label: 'Initials', useInitials: true),
   ];
@@ -1123,7 +1130,7 @@ class _ProfileFormDialogState extends State<_ProfileFormDialog> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Tap one image below, or choose initials only.',
+                  'Tap one avatar below, or choose initials only.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.white60,
                         height: 1.4,

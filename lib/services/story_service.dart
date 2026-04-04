@@ -11,10 +11,10 @@ class StoryService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<StoryModel> get _localStories => [
-    ...filipinoTalesData,
-    ...adventureJourneyData,
-    ...socialStoriesData,
-  ];
+        ...filipinoTalesData,
+        ...adventureJourneyData,
+        ...socialStoriesData,
+      ];
   List<StoryModel> _stories = [];
   bool _isInitialized = false;
 
@@ -67,6 +67,26 @@ class StoryService {
       getStoriesByCategory(StoryCategory.adventureJourney);
   List<StoryModel> getSocialStories() =>
       getStoriesByCategory(StoryCategory.socialStories);
+
+  List<StoryModel> getKuwentoBuddyOriginalStories() {
+    final storiesById = <String, StoryModel>{
+      for (final story in getAllStories()) story.id: story,
+    };
+
+    const kuwentoBuddyOriginalStoryIds = [
+      'huni-ng-duyan-sa-punong-kawayan',
+      'butil-ng-tala-sa-ilalim-ng-balete',
+      'lia-at-ang-mapa-ng-mahinhing-alon',
+      'empty-seat-by-the-window',
+      'saturday-market-list',
+      'daan-ng-orasan-sa-ulap-na-gulod',
+    ];
+
+    return kuwentoBuddyOriginalStoryIds
+        .map((storyId) => storiesById[storyId])
+        .whereType<StoryModel>()
+        .toList();
+  }
 
   List<StoryModel> getRecommendedStories() {
     return _stories.take(5).toList();
@@ -161,11 +181,27 @@ class StoryService {
 
     return _stories
         .where(
-          (story) =>
-              story.title.toLowerCase().contains(lowerQuery) ||
-              story.description.toLowerCase().contains(lowerQuery) ||
-              story.author.toLowerCase().contains(lowerQuery),
+          (story) => _storySearchCorpus(story).contains(lowerQuery),
         )
         .toList();
+  }
+
+  String _storySearchCorpus(StoryModel story) {
+    final buffer = StringBuffer()
+      ..write(story.title)
+      ..write(' ')
+      ..write(story.author)
+      ..write(' ')
+      ..write(story.description)
+      ..write(' ')
+      ..write(story.localizedTitles.values.join(' '))
+      ..write(' ')
+      ..write(story.localizedDescriptions.values.join(' '))
+      ..write(' ')
+      ..write(story.sequenceActivity.join(' '))
+      ..write(' ')
+      ..write(story.segments.map((segment) => segment.content).join(' '));
+
+    return buffer.toString().toLowerCase();
   }
 }

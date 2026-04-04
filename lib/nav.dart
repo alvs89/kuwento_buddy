@@ -12,6 +12,8 @@ import 'package:kuwentobuddy/screens/settings_screen.dart';
 import 'package:kuwentobuddy/screens/sequence_activity_screen.dart';
 import 'package:kuwentobuddy/screens/profile_selection_screen.dart';
 import 'package:kuwentobuddy/services/auth_service.dart';
+import 'package:kuwentobuddy/services/story_service.dart';
+import 'package:kuwentobuddy/models/story_model.dart';
 import 'package:kuwentobuddy/theme.dart';
 import 'package:kuwentobuddy/widgets/buddy_companion.dart';
 
@@ -27,6 +29,8 @@ class AppRouter {
     double? size,
     bool animateFloatingBuddy = false,
     String? speechMessage,
+    String? speechTitle,
+    bool speechBubbleInitiallyVisible = false,
     bool allowInteraction = false,
   }) {
     return Builder(
@@ -41,6 +45,8 @@ class AppRouter {
           showSpeechBubble: speechMessage != null,
           enableTapSpeechBubble: speechMessage != null,
           message: speechMessage,
+          speechTitle: speechTitle,
+          speechBubbleInitiallyVisible: speechBubbleInitiallyVisible,
         );
         final buddyWidget = animateFloatingBuddy
             ? AnimatedFloatingBuddy(child: overlayBuddy)
@@ -310,10 +316,22 @@ class AppRouter {
         pageBuilder: (context, state) {
           final level = state.pathParameters['level'] ?? '';
           final levelName = level[0].toUpperCase() + level.substring(1);
+          final storyService = StoryService();
+          final levelStories = _getStoriesForRoute(
+            storyService: storyService,
+            level: level,
+          );
+          final speechMessage = _buildBuddyMessage(
+            title: '$levelName Stories',
+            stories: levelStories,
+          );
           return CustomTransitionPage(
             child: _withFloatingBuddy(
               StoriesListScreen(level: level, title: '$levelName Stories'),
               extraBottomOffset: 24,
+              speechMessage: speechMessage,
+              speechTitle: _getBuddySpeechTitleForLevel(level),
+              allowInteraction: true,
             ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -354,6 +372,17 @@ class AppRouter {
           final title = customTitle == null || customTitle.isEmpty
               ? _getCategoryTitle(category)
               : customTitle;
+          final storyService = StoryService();
+          final selectedStories = _getStoriesForRoute(
+            storyService: storyService,
+            category: category,
+            currentLibraryOnly: currentLibraryOnly,
+            recommendedStoryIds: recommendedStoryIds,
+          );
+          final speechMessage = _buildBuddyMessage(
+            title: title,
+            stories: selectedStories,
+          );
           return CustomTransitionPage(
             child: _withFloatingBuddy(
               StoriesListScreen(
@@ -363,6 +392,9 @@ class AppRouter {
                 recommendedStoryIds: recommendedStoryIds,
               ),
               extraBottomOffset: 24,
+              speechMessage: speechMessage,
+              speechTitle: _getBuddySpeechTitleForCategory(category, title),
+              allowInteraction: true,
             ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -401,6 +433,166 @@ class AppRouter {
       default:
         return 'All Stories 📚';
     }
+  }
+
+  static List<StoryModel> _getStoriesForRoute({
+    required StoryService storyService,
+    String? category,
+    String? level,
+    bool currentLibraryOnly = false,
+    List<String> recommendedStoryIds = const [],
+  }) {
+    final baseStories = currentLibraryOnly
+        ? storyService.getRecommendedStories()
+        : storyService.getAllStories();
+
+    if (level != null) {
+      final selectedLevel = switch (level) {
+        'beginner' => StoryLevel.beginner,
+        'intermediate' => StoryLevel.intermediate,
+        'advanced' => StoryLevel.advanced,
+        _ => null,
+      };
+
+      if (selectedLevel == null) {
+        return baseStories;
+      }
+
+      return baseStories
+          .where((story) => story.level == selectedLevel)
+          .toList();
+    }
+
+    if (category != null) {
+      if (category == 'recommended') {
+        if (recommendedStoryIds.isEmpty) {
+          return baseStories;
+        }
+
+        final storiesById = <String, StoryModel>{
+          for (final story in baseStories) story.id: story,
+        };
+
+        return recommendedStoryIds
+            .map((id) => storiesById[id])
+            .whereType<StoryModel>()
+            .toList();
+      }
+
+      final selectedCategory = switch (category) {
+        'filipino_tales' || 'filipino-tales' => StoryCategory.filipinoTales,
+        'adventure' || 'adventure-journey' => StoryCategory.adventureJourney,
+        'social' || 'social-stories' => StoryCategory.socialStories,
+        _ => null,
+      };
+
+      if (selectedCategory == null) {
+        return baseStories;
+      }
+
+      return baseStories
+          .where((story) => story.categories.contains(selectedCategory))
+          .toList();
+    }
+
+    return baseStories;
+  }
+
+  static String _buildBuddyMessage({
+    required String title,
+    required List<StoryModel> stories,
+  }) {
+    final countText =
+        stories.length == 1 ? '1 story' : '${stories.length} stories';
+    final themeLine = _buildThemeLine(title);
+
+    return '$countText. $themeLine';
+  }
+
+  static String _buildThemeLine(String title) {
+    final lowerTitle = title.toLowerCase();
+
+    if (lowerTitle.contains('folklore') || lowerTitle.contains('folktales')) {
+      return 'Gentle folklore and nature-inspired wonder.';
+    }
+    if (lowerTitle.contains('legend') || lowerTitle.contains('myth')) {
+      return 'Origin legends and Filipino myths.';
+    }
+    if (lowerTitle.contains('ocean') ||
+        lowerTitle.contains('travel') ||
+        lowerTitle.contains('adventure')) {
+      return 'Journeys, discovery, and brave new paths.';
+    }
+    if (lowerTitle.contains('school') || lowerTitle.contains('friendship')) {
+      return 'Classroom moments and everyday kindness.';
+    }
+    if (lowerTitle.contains('kindness') ||
+        lowerTitle.contains('responsibility')) {
+      return 'Honest choices and helpful actions.';
+    }
+    if (lowerTitle.contains('ethics') || lowerTitle.contains('future')) {
+      return 'Rules, choices, and future questions.';
+    }
+    if (lowerTitle.contains('fantasy') || lowerTitle.contains('discovery')) {
+      return 'Magic, wonder, and unexpected places.';
+    }
+
+    return 'Tap Buddy for a quick story hint.';
+  }
+
+  static String _getBuddySpeechTitleForLevel(String level) {
+    switch (level) {
+      case 'beginner':
+        return 'Beginner';
+      case 'intermediate':
+        return 'Intermediate';
+      case 'advanced':
+        return 'Advanced';
+      default:
+        return 'Stories';
+    }
+  }
+
+  static String _getBuddySpeechTitleForCategory(String category, String title) {
+    switch (category) {
+      case 'filipino_tales':
+      case 'filipino-tales':
+        return 'Folktales';
+      case 'adventure':
+      case 'adventure-journey':
+        return 'Adventure';
+      case 'social':
+      case 'social-stories':
+        return 'Life Lessons';
+      case 'recommended':
+        return 'Recommended';
+    }
+
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('legend') || lowerTitle.contains('myth')) {
+      return 'Myths';
+    }
+    if (lowerTitle.contains('folklore')) {
+      return 'Folklore';
+    }
+    if (lowerTitle.contains('ocean') || lowerTitle.contains('travel')) {
+      return 'Travel';
+    }
+    if (lowerTitle.contains('fantasy')) {
+      return 'Fantasy';
+    }
+    if (lowerTitle.contains('school') || lowerTitle.contains('friendship')) {
+      return 'School';
+    }
+    if (lowerTitle.contains('kindness') ||
+        lowerTitle.contains('responsibility')) {
+      return 'Kindness';
+    }
+    if (lowerTitle.contains('ethics') || lowerTitle.contains('future')) {
+      return 'Future';
+    }
+
+    return 'Stories';
   }
 }
 
