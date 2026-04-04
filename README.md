@@ -107,4 +107,4 @@ We are a group of Third-Year Computer Science students from the **Technological 
 
 -----
 
-**© 2026 KuwentoBuddy Project. All Rights Reserved.**
+**© 2026 Kuwento Buddy Project. All Rights Reserved.**
