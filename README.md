@@ -1,4 +1,4 @@
-⚠️ Academic Integrity Notice: This repository is a dedicated workspace for an ongoing project at the Technological Institute of the Philippines. Access and use of these files are strictly limited to the members of Group 8 (CS32S3). We kindly ask that external visitors do not fork, pull, or distribute this source code.
+⚠️ Academic Integrity Notice: This repository is a dedicated workspace for an ongoing project at the Technological Institute of the Philippines. Access and use of these files are strictly limited to the members of Group 8 (CS32S3). We kindly ask that external visitors not fork, pull, or distribute this source code.
 
 -----
 
@@ -73,7 +73,7 @@ KuwentoBuddy utilizes a **Spotify-inspired UI**—clean, horizontal scrolling li
 ### Prerequisites
 
   * Flutter SDK (v3.0.0 or higher)
-  * Android Studio / Xcode
+  * Android Studio / Visual Studio Code
   * Firebase Project Setup
 
 ### Installation
