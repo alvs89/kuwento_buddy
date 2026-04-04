@@ -26,12 +26,13 @@ Stories are divided into meaningful segments. The narrative automatically pauses
 
 ### 🐾 Meet Your Buddies
 
-Personalization is at the heart of the experience. Users can choose from four unique, gender-neutral Filipino avatars:
+Personalization is at the heart of the experience. Users can choose from five unique, gender-neutral Filipino avatars:
 
-  * **Hiraya Buklat** (The Blue Reading Guide)
-  * **Sinag Talinhaga** (The Wise Purple Panda)
-  * **Dalisay Lundag** (The Energetic Green Rabbit)
-  * **Gilas Likha** (The Clever Teal Cat)
+  * **Buddy** 
+  * **Hiraya** 
+  * **Sinag** 
+  * **Felix** 
+  * **Toby**
 
 ### 👨‍👩‍👧‍👦 Managed Profiles
 
