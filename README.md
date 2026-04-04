@@ -1,66 +1,109 @@
 ⚠️ Academic Integrity Notice: This repository is a dedicated workspace for an ongoing project at the Technological Institute of the Philippines. Access and use of these files are strictly limited to the members of Group 8 (CS32S3). We kindly ask that external visitors do not fork, pull, or distribute this source code.
 
-# 📖 KuwentoBuddy: Your Interactive Reading Companion
+-----
 
-**KuwentoBuddy** is a mobile learning application designed to help users of all ages improve their reading comprehension skills through an interactive and engaging experience. By transforming passive reading into an active **"Read-Think-Continue"** dialogue, the app ensures that learners don't just recognize words but truly understand the narrative flow.
+# 📖 KuwentoBuddy
 
----
+> **Your Interactive Reading Companion** \> *Empowering Filipino young learners through scaffolded storytelling and active comprehension.*
 
-### ✨ Key Features 🌟
+[](https://flutter.dev)
+[](https://firebase.google.com/)
+[](https://www.google.com/search?q=https://www.tip.edu.ph/)
 
-* **Interactive Story Engine (Read-Think-Continue)** 📖⏯️: Stories are divided into logical segments where the app automatically pauses at critical plot points. Users must engage with comprehension questions before the story proceeds, transforming reading into an active process.
-* **Supportive Buddy Companion** 🤖🤝: A friendly digital buddy stays on screen to guide the learner. It provides instant, non-punitive feedback, such as happy animations for correct answers and helpful hints when a user is stuck.
-* **Leveled Content Library** 📚🌱: Stories are organized into user-friendly categories and difficulty levels, such as **Beginner**, **Intermediate**, and **Advanced**. The library includes original narratives and local **Filipino Tales** like "Alamat ng Pinya".
-* **Sequence the Story Activity** 🧩🔄: After completing a story, users can practice narrative structure through a "Put It in Order" game where they arrange key events chronologically.
-* **My Progress Dashboard** 📊📈: Users can track their reading journey with personalized stats, including stories completed, comprehension percentages, and daily reading streaks.
-* **Spotify-Inspired UI/UX** 🎨🎶: The app features a clean, modern design with horizontal library scrolling and "Album Art" style story covers for a premium, engaging feel.
+-----
 
----
+## 🌟 Overview
 
-### 🚀 The Development Team (Group 8) 👨‍💻
+**KuwentoBuddy** is a mobile learning application designed to bridge the reading comprehension gap among Filipino elementary students. Moving beyond passive reading, the app introduces a unique **"Read-Think-Continue"** methodology. By integrating interactive checkpoints and a reactive digital companion, KuwentoBuddy transforms every story into a guided journey of discovery and critical thinking.
 
-The dedicated team from section **CS32S3** behind this project includes:
+-----
 
-* **GUILLERMO, ALVIN J.** 👑
-* **ROSLIN, KENDRICK A.** 🎨 
-* **ROXAS, MARK KENDRICK P.** ✍️ 
-* **SIMBULAN, HIRONDELLE D.** 🛠️ 
+## ✨ Key Features
 
+### 🧠 The "Read-Think-Continue" Logic
 
+Stories are divided into meaningful segments. The narrative automatically pauses at critical plot points, requiring the reader to engage with a **Comprehension Checkpoint**. This ensures that the learner masters the current part of the story before moving forward.
 
----
+### 🐾 Meet Your Buddies
 
-### 🏛️ Institutional Context 🎓
+Personalization is at the heart of the experience. Users can choose from four unique, gender-neutral Filipino avatars:
 
-* **School:** Technological Institute of the Philippines (T.I.P.) 🏫
-* **Department:** College of Computer Studies 💻 
+  * **Hiraya Buklat** (The Blue Reading Guide)
+  * **Sinag Talinhaga** (The Wise Purple Panda)
+  * **Dalisay Lundag** (The Energetic Green Rabbit)
+  * **Gilas Likha** (The Clever Teal Cat)
 
+### 👨‍👩‍👧‍👦 Managed Profiles
 
-* **Course:** ITE 010 - Introduction to Human-Computer Interaction 🖥️ 
+Inspired by modern streaming platforms, KuwentoBuddy supports **Managed Profiles**. A single primary adult account (Parent/Teacher) can manage multiple reading journeys. Each profile maintains its own:
 
+  * **Story Stars** and earned rewards.
+  * **Reading Journal** and "In Progress" books.
+  * **Comprehension Metrics** (Inference, Prediction, and Emotion tracking).
 
-* **Instructor:** Ms. Elizzette Joy Mationg 👩‍🏫 
+### 🇵🇭 Bilingual & Culturally Rooted
 
+  * **Dual Language Support:** Seamlessly toggle between **English** and **Filipino**.
+  * **Voice Narration:** Audio support for every story to assist auditory learners.
+  * **Localized Content:** A library featuring **Filipino Tales**, **Adventure Stories**, and **Social/Real-life Narratives**.
 
-* **Term:** S.Y. 2025-2026 📅 
+-----
 
+## 🎨 Design Philosophy
 
----
+KuwentoBuddy utilizes a **Spotify-inspired UI**—clean, horizontal scrolling libraries and vibrant "Album Art" story covers. The aesthetic relies on a soothing **Pastel Color Palette** to reduce cognitive load and create a welcoming digital environment for children.
 
-*Developed with ❤️ to empower every reader.*
+  * **Avatars & Imagery:** Artistically crafted using AI-enhanced designs via *Canva Magic Design™*.
+  * **User Interface:** Built with high-fidelity Flutter widgets for fluid animations and ergonomic usability.
 
----
+-----
 
-### Android Device Compatibility Checklist
+## 🛠️ Technology Stack
 
-To keep KuwentoBuddy working across different Android phones and build environments:
+  * **Frontend:** Flutter (Dart)
+  * **Backend:** Firebase (Authentication & Firestore)
+  * **State Management:** Provider / ChangeNotifiers
+  * **Database:** Cloud Firestore (Real-time synchronization)
 
-1. Keep `applicationId` as `com.kuwentobuddy.app`.
-2. Use `minSdk = 21` so older Android devices can still install the app.
-3. Add both debug and release SHA keys in Firebase for `com.kuwentobuddy.app`.
-4. Download and replace `android/app/google-services.json` whenever SHA keys or package settings change.
-5. Enable Google sign-in in Firebase Authentication.
-6. Deploy Firestore rules after updates:
-	`firebase deploy --only firestore:rules`
+-----
 
-Without steps 3 to 6, Google login and cloud sync may fail on some devices/builds even if local app launch works.
+## 🚀 Getting Started
+
+### Prerequisites
+
+  * Flutter SDK (v3.0.0 or higher)
+  * Android Studio / Xcode
+  * Firebase Project Setup
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/alvs89/kuwento_buddy.git
+    ```
+2.  **Install dependencies:**
+    ```bash
+    flutter pub get
+    ```
+3.  **Run the application:**
+    ```bash
+    flutter run
+    ```
+
+-----
+
+## 👥 The Development Team
+
+We are a group of Third-Year Computer Science students from the **Technological Institute of the Philippines (T.I.P.)**, dedicated to creating impactful educational technology.
+
+  * **Alvin J. Guillermo** – Lead Developer / Project Manager
+  * **Kendrick A. Roslin** – Backend & Firebase Specialist
+  * **Mark Kendrick P. Roxas** – UI/UX Designer & Content Lead
+  * **Hirondelle D. Simbulan** – Quality Assurance & Documentation
+
+**Instructor:** Ms. Elizzette Joy Mationg  
+**Course:** ITE 010 - Human-Computer Interaction (CS32S3)
+
+-----
+
+**© 2026 KuwentoBuddy Project. All Rights Reserved.**
