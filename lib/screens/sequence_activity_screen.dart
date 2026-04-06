@@ -74,6 +74,18 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
 
   bool get _isFilipino => _activeLanguageCode == 'fil';
 
+  static const Set<String> _femalePronounStoryIds = {
+    'alamat-ng-pinya',
+    'alamat-ng-parol',
+    'huni-ng-duyan-sa-punong-kawayan',
+    'pamana-ng-lumang-duyan',
+  };
+
+  bool get _preferFemalePronounsForStory =>
+      _story != null &&
+      _femalePronounStoryIds.contains(_story!.id) &&
+      _sourceLanguageCode == 'fil';
+
   String _uiText({required String en, required String fil}) {
     return _isFilipino ? fil : en;
   }
@@ -103,6 +115,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
       text: text,
       sourceLanguage: _sourceLanguageCode,
       targetLanguage: targetLanguage,
+      preferFemaleSubject: _preferFemalePronounsForStory,
     );
 
     final sourceText = text.trim();
@@ -117,6 +130,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
         text: fallbackText,
         sourceLanguage: _sourceLanguageCode,
         targetLanguage: targetLanguage,
+        preferFemaleSubject: _preferFemalePronounsForStory,
       );
 
       final fallbackResult = fallbackTranslated.trim();

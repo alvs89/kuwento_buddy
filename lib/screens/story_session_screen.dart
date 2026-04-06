@@ -259,10 +259,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     String articleText,
   ) async {
     final narrationLanguage = _activeLanguageCode == 'fil' ? 'fil-PH' : 'en-US';
-    final titleValue = _extractOpeningFieldAny(articleText, const [
-      'Title',
-      'Pamagat',
-    ]);
+    final titleValue = _displayStoryTitle();
     final genreValue = _extractOpeningFieldAny(articleText, const [
       'Genre',
       'Uri',
@@ -277,32 +274,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     ]);
     final synopsisValue = _extractOpeningBlockAny(
       articleText,
-      const ['Synopsis', 'Buod'],
-      const [
-        'Source / Reference',
-        'Source / Sanggunian',
-        'Pinagmulan / Sanggunian',
-        'Heads Up',
-        'Paalala',
-      ],
+      _openingSynopsisSectionLabels,
+      [..._openingSourceSectionLabels, ..._openingHeadsUpSectionLabels],
     );
     final headsUpValue = _extractOpeningBlockAny(
       articleText,
-      const ['Heads Up', 'Paalala'],
-      const [
-        'Source / Reference',
-        'Source / Sanggunian',
-        'Pinagmulan / Sanggunian',
-      ],
+      _openingHeadsUpSectionLabels,
+      _openingSourceSectionLabels,
     );
     final sourceValue = _extractOpeningBlockAny(
       articleText,
-      const [
-        'Source / Reference',
-        'Source / Sanggunian',
-        'Pinagmulan / Sanggunian',
-      ],
-      const ['Heads Up', 'Paalala'],
+      _openingSourceSectionLabels,
+      _openingHeadsUpSectionLabels,
     );
 
     final narrationParts = <String>[
@@ -417,6 +400,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
   String get _targetLanguageCode => _activeLanguageCode == 'en' ? 'fil' : 'en';
 
+  static const Set<String> _femalePronounStoryIds = {
+    'alamat-ng-pinya',
+    'alamat-ng-parol',
+    'huni-ng-duyan-sa-punong-kawayan',
+    'pamana-ng-lumang-duyan',
+  };
+
+  bool get _preferFemalePronounsForStory =>
+      _story != null &&
+      _femalePronounStoryIds.contains(_story!.id) &&
+      _sourceLanguageCode == 'fil';
+
   String _translationCacheKey(String segmentId, String langCode) =>
       '$segmentId::$langCode';
 
@@ -464,6 +459,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       text: segment.content,
       sourceLanguage: _sourceLanguageCode,
       targetLanguage: languageCode,
+      preferFemaleSubject: _preferFemalePronounsForStory,
     );
 
     if (!mounted) return translated;
@@ -480,6 +476,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     if (_activeLanguageCode == _sourceLanguageCode) return;
 
     final segment = _controller!.currentSegment;
+    if (_isOpeningPageSegment(segment, _controller!.currentSegmentIndex)) {
+      await _prefetchOpeningPageTranslation(segment, _activeLanguageCode);
+    }
     await _getTextForLanguage(segment, _activeLanguageCode);
   }
 
@@ -507,6 +506,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         text: text,
         sourceLanguage: _sourceLanguageCode,
         targetLanguage: _activeLanguageCode,
+        preferFemaleSubject: _preferFemalePronounsForStory,
       );
       updates[key] = translated;
     }
@@ -579,6 +579,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
     for (final segment in story.segments) {
       tasks.add(_getTextForLanguage(segment, targetLanguage).then((_) {}));
+      if (_isOpeningPageSegment(segment, story.segments.indexOf(segment))) {
+        tasks.add(_prefetchOpeningPageTranslation(segment, targetLanguage));
+      }
       final question = segment.question;
       if (question != null) {
         tasks.add(_prefetchQuestionTranslation(question, targetLanguage));
@@ -599,6 +602,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       text: story.title,
       sourceLanguage: _sourceLanguageCode,
       targetLanguage: targetLanguage,
+      preferFemaleSubject: _preferFemalePronounsForStory,
     );
 
     if (!mounted) return;
@@ -631,6 +635,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
         text: text,
         sourceLanguage: _sourceLanguageCode,
         targetLanguage: targetLanguage,
+        preferFemaleSubject: _preferFemalePronounsForStory,
       );
       updates[key] = translated;
     }
@@ -640,6 +645,60 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     setState(() {
       _translatedQuestionCache.addAll(updates);
     });
+  }
+
+  Future<void> _prefetchOpeningPageTranslation(
+    StorySegment segment,
+    String targetLanguage,
+  ) async {
+    if (targetLanguage == _sourceLanguageCode) return;
+
+    final sourceArticleText = segment.content;
+    final texts = <String>{
+      _extractOpeningBlockAny(
+        sourceArticleText,
+        _openingSynopsisSectionLabels,
+        [..._openingSourceSectionLabels, ..._openingHeadsUpSectionLabels],
+      ),
+      _extractOpeningBlockAny(
+        sourceArticleText,
+        _openingSourceSectionLabels,
+        _openingHeadsUpSectionLabels,
+      ),
+      _extractOpeningBlockAny(
+        sourceArticleText,
+        _openingHeadsUpSectionLabels,
+      ),
+    }..removeWhere((text) => text.trim().isEmpty);
+
+    final updates = <String, String>{};
+    for (final text in texts) {
+      final key = _questionCacheKey(text, targetLanguage);
+      if (_translatedQuestionCache.containsKey(key)) continue;
+
+      final translated = await _translationService.translateText(
+        text: text,
+        sourceLanguage: _sourceLanguageCode,
+        targetLanguage: targetLanguage,
+        preferFemaleSubject: _preferFemalePronounsForStory,
+      );
+      updates[key] = translated;
+    }
+
+    if (!mounted || updates.isEmpty) return;
+
+    setState(() {
+      _translatedQuestionCache.addAll(updates);
+    });
+  }
+
+  String _displayOpeningText(String text) {
+    if (_activeLanguageCode == _sourceLanguageCode) {
+      return text;
+    }
+
+    return _translatedQuestionCache[_questionCacheKey(text, _activeLanguageCode)] ??
+        text;
   }
 
   String _storyTitleCacheKey(String langCode) => 'story-title::$langCode';
@@ -735,6 +794,31 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   String get _sourceReferenceLabel =>
       _uiText(en: 'Source / Reference', fil: 'Pinagmulan / Sanggunian');
 
+  static const List<String> _openingSynopsisSectionLabels = [
+    'Synopsis',
+    'Buod',
+  ];
+
+  static const List<String> _openingSourceSectionLabels = [
+    'Source / Reference',
+    'Source / Sanggunian',
+    'Pinagmulan / Sanggunian',
+    'Source and Reference',
+    'Reference / Source',
+    'Pinagmulan at Sanggunian',
+    'Source',
+    'Reference',
+    'Pinagmulan',
+    'Sanggunian',
+  ];
+
+  static const List<String> _openingHeadsUpSectionLabels = [
+    'Heads Up',
+    'Paalala',
+    'Reminder',
+    'Note',
+  ];
+
   String _hintRemainingText(int remaining) => _uiText(
         en: remaining == 1 || remaining == 0
             ? 'hint remaining'
@@ -743,7 +827,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       );
 
   String _stripChoicePrefix(String text) {
-    return text.replaceFirst(RegExp(r'^\s*[A-Ca-c][\.)]\s*'), '');
+    return text.replaceFirst(RegExp(r'^\s*[A-Da-d][\.)]\s*'), '');
   }
 
   String get _showHintsLabel =>
@@ -1189,58 +1273,52 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     String? displayedSegmentText,
   ) {
     final theme = Theme.of(context);
+    final sourceArticleText = segment.content;
     final localizedStoryTitle = _story?.explicitTitleTranslation(
       _activeLanguageCode,
     );
     final title = localizedStoryTitle?.trim().isNotEmpty == true
         ? localizedStoryTitle!
         : (_story?.title ?? '');
-    final articleText = displayedSegmentText ?? segment.content;
-    final extractedTitle = _extractOpeningFieldAny(articleText, const [
+    final extractedTitle = _extractOpeningFieldAny(sourceArticleText, const [
       'Title',
       'Pamagat',
     ]);
     final titleValue = _activeLanguageCode == _sourceLanguageCode
         ? (extractedTitle.isNotEmpty ? extractedTitle : title)
-        : (localizedStoryTitle?.trim().isNotEmpty == true
-            ? localizedStoryTitle!
-            : (extractedTitle.isNotEmpty ? extractedTitle : title));
-    final genreValue = _extractOpeningFieldAny(articleText, const [
+        : _displayStoryTitle();
+    final genreValue = _extractOpeningFieldAny(sourceArticleText, const [
       'Genre',
       'Uri',
     ]);
-    final levelValue = _extractOpeningFieldAny(articleText, const [
+    final levelValue = _extractOpeningFieldAny(sourceArticleText, const [
       'Level',
       'Antas',
     ]);
-    final languageValue = _extractOpeningFieldAny(articleText, const [
+    final languageValue = _extractOpeningFieldAny(sourceArticleText, const [
       'Language',
       'Wika',
     ]);
-    final synopsisValue = _extractOpeningBlockAny(
-      articleText,
-      const ['Synopsis', 'Buod'],
-      const [
-        'Source / Reference',
-        'Source / Sanggunian',
-        'Pinagmulan / Sanggunian',
-        'Heads Up',
-        'Paalala',
-      ],
+    final synopsisValue = _displayOpeningText(
+      _extractOpeningBlockAny(
+        sourceArticleText,
+        _openingSynopsisSectionLabels,
+        [..._openingSourceSectionLabels, ..._openingHeadsUpSectionLabels],
+      ),
     );
-    final sourceValue = _extractOpeningBlockAny(
-      articleText,
-      const [
-        'Source / Reference',
-        'Source / Sanggunian',
-        'Pinagmulan / Sanggunian',
-      ],
-      const ['Heads Up', 'Paalala'],
+    final sourceValue = _displayOpeningText(
+      _extractOpeningBlockAny(
+        sourceArticleText,
+        _openingSourceSectionLabels,
+        _openingHeadsUpSectionLabels,
+      ),
     );
-    final headsUpValue = _extractOpeningBlockAny(articleText, const [
-      'Heads Up',
-      'Paalala',
-    ]);
+    final headsUpValue = _displayOpeningText(
+      _extractOpeningBlockAny(
+        sourceArticleText,
+        _openingHeadsUpSectionLabels,
+      ),
+    );
     return Container(
       decoration: BoxDecoration(
         color: isDark ? KuwentoColors.backgroundDark : const Color(0xFFF7FAFC),
@@ -1789,18 +1867,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     List<String> startLabels, [
     List<String>? endLabels,
   ]) {
+    final startPattern = _openingSectionPattern(startLabels);
     RegExpMatch? startMatch;
-    for (final label in startLabels) {
-      final match = RegExp(
-        '^${RegExp.escape(label)}:\\s*'
-        r'$',
-        multiLine: true,
-      ).firstMatch(content);
-      if (match != null) {
-        startMatch = match;
-        break;
-      }
-    }
+    startMatch = startPattern.firstMatch(content);
 
     if (startMatch == null) return '';
 
@@ -1811,16 +1880,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
     final trailingContent = content.substring(startIndex);
     int? endIndex;
-    for (final label in endLabels) {
-      final match = RegExp(
-        '^${RegExp.escape(label)}:\\s*'
-        r'$',
-        multiLine: true,
-      ).firstMatch(trailingContent);
-      if (match != null) {
-        endIndex =
-            endIndex == null || match.start < endIndex ? match.start : endIndex;
-      }
+    final endPattern = _openingSectionPattern(endLabels);
+    for (final match in endPattern.allMatches(trailingContent)) {
+      endIndex =
+          endIndex == null || match.start < endIndex ? match.start : endIndex;
     }
 
     return content
@@ -1829,6 +1892,22 @@ class _StorySessionScreenState extends State<StorySessionScreen>
           endIndex == null ? content.length : startIndex + endIndex,
         )
         .trim();
+  }
+
+  RegExp _openingSectionPattern(List<String> labels) {
+    final pattern = labels
+        .map(
+          (label) => RegExp.escape(label)
+              .replaceAll(r'\ ', r'\s+')
+              .replaceAll(r'\/', r'\s*\/\s*'),
+        )
+        .join('|');
+
+    return RegExp(
+      '^\\s*(?:$pattern)\\s*:\\s*',
+      multiLine: true,
+      caseSensitive: false,
+    );
   }
 
   String _resolveSegmentImage(StorySegment segment, int index) {

@@ -659,6 +659,325 @@ At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Is
     ],
   ),
   StoryModel(
+    id: 'pamana-ng-lumang-duyan',
+    title: 'Ang Pamana ng Lumang Duyan',
+    author: 'Kuwento Buddy Original',
+    coverImage: 'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+    description:
+        'Sa muling pag-uwi ng isang pamilyang unti-unting nagkakalayo, isang lumang duyan, isang tahanan, at isang gabing may bagyo ang magpapaalala na ang tunay na pamana ay hindi lupa o bahay lamang, kundi ang kakayahang makinig, magpatawad, at muling magkaugnay bilang pamilya.',
+    level: StoryLevel.advanced,
+    categories: [StoryCategory.filipinoTales],
+    estimatedMinutes: 11,
+    language: 'fil',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    sequenceActivity: [
+      'Nagtipon ang pamilya ni Mina sa lumang bahay ng kanilang lola.',
+      'Narinig ni Mina ang marahang ugoy ng lumang duyan at nakita ang piraso ng telang walang pangalan.',
+      'Nabanggit sa hapag ang balak na ipagbili ang bahay at lupa ng pamilya.',
+      'Ipinaliwanag ni Lola Sabel ang kahulugan ng mga telang nakatali sa duyan.',
+      'Natagpuan nina Mina at Elias ang mga liham at talaan ng mga sakripisyo ng pamilya.',
+      'Naghanda ang pamilya ng hapag ng mga alaala at nagsimulang magsabi ng katotohanan sa isa\'t isa.',
+      'Binuksan nila ang bahay sa mga kapitbahay nang dumating ang malakas na bagyo.',
+      'Napagtanto ng ama ni Mina na buhay na pamana ang tahanan at hindi basta ari-arian.',
+      'Tinahi ng pamilya ang bagong piraso ng tela bilang tanda ng pagkakasundo at pag-uwi.',
+    ],
+    segments: [
+      StorySegment(
+        id: 'pamana-duyan-opening',
+        image:
+            'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+        content: '''Page 1 (Opening Page)
+Title: Ang Pamana ng Lumang Duyan
+Genre: Filipino Tale
+Level: Advanced
+Language: Filipino
+Synopsis:
+Matagal nang hindi kumpleto sa iisang hapag ang pamilya nina Mina. Ngunit nang ipadala ni Lola Sabel ang isang maikling liham na humihiling na sila ay umuwi sa lumang bahay sa baryo bago matapos ang tag-ani, napilitan silang harapin hindi lamang ang alikabok ng mga lumang silid kundi pati ang mga salitang matagal nang hindi nasasabi. Sa gitna ng bahay ay naroon ang isang lumang duyan na pinagdaanan ng magkakaibang salinlahi. Habang umuugoy ito sa gabi na tila may sariling gunita, unti-unting mabubuksan ang katotohanang ang pamilya, tahanan, pamana, alaala, at pag-asa ay pinagdurugtong hindi ng dugo lamang kundi ng pagpiling manatili sa isa't isa.
+Source / Reference:
+Original Filipino-inspired family story
+Adapted for KuwentoBuddy
+Heads Up:
+May checkpoint questions sa bawat bahagi.
+
+Basahin nang mabuti at pag-isipan ang damdamin, alitan, at pasya ng bawat kasapi ng pamilya.
+
+Pinakamainam para sa mas malalim na pag-unawa, pagninilay, at talakayan.''',
+      ),
+      StorySegment(
+        id: 'pamana-duyan-1',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
+        content:
+            '''Makulimlim ang hapon nang makarating sina Mina, ang kanyang nakababatang kapatid na si Elias, at ang kanilang mga magulang sa bahay ni Lola Sabel. Ang lumang tahanan ay nakatindig pa rin sa tabi ng kawayanan, ngunit ang pintuan nito ay wari bang may sariling buntong-hininga sa bawat bukas at sara.
+
+Sa loob, naroon ang mga bagay na hindi madaling kalimutan: isang aparador na amoy santol at lumang papel, isang hapag na kabilugan pa rin ng mga gasgas ng pinggan, at isang duyan na nakasabit malapit sa bintana. Lahat ay pamilyar, ngunit may kakaibang bigat sa pagitan ng mga bumati at ngumiti.
+
+Napansin ni Mina na maingat magsalita ang kanyang ama, at mas maingat pang manahimik ang kanyang ina. Si Elias lamang ang walang muwang na humanga sa laki ng bahay. Si Lola Sabel naman ay nakangiti, ngunit ang kanyang titig ay tila may hinihintay na pagdating na higit sa kanilang katawan. Para kay Mina, hindi simpleng reunion ang pag-uwi nilang iyon. May kung anong hindi pa sinasabi ang buong pamilya.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q1',
+          question:
+              'Ano ang pinakamalinaw na palatandaan na may hindi pa naaayos sa pamilya nina Mina?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Maingat magsalita ang ilan at may mabigat na katahimikan sa bahay',
+            'B. Dahil luma na ang aparador at ang hapag',
+            'C. Dahil natuwa si Elias sa laki ng bahay',
+            'D. Dahil makulimlim ang panahon nang sila ay dumating',
+          ],
+          correctAnswerIndex: 0,
+          hint:
+              'Pansinin hindi lamang ang mga bagay sa bahay kundi ang paraan ng pakikitungo nila sa isa\'t isa.',
+          encouragement:
+              'Tama! Ang maingat na pananalita at mabigat na katahimikan ang nagpapahiwatig na may nakatagong alitan at hindi pa ganap na pag-uusap sa pamilya.',
+          buddyHintParagraph:
+              'May kakaibang bigat sa pagitan ng mga bumati at ngumiti.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-2',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page2.png',
+        content:
+            '''Nang lumalim ang gabi at isa-isang namatay ang mga ilaw sa kabahayan, hindi agad dinalaw ng antok si Mina. Mula sa silid na tinulugan niya noon bata pa siya, narinig niya ang banayad na langitngit ng lumang duyan sa may bintana.
+
+Lumabas siya at nakita niyang marahang umuugoy ang duyan kahit halos hindi gumagalaw ang hangin. Sa may tagiliran nito ay may nakataling maliliit na piraso ng tela, bawat isa ay may pangalan: Sabel, Dario, Celia, Mina, Elias. Sa pinakadulo ay may isang pirasong puti na wala pang titik.
+
+Hinaplos ni Mina ang telang walang pangalan. Hindi siya natakot; sa halip, nakaramdam siya ng pananabik na may halong lungkot, para bang may bakanteng puwang na matagal nang naghihintay mapunan. Sa unang pagkakataon nang gabing iyon, naramdaman niyang ang bahay ay hindi lamang tahimik. Parang nakikinig din ito.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q2',
+          question:
+              'Ano ang pinakaangkop na damdaming maaaring naramdaman ni Mina nang makita ang telang walang pangalan?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.emotion,
+          options: [
+            'A. Purong galit dahil may nagtago ng lihim sa kanya',
+            'B. Pananabik na may halong lungkot dahil tila may kulang sa kuwento ng pamilya',
+            'C. Pagkainis dahil gusto na niyang matulog',
+            'D. Kasiyahang parang nakakita lamang siya ng bagong laruan',
+          ],
+          correctAnswerIndex: 1,
+          hint:
+              'Pagdugtungin ang salitang "bakanteng puwang" at ang paraan ng paghawak niya sa tela.',
+          encouragement:
+              'Tama! Ang telang walang pangalan ay nagdulot kay Mina ng pananabik na may halong lungkot dahil dama niyang may hindi pa nabubuong bahagi sa kuwento ng kanilang pamilya.',
+          buddyHintParagraph:
+              'Nakaramdam siya ng pananabik na may halong lungkot, para bang may bakanteng puwang na matagal nang naghihintay mapunan.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-3',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page3.png',
+        content:
+            '''Kinabukasan, habang magkaharap sila sa hapag, unang nagsalita ang ama ni Mina matapos ang mahabang katahimikan. May bumibili raw sa likod na bahagi ng lupain, at kung isasama pati ang lumang bahay, sapat na ang halaga upang mabayaran ang kanilang mga utang sa siyudad at ang ilan pang gastusin sa pagpapagamot ni Lola Sabel.
+
+Walang agad sumagot. Ang ina ni Mina ay tumingin sa mangkok ng sabaw na tila may nais lunukin bukod sa pagkain. Si Lola Sabel ay hindi nagtaas ng boses, ngunit ang kanyang kamay na nasa ibabaw ng mesa ay bahagyang nanginig. Si Elias, na hindi pa ganap na nakauunawa, ay nagtanong kung saan sila uuwi kapag nawala ang bahay.
+
+Ang tanong na iyon ang tila nagbitak sa katahimikan. Naunawaan ni Mina na ang usapan ay hindi lamang tungkol sa pera, utang, o ari-arian. Nasa mesa rin ang dangal, alaala, at takot na baka sa pagbebenta ng tahanan ay may bahagi rin ng kanilang pagiging pamilya ang mawala.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q3',
+          question:
+              'Batay sa bigat ng usapan sa hapag, ano ang malamang na mangyari sa susunod na bahagi?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.prediction,
+          options: [
+            'A. May magpapaliwanag ng mas malalim na kahulugan ng bahay at ng lumang duyan sa pamilya',
+            'B. Kaagad nilang ipagbibili ang bahay nang walang karagdagang pag-uusap',
+            'C. Aalis agad si Mina upang hindi na bumalik sa baryo',
+            'D. Magkakaroon agad ng pagdiriwang sa bakuran',
+          ],
+          correctAnswerIndex: 0,
+          hint:
+              'Isipin kung sino sa bahay ang maaaring magbigay-linaw sa bigat ng usapan at sa pinagmulan ng kanilang alitan.',
+          encouragement:
+              'Tama! Sa susunod na bahagi, si Lola Sabel ang magbibigay ng mas malalim na paliwanag tungkol sa telang walang pangalan at sa tungkulin ng pagdadala ng tahanan.',
+          buddyHintParagraph:
+              'Nasa mesa rin ang dangal, alaala, at takot na baka sa pagbebenta ng tahanan ay may bahagi rin ng kanilang pagiging pamilya ang mawala.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-4',
+        image:
+            'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+        content:
+            '''Nang sila'y nag-iisa na ni Lola Sabel sa may bintana, itinuro ng matanda ang mga telang nakatali sa duyan. Ipinaliwanag niyang sa tuwing may batang unang pinatutulog sa duyang iyon, nagtatahi siya ng maliit na piraso ng tela bilang pananda na may isa na namang buhay na iniingatan ng bahay at ng pamilya.
+
+"Ngunit hindi para sa sanggol lamang ang huling piraso," wika ni Lola Sabel habang pinagmamasdan ang telang puti. "Iyan ay para sa sinumang pipiling magdala ng tahanan kahit mahirap, kahit mabigat, kahit hindi iyon nasusukat sa pera."
+
+Hindi agad nakaimik si Mina. Sa unang pagkakataon, naisip niyang ang pamana ay maaari palang maging tungkulin at hindi gantimpala lamang. Ang telang walang pangalan ay hindi pala kakulangan. Isa pala itong tanong na naghihintay ng sagot mula sa puso ng kanilang pamilya.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q4',
+          question:
+              'Ano ang sinisimbolo ng telang walang pangalan ayon kay Lola Sabel?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Isang telang nakalimutan lamang tahiin',
+            'B. Isang piraso para sa pinakamayamang kamag-anak',
+            'C. Isang paanyaya sa sinumang handang mag-aruga at magpanatili ng tahanan',
+            'D. Isang palamuti upang gumanda ang lumang duyan',
+          ],
+          correctAnswerIndex: 2,
+          hint:
+              'Balikan ang sinabi ni Lola tungkol sa pagdadala ng tahanan kahit mahirap.',
+          encouragement:
+              'Tama! Ang telang walang pangalan ay sumasagisag sa pananagutang piliing alagaan ang pamilya at panatilihing buo ang tahanan kahit mahirap.',
+          buddyHintParagraph:
+              'Iyan ay para sa sinumang pipiling magdala ng tahanan kahit mahirap, kahit mabigat, kahit hindi iyon nasusukat sa pera.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-5',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
+        content:
+            '''Sa ilalim ng hagdan, natagpuan nina Mina at Elias ang isang kahong kinalawang ang bisagra. Sa loob nito ay may mga liham, lumang talaan ng ani, resibo ng gamot, at isang kuwadernong may sulat-kamay ng kanilang ina noong dalaga pa ito.
+
+Isa-isang binasa ni Mina ang mga pahina. Nalaman niyang nang magkasakit noon ang kanyang ama, ipinagbili ni Lola Sabel ang kalahati ng naaning palay upang may maipadala sa ospital. Nang mawalan naman ng hanapbuhay ang kanyang tiyuhin, ang lumang bahay ang naging kanlungan nila sa loob ng maraming buwan. May mga tala rin ng mga binyag, pag-iyak ng sanggol, at pagdating ng mga panahong halos asin at sabaw lamang ang naihahain ngunit walang natutulog na gutom.
+
+Habang binabasa iyon, napagtanto ni Mina na ang bahay ay hindi nanatili dahil lamang sa kahoy at pawid. Nananatili ito dahil may mga taong paulit-ulit na nagpasyang magbigay ng puwang para sa isa't isa. Ang pamilya pala ay hindi basta pinamamana; araw-araw din itong binubuo.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q5',
+          question:
+              'Ano ang pinakamahalagang natuklasan ni Mina sa mga liham at talaan?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Na ang bahay ay matagal nang walang saysay',
+            'B. Na ang tahanan ay naging saksi at kanlungan sa mga sakripisyo ng pamilya',
+            'C. Na puro pera lamang ang dahilan ng lahat ng desisyon',
+            'D. Na dapat itago ang lahat ng dokumento sa mga bata',
+          ],
+          correctAnswerIndex: 1,
+          hint:
+              'Tingnan kung paano inilarawan ng mga tala ang bahay sa panahon ng sakit, gutom, at pagbangon.',
+          encouragement:
+              'Tama! Ipinakita ng mga liham at talaan na ang bahay ay naging kanlungan ng pamilya sa panahon ng hirap, sakit, at paghilom.',
+          buddyHintParagraph:
+              'Ang bahay ay hindi nanatili dahil lamang sa kahoy at pawid. Nananatili ito dahil may mga taong paulit-ulit na nagpasyang magbigay ng puwang para sa isa\'t isa.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-6',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page2.png',
+        content:
+            '''Kinagabihan, iminungkahi ni Mina na maghanda sila ng "hapag ng mga alaala." Hindi iyon engrandeng salu-salo. Mula lamang iyon sa natitirang kalabasa, munggo, daing, at gulay sa bakuran. Ngunit hiniling niya na ang bawat magluluto ay magbahagi rin ng isang alaala kung kailan sila inalagaan ng bahay o ng isa sa pamilya.
+
+Nang una, walang may gustong magsimula. Ngunit nang maghiwa ng kalabasa ang kanyang ina, ikinuwento nitong sa parehong kusina siya unang tinuruan ni Lola Sabel kung paano magluto sa panahong wala silang sapat na bigas. Sumunod ang ama ni Mina, at sa paos na tinig ay inamin niyang kinatatakutan niyang hindi na niya kayang buhayin ang pamilya kaya gusto niyang magbenta ng anumang maaaring isalba.
+
+Sa halip na pagtatalo ang sumunod, unti-unting umusbong ang pakikinig. Hindi na lamang opinyon ang naroon kundi pinagmumulan ng takot, pagod, at pagmamahal. Napansin ni Mina na kapag ang katotohanan ay inihahain nang may kababaan, nagiging mas madali itong tanggapin.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q6',
+          question:
+              'Bakit nabago ng "hapag ng mga alaala" ang himig ng pag-uusap ng pamilya?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.emotion,
+          options: [
+            'A. Dahil masarap lamang ang pagkaing inihain',
+            'B. Dahil napilitan silang tumawa kahit may tampo',
+            'C. Dahil nagbigay ito ng ligtas na paraan upang mailahad ang takot at pagmamahal ng bawat isa',
+            'D. Dahil nakalimutan nila bigla ang problema sa pera',
+          ],
+          correctAnswerIndex: 2,
+          hint:
+              'Pansinin na ang pagbabago ay nangyari nang magsimulang magbahagi ng pinagmumulan ng damdamin ang bawat isa.',
+          encouragement:
+              'Tama! Nabago ang usapan dahil ang hapag ay naging ligtas na puwang para sa tapat na pag-amin, pakikinig, at pag-unawa sa pinagmumulan ng takot at pagmamahal ng bawat isa.',
+          buddyHintParagraph:
+              'Hindi na lamang opinyon ang naroon kundi pinagmumulan ng takot, pagod, at pagmamahal.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-7',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page3.png',
+        content:
+            '''Hindi pa man lubusang natatapos ang kanilang pag-uusap ay dumating ang malakas na ulan. Sumunod ang hangin, at hindi naglaon ay may kumatok na kapitbahay na may kargang bata. Tumaas ang tubig sa mababang bahagi ng baryo at may ilang tahanang pinasok na ng baha.
+
+Walang nag-utos nang malakas, ngunit tila sabay-sabay na nakaunawa ang pamilya. Binuksan ng ama ni Mina ang malapad na pinto. Ang kanyang ina ay nagpainit ng sabaw. Si Elias ay nag-abot ng tuyong kumot. Si Lola Sabel ay itinuro kung saan ilalagay ang mga batang giniginaw. Maging ang lumang duyan ay ginamit muna upang mahimbing na maihiga ang isang sanggol habang inaasikaso ang kanyang ina.
+
+Sa gitna ng unos, ang bahay ay hindi na naging paksa ng pagtatalo. Naging tahanan itong muli sa pinakabuo nitong kahulugan: isang lugar na marunong tumanggap, kumalinga, at magbigay-silong. Nakita ni Mina na ang mga salitang "atin" at "kanila" ay mabilis matunaw kapag may taong nangangailangan.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q7',
+          question:
+              'Ano ang ipinakita ng pamilya nang buksan nila ang bahay sa mga kapitbahay sa gitna ng bagyo?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Na mas mahalaga ang pag-aari kaysa sa tao',
+            'B. Na ang tahanan ay may saysay kapag nagiging kanlungan at kalinga ng kapwa',
+            'C. Na dapat nilang iwasan ang sinumang may problema',
+            'D. Na ang lumang bahay ay mahina at walang silbi',
+          ],
+          correctAnswerIndex: 1,
+          hint:
+              'Pag-isipan kung paano nagbago ang kahulugan ng bahay habang may mga humihingi ng masisilungan.',
+          encouragement:
+              'Tama! Sa pagbubukas nila ng bahay sa gitna ng bagyo, ipinakita ng pamilya na ang tahanan ay tunay na may saysay kapag nagiging kanlungan at kalinga ng kapwa.',
+          buddyHintParagraph:
+              'Naging tahanan itong muli sa pinakabuo nitong kahulugan: isang lugar na marunong tumanggap, kumalinga, at magbigay-silong.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-8',
+        image:
+            'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+        content:
+            '''Nang tumila ang ulan kinabukasan, matagal na nakatanaw sa bakuran ang ama ni Mina. Hindi niya agad binitiwan ang pasyang nais niyang gawin, ngunit iba na ang bigat ng kanyang tinig nang muli siyang magsalita.
+
+"Maling isipin na ang bahay na ito ay pabigat lamang," wika niya. "Utang ang una kong nakita, pero ugat pala ang dapat kong maalala." Iminungkahi niyang huwag muna itong ipagbili. Sa halip, sama-sama nilang aayusin ang bahay at gagamitin ang harapang silid upang pagdausan ng maliit na lutuan at tagpuan ng mga produktong gawa ng pamilya upang makatulong sa gastusin.
+
+Hindi nito agad binura ang lahat ng kanilang problema, ngunit nagbukas ito ng isang pasyang hindi nakabatay sa pagkaputol kundi sa pagpapatuloy. Naramdaman ni Mina na may mga desisyong hindi nag-aalis ng hirap, ngunit binibigyan ito ng direksiyon at dangal.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q8',
+          question:
+              'Pagkatapos ng bagong mungkahi ng ama ni Mina, ano ang pinakamalamang na mangyari sa susunod na bahagi?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.prediction,
+          options: [
+            'A. Tuluyan nang gigibain ang duyan upang magsimula ng bagong negosyo',
+            'B. Maglalagay ang pamilya ng bagong tanda sa duyan bilang sagisag ng kanilang pagkakasundo at pag-uwi',
+            'C. Iiwan agad ng lahat ang bahay upang lumipat sa siyudad kinabukasan',
+            'D. Itatago nila ang lahat ng liham upang hindi na maalala ang nakaraan',
+          ],
+          correctAnswerIndex: 1,
+          hint:
+              'Pansinin na ang kuwento ay papalapit na sa isang simbolikong pagtatapos tungkol sa tahanan, pamana, at pag-uwi.',
+          encouragement:
+              'Tama! Sa susunod na bahagi, pagtitibayin ng pamilya ang kanilang pagkakasundo sa pamamagitan ng paglalagay ng bagong piraso ng tela sa lumang duyan.',
+          buddyHintParagraph:
+              'Nagbukas ito ng isang pasyang hindi nakabatay sa pagkaputol kundi sa pagpapatuloy.',
+        ),
+      ),
+      StorySegment(
+        id: 'pamana-duyan-9',
+        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
+        content:
+            '''Bago sila maghiwa-hiwalay ng silid nang sumunod na gabi, kumuha si Lola Sabel ng karayom, sinulid, at isang maliit na piraso ng tela. Ibinigay niya ito kay Mina, ngunit hiniling niyang lahat sila ay maglagay ng isang tahi.
+
+Hindi pangalan ng bagong sanggol ang isinulat nila roon. Sa halip, pinili nilang ilagay ang isang salitang matagal nang hindi ganap na nadarama sa bahay: "uuwi." Pagkatapos, itinali nila ang tela sa dulo ng duyan kasama ng iba pa. Sa unang pagkakataon mula nang dumating sila, hindi na ito umugong. Marahan lamang itong tumigil, tila nakahinga na rin.
+
+Mula sa bintana, minasdan ni Mina ang bakuran na pinahiran ng sariwang liwanag ng umaga. Nauunawaan na niya ngayon na ang pinakamahalagang pamana ay hindi lamang naiiwan sa titulo ng lupa o sa lumang tabla ng bahay. Nasa paraan iyon ng pag-upo sa iisang hapag, pagharap sa katotohanan, pagdadala sa isa't isa, at pagpiling bumalik kahit may sugat pa. At sa puso ng bawat pag-uwi, ang pamilya ay muling isinisilang.''',
+        question: QuestionModel(
+          id: 'pamana-duyan-q9',
+          question: 'Ano ang pangunahing tema ng kuwento?',
+          type: QuestionType.multipleChoice,
+          skill: QuestionSkill.inference,
+          options: [
+            'A. Ang tunay na pamana ng pamilya ay pag-aari lamang na maaaring ipagbili',
+            'B. Ang pinakamahalagang pamana ay ang muling pagkakaugnay, pag-aalaga, at pagpiling umuwi sa isa\'t isa',
+            'C. Ang katahimikan ay laging mas mabuti kaysa tapat na pag-uusap',
+            'D. Ang mga lumang bagay ay mahalaga lamang kapag mahiwaga',
+          ],
+          correctAnswerIndex: 1,
+          hint:
+              'Balikan kung ano ang kinatawan ng salitang "uuwi" at kung ano ang nabuo sa dulo ng kuwento.',
+          encouragement:
+              'Tama! Itinuro ng kuwento na ang tunay na pamana ay nasa paghilom, pag-aaruga, at pagpiling umuwi sa isa\'t isa bilang pamilya, hindi lamang sa anumang materyal na naiiwan.',
+          buddyHintParagraph:
+              'Ang pinakamahalagang pamana ay hindi lamang naiiwan sa titulo ng lupa o sa lumang tabla ng bahay.',
+        ),
+      ),
+    ],
+  ),
+  StoryModel(
     id: 'lia-at-ang-mapa-ng-mahinhing-alon',
     title: 'Lia and the Map of Whispering Waves',
     author: 'Kuwento Buddy Original',

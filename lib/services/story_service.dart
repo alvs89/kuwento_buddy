@@ -76,6 +76,7 @@ class StoryService {
     const kuwentoBuddyOriginalStoryIds = [
       'huni-ng-duyan-sa-punong-kawayan',
       'butil-ng-tala-sa-ilalim-ng-balete',
+      'pamana-ng-lumang-duyan',
       'lia-at-ang-mapa-ng-mahinhing-alon',
       'empty-seat-by-the-window',
       'saturday-market-list',

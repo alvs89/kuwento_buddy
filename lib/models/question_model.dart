@@ -47,34 +47,34 @@ class QuestionModel {
   }
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) => QuestionModel(
-    id: json['id'] as String,
-    question: json['question'] as String,
-    type: QuestionType.values.firstWhere(
-      (e) => e.name == json['type'],
-      orElse: () => QuestionType.multipleChoice,
-    ),
-    skill: QuestionSkill.values.firstWhere(
-      (e) => e.name == json['skill'],
-      orElse: () => QuestionSkill.inference,
-    ),
-    options: (json['options'] as List<dynamic>).cast<String>(),
-    correctAnswerIndex: json['correctAnswerIndex'] as int,
-    hint: json['hint'] as String,
-    encouragement: json['encouragement'] as String,
-    buddyHintParagraph: json['buddyHintParagraph'] as String? ?? '',
-  );
+        id: json['id'] as String,
+        question: json['question'] as String,
+        type: QuestionType.values.firstWhere(
+          (e) => e.name == json['type'],
+          orElse: () => QuestionType.multipleChoice,
+        ),
+        skill: QuestionSkill.values.firstWhere(
+          (e) => e.name == json['skill'],
+          orElse: () => QuestionSkill.inference,
+        ),
+        options: (json['options'] as List<dynamic>).cast<String>(),
+        correctAnswerIndex: json['correctAnswerIndex'] as int,
+        hint: json['hint'] as String,
+        encouragement: json['encouragement'] as String,
+        buddyHintParagraph: json['buddyHintParagraph'] as String? ?? '',
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'question': question,
-    'type': type.name,
-    'skill': skill.name,
-    'options': options,
-    'correctAnswerIndex': correctAnswerIndex,
-    'hint': hint,
-    'encouragement': encouragement,
-    'buddyHintParagraph': buddyHintParagraph,
-  };
+        'id': id,
+        'question': question,
+        'type': type.name,
+        'skill': skill.name,
+        'options': options,
+        'correctAnswerIndex': correctAnswerIndex,
+        'hint': hint,
+        'encouragement': encouragement,
+        'buddyHintParagraph': buddyHintParagraph,
+      };
 
   QuestionModel copyWith({
     String? id,
@@ -86,15 +86,16 @@ class QuestionModel {
     String? hint,
     String? encouragement,
     String? buddyHintParagraph,
-  }) => QuestionModel(
-    id: id ?? this.id,
-    question: question ?? this.question,
-    type: type ?? this.type,
-    skill: skill ?? this.skill,
-    options: options ?? this.options,
-    correctAnswerIndex: correctAnswerIndex ?? this.correctAnswerIndex,
-    hint: hint ?? this.hint,
-    encouragement: encouragement ?? this.encouragement,
-    buddyHintParagraph: buddyHintParagraph ?? this.buddyHintParagraph,
-  );
+  }) =>
+      QuestionModel(
+        id: id ?? this.id,
+        question: question ?? this.question,
+        type: type ?? this.type,
+        skill: skill ?? this.skill,
+        options: options ?? this.options,
+        correctAnswerIndex: correctAnswerIndex ?? this.correctAnswerIndex,
+        hint: hint ?? this.hint,
+        encouragement: encouragement ?? this.encouragement,
+        buddyHintParagraph: buddyHintParagraph ?? this.buddyHintParagraph,
+      );
 }
