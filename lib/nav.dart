@@ -316,18 +316,22 @@ class AppRouter {
         pageBuilder: (context, state) {
           final level = state.pathParameters['level'] ?? '';
           final levelName = level[0].toUpperCase() + level.substring(1);
+          final customTitle = state.uri.queryParameters['title']?.trim();
+          final title = customTitle == null || customTitle.isEmpty
+              ? '$levelName Stories'
+              : customTitle;
           final storyService = StoryService();
           final levelStories = _getStoriesForRoute(
             storyService: storyService,
             level: level,
           );
           final speechMessage = _buildBuddyMessage(
-            title: '$levelName Stories',
+            title: title,
             stories: levelStories,
           );
           return CustomTransitionPage(
             child: _withFloatingBuddy(
-              StoriesListScreen(level: level, title: '$levelName Stories'),
+              StoriesListScreen(level: level, title: title),
               extraBottomOffset: 24,
               speechMessage: speechMessage,
               speechTitle: _getBuddySpeechTitleForLevel(level),
@@ -490,6 +494,11 @@ class AppRouter {
         return baseStories;
       }
 
+      if (!currentLibraryOnly &&
+          (category == 'filipino_tales' || category == 'filipino-tales')) {
+        return storyService.getFilipinoTales();
+      }
+
       return baseStories
           .where((story) => story.categories.contains(selectedCategory))
           .toList();
@@ -512,6 +521,9 @@ class AppRouter {
   static String _buildThemeLine(String title) {
     final lowerTitle = title.toLowerCase();
 
+    if (lowerTitle.contains('family') || lowerTitle.contains('heritage')) {
+      return 'Homecoming, cherished memories, and enduring healing.';
+    }
     if (lowerTitle.contains('folklore') || lowerTitle.contains('folktales')) {
       return 'Gentle folklore and nature-inspired wonder.';
     }
@@ -571,6 +583,9 @@ class AppRouter {
     final lowerTitle = title.toLowerCase();
     if (lowerTitle.contains('legend') || lowerTitle.contains('myth')) {
       return 'Myths';
+    }
+    if (lowerTitle.contains('family') || lowerTitle.contains('heritage')) {
+      return 'Heritage';
     }
     if (lowerTitle.contains('folklore')) {
       return 'Folklore';

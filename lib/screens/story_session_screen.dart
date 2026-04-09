@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -36,6 +37,11 @@ class StorySessionScreen extends StatefulWidget {
 
 class _StorySessionScreenState extends State<StorySessionScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const Duration _hintBubbleDuration = Duration(seconds: 6);
+  static const String _correctAnswerSoundAsset = 'audio/correct_answer.wav';
+  static const String _wrongAnswerSoundAsset = 'audio/wrong_answer.wav';
+  static const double _answerFeedbackVolume = 0.9;
+
   StoryController? _controller;
   late PageController _pageController;
   late AnimationController _overlayController;
@@ -51,6 +57,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   final Map<String, String> _translatedTitleCache = {};
   final Map<String, String> _translatedSegmentCache = {};
   final Map<String, String> _translatedQuestionCache = {};
+  late final AudioContext _answerFeedbackAudioContext;
+  AudioPool? _correctAnswerAudioPool;
+  AudioPool? _wrongAnswerAudioPool;
+  StopFunction? _activeAnswerFeedbackStop;
   String _activeLanguageCode = 'en';
   bool _isTranslating = false;
   bool _isNarrationPlaying = false;
@@ -58,6 +68,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   bool _suppressBuddyHints = false;
   bool _showQuestionHintBubble = false;
   bool _showQuestionSuccessBubble = false;
+  int _hintBubblePresentationId = 0;
   Timer? _hintBubbleTimer;
   Timer? _successBubbleTimer;
 
@@ -65,6 +76,12 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _answerFeedbackAudioContext = AudioContextConfig(
+      route: AudioContextConfigRoute.speaker,
+      focus: AudioContextConfigFocus.gain,
+      respectSilence: false,
+    ).build();
+    unawaited(_prepareAnswerFeedbackAudio());
     _loadStory();
     context.read<TTSService>().addListener(_onTTSStateChanged);
     _pageController = PageController();
@@ -78,6 +95,48 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       parent: _overlayController,
       curve: Curves.easeOutBack,
     );
+  }
+
+  Future<void> _prepareAnswerFeedbackAudio() async {
+    try {
+      await AudioPlayer.global.setAudioContext(_answerFeedbackAudioContext);
+      _correctAnswerAudioPool = await AudioPool.create(
+        source: AssetSource(_correctAnswerSoundAsset),
+        maxPlayers: 1,
+        minPlayers: 1,
+        playerMode: PlayerMode.lowLatency,
+        audioContext: _answerFeedbackAudioContext,
+      );
+      _wrongAnswerAudioPool = await AudioPool.create(
+        source: AssetSource(_wrongAnswerSoundAsset),
+        maxPlayers: 1,
+        minPlayers: 1,
+        playerMode: PlayerMode.lowLatency,
+        audioContext: _answerFeedbackAudioContext,
+      );
+    } catch (error) {
+      debugPrint('Answer feedback audio failed to prepare: $error');
+    }
+  }
+
+  Future<void> _playAnswerFeedbackSound({required bool isCorrect}) async {
+    try {
+      final selectedPool =
+          isCorrect ? _correctAnswerAudioPool : _wrongAnswerAudioPool;
+      if (selectedPool == null) return;
+
+      final previousStop = _activeAnswerFeedbackStop;
+      _activeAnswerFeedbackStop = null;
+      if (previousStop != null) {
+        await previousStop();
+      }
+
+      _activeAnswerFeedbackStop = await selectedPool.start(
+        volume: _answerFeedbackVolume,
+      );
+    } catch (error) {
+      debugPrint('Answer feedback audio failed to play: $error');
+    }
   }
 
   void _onTTSStateChanged() {
@@ -141,7 +200,9 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       if (_suppressBuddyHints) {
         _hideHintBubble();
       } else if (_controller?.showHint == true) {
-        _startHintBubble();
+        if (!_showQuestionHintBubble) {
+          _startHintBubble();
+        }
       } else {
         _hideHintBubble();
       }
@@ -176,7 +237,11 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   void _handleShowHintsTap() {
     if (_controller == null) return;
 
+    final bubbleWasVisible = _showQuestionHintBubble;
     final result = _controller!.requestHint();
+    if (bubbleWasVisible && result.hintShown) {
+      _startHintBubble();
+    }
     if (result.remainingAttempts > 0) {
       final label = result.remainingAttempts == 1
           ? _uiText(en: 'hint attempt', fil: 'pahiwatig')
@@ -217,6 +282,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       _suppressBuddyHints = false;
       _showQuestionHintBubble = false;
       _showQuestionSuccessBubble = false;
+      _hintBubblePresentationId = 0;
     });
     controller.startFreshCountedSession();
     _pageController.jumpToPage(0);
@@ -697,7 +763,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
       return text;
     }
 
-    return _translatedQuestionCache[_questionCacheKey(text, _activeLanguageCode)] ??
+    return _translatedQuestionCache[
+            _questionCacheKey(text, _activeLanguageCode)] ??
         text;
   }
 
@@ -865,6 +932,18 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     _wrongAnswerHighlightTimer?.cancel();
     _hintBubbleTimer?.cancel();
     _successBubbleTimer?.cancel();
+    final activeAnswerFeedbackStop = _activeAnswerFeedbackStop;
+    if (activeAnswerFeedbackStop != null) {
+      unawaited(activeAnswerFeedbackStop());
+    }
+    if (_correctAnswerAudioPool != null || _wrongAnswerAudioPool != null) {
+      unawaited(
+        Future.wait([
+          if (_correctAnswerAudioPool != null) _correctAnswerAudioPool!.dispose(),
+          if (_wrongAnswerAudioPool != null) _wrongAnswerAudioPool!.dispose(),
+        ]),
+      );
+    }
     WidgetsBinding.instance.removeObserver(this);
     _stopSpeakingSilently();
     context.read<TTSService>().removeListener(_onTTSStateChanged);
@@ -930,6 +1009,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                   showSpeechBubble: true,
                   enableTapSpeechBubble: true,
                   tapMessage: _floatingBuddyMessage(controller),
+                  speechTitle: _floatingBuddySpeechTitle(controller),
                   onTap: () => _handleFloatingBuddyInteraction(controller),
                 ),
               ),
@@ -2140,6 +2220,34 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     return _buddyCheeringLabel;
   }
 
+  String? _buddySpeechTitleForState(BuddyState state) {
+    switch (state) {
+      case BuddyState.idle:
+        return _uiText(en: 'Buddy Tip', fil: 'Tip ni Buddy');
+      case BuddyState.thinking:
+        return _uiText(en: 'Thinking Together', fil: 'Mag-isip Tayo');
+      case BuddyState.happy:
+        return _uiText(en: 'Nice Work', fil: 'Magaling');
+      case BuddyState.encouraging:
+        return _uiText(en: 'Keep Going', fil: 'Tuloy Lang');
+      case BuddyState.sympathetic:
+        return _uiText(en: 'Take Your Time', fil: 'Dahan-dahan Lang');
+      case BuddyState.waving:
+        return _uiText(en: 'Hello', fil: 'Kumusta');
+      case BuddyState.cheering:
+        return _uiText(en: 'Celebrate', fil: 'Ipagdiwang Natin');
+      default:
+        return null;
+    }
+  }
+
+  String? _floatingBuddySpeechTitle(StoryController controller) {
+    final state = controller.hasCheckpoint && !controller.isAnswerCorrect
+        ? BuddyState.thinking
+        : BuddyState.idle;
+    return _buddySpeechTitleForState(state);
+  }
+
   void _startSuccessBubble() {
     if (_showQuestionSuccessBubble) return;
     _successBubbleTimer?.cancel();
@@ -2157,10 +2265,12 @@ class _StorySessionScreenState extends State<StorySessionScreen>
   }
 
   void _startHintBubble() {
-    if (_showQuestionHintBubble) return;
     _hintBubbleTimer?.cancel();
-    setState(() => _showQuestionHintBubble = true);
-    _hintBubbleTimer = Timer(const Duration(seconds: 5), () {
+    setState(() {
+      _showQuestionHintBubble = true;
+      _hintBubblePresentationId++;
+    });
+    _hintBubbleTimer = Timer(_hintBubbleDuration, () {
       if (!mounted) return;
       setState(() => _showQuestionHintBubble = false);
     });
@@ -2510,6 +2620,10 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
                       showSpeechBubble: true,
                       enableTapSpeechBubble: false,
+                      speechTitle:
+                          _buddySpeechTitleForState(BuddyState.sympathetic),
+                      speechBubbleCountdownDuration: _hintBubbleDuration,
+                      speechBubbleInstanceId: _hintBubblePresentationId,
                     ),
                   ),
                 if (_controller!.isAnswerCorrect && _showQuestionSuccessBubble)
@@ -2523,6 +2637,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
                           MediaQuery.of(context).size.width < 360 ? 50.0 : 54.0,
                       showSpeechBubble: true,
                       enableTapSpeechBubble: false,
+                      speechTitle: _buddySpeechTitleForState(BuddyState.happy),
                     ),
                   ),
               ],
@@ -2580,8 +2695,12 @@ class _StorySessionScreenState extends State<StorySessionScreen>
             ? null
             : () {
                 HapticFeedback.selectionClick();
+                final isCorrectSelection = question.isCorrect(optionIndex);
+                unawaited(
+                  _playAnswerFeedbackSound(isCorrect: isCorrectSelection),
+                );
                 _controller!.submitAnswer(optionIndex);
-                if (!question.isCorrect(optionIndex)) {
+                if (!isCorrectSelection) {
                   _wrongAnswerHighlightTimer?.cancel();
                   setState(() => _recentWrongAnswerIndex = optionIndex);
                   _wrongAnswerHighlightTimer = Timer(

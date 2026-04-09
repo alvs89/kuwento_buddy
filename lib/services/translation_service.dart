@@ -12,6 +12,10 @@ class TranslationService {
   static const String _apiHost = 'translate.googleapis.com';
   static const String _apiPath = '/translate_a/single';
   static const int _maxChunkLength = 750;
+  static const Map<String, String> _targetedTranslationOverrides = {
+    'en->tl::Correct! Returning the extra change protected the trust placed in Jun.':
+        'Tama! Sa pagbabalik ni Jun ng sobrang sukli, napangalagaan niya ang tiwalang ibinigay sa kanya.',
+  };
 
   final Map<String, String> _cache = {};
 
@@ -32,7 +36,13 @@ class TranslationService {
         '$sourceLanguage->$targetLanguage${preferFemaleSubject ? '::female' : ''}::$cleanedText';
     final cached = _cache[cacheKey];
     if (cached != null) {
-      return cached;
+      return _finalizeTranslatedText(
+        translatedText: cached,
+        originalText: cleanedText,
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+        preferFemaleSubject: preferFemaleSubject,
+      );
     }
 
     if (cleanedText.length > _maxChunkLength) {
@@ -43,9 +53,21 @@ class TranslationService {
         preferFemaleSubject: preferFemaleSubject,
       );
       if (translated.trim().isNotEmpty && translated.trim() != cleanedText) {
-        _cache[cacheKey] = translated;
+        _cache[cacheKey] = _finalizeTranslatedText(
+          translatedText: translated,
+          originalText: cleanedText,
+          sourceLanguage: sourceLanguage,
+          targetLanguage: targetLanguage,
+          preferFemaleSubject: preferFemaleSubject,
+        );
       }
-      return translated;
+      return _finalizeTranslatedText(
+        translatedText: translated,
+        originalText: cleanedText,
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+        preferFemaleSubject: preferFemaleSubject,
+      );
     }
 
     final translated = await _translateSingleChunk(
@@ -56,10 +78,22 @@ class TranslationService {
     );
 
     if (translated.trim().isNotEmpty) {
-      _cache[cacheKey] = translated;
+      _cache[cacheKey] = _finalizeTranslatedText(
+        translatedText: translated,
+        originalText: cleanedText,
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+        preferFemaleSubject: preferFemaleSubject,
+      );
     }
 
-    return translated;
+    return _finalizeTranslatedText(
+      translatedText: translated,
+      originalText: cleanedText,
+      sourceLanguage: sourceLanguage,
+      targetLanguage: targetLanguage,
+      preferFemaleSubject: preferFemaleSubject,
+    );
   }
 
   Future<String> _translateChunkedText({
@@ -245,7 +279,7 @@ class TranslationService {
       }
 
       final normalized = _decodeHtmlEntities(translated.trim());
-      final adjusted = _applyPronounPreference(
+      final adjusted = _finalizeTranslatedText(
         translatedText: normalized,
         originalText: cleanedText,
         sourceLanguage: sourceLanguage,
@@ -291,6 +325,62 @@ class TranslationService {
     }
 
     return _swapToFemalePronouns(translatedText);
+  }
+
+  String _finalizeTranslatedText({
+    required String translatedText,
+    required String originalText,
+    required String sourceLanguage,
+    required String targetLanguage,
+    required bool preferFemaleSubject,
+  }) {
+    var adjusted = _applyPronounPreference(
+      translatedText: translatedText,
+      originalText: originalText,
+      sourceLanguage: sourceLanguage,
+      targetLanguage: targetLanguage,
+      preferFemaleSubject: preferFemaleSubject,
+    );
+    adjusted = _applyTargetedOverride(
+      translatedText: adjusted,
+      originalText: originalText,
+      sourceLanguage: sourceLanguage,
+      targetLanguage: targetLanguage,
+    );
+    adjusted = _restoreKnownNames(
+      translatedText: adjusted,
+      originalText: originalText,
+    );
+    return adjusted;
+  }
+
+  String _applyTargetedOverride({
+    required String translatedText,
+    required String originalText,
+    required String sourceLanguage,
+    required String targetLanguage,
+  }) {
+    final normalizedSource = _normalizeLanguageCode(sourceLanguage);
+    final normalizedTarget = _normalizeLanguageCode(targetLanguage);
+    final override = _targetedTranslationOverrides[
+        '$normalizedSource->$normalizedTarget::$originalText'];
+    return override ?? translatedText;
+  }
+
+  String _restoreKnownNames({
+    required String translatedText,
+    required String originalText,
+  }) {
+    var adjusted = translatedText;
+
+    if (RegExp(r'\bJun\b').hasMatch(originalText)) {
+      adjusted = adjusted.replaceAllMapped(
+        RegExp(r'\bHun\b', caseSensitive: false),
+        (match) => _matchCasing(match.group(0) ?? 'Hun', 'Jun'),
+      );
+    }
+
+    return adjusted;
   }
 
   bool _isFilipinoToEnglish(String source, String target) {
@@ -340,5 +430,13 @@ class TranslationService {
 
   bool _isCapitalized(String value) {
     return value.isNotEmpty && value[0].toUpperCase() == value[0];
+  }
+
+  String _matchCasing(String original, String replacement) {
+    if (_isAllCaps(original)) return replacement.toUpperCase();
+    if (_isCapitalized(original)) {
+      return replacement[0].toUpperCase() + replacement.substring(1);
+    }
+    return replacement.toLowerCase();
   }
 }

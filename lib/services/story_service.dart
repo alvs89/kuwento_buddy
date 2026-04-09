@@ -58,7 +58,9 @@ class StoryService {
   }
 
   List<StoryModel> getStoriesByCategory(StoryCategory category) {
-    return _stories.where((s) => s.categories.contains(category)).toList();
+    return getAllStories()
+        .where((s) => s.categories.contains(category))
+        .toList();
   }
 
   List<StoryModel> getFilipinoTales() =>

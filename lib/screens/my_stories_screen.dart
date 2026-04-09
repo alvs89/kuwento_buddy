@@ -721,10 +721,17 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     final storyProgressEntries = _resolvedStoryProgressEntries(user);
 
     // Dynamic categorization: completed when final sequence/segment is finished.
-    final completed = storyProgressEntries
+    final completedEntries = storyProgressEntries
         .where((entry) => _isStoryCompleted(entry.value, entry.key))
-        .map((entry) => entry.key)
-        .toList();
+        .toList()
+      ..sort((a, b) {
+        final aRecent = a.value.completedAt ?? a.value.updatedAt;
+        final bRecent = b.value.completedAt ?? b.value.updatedAt;
+        final comparison = bRecent.compareTo(aRecent);
+        if (comparison != 0) return comparison;
+        return a.key.title.compareTo(b.key.title);
+      });
+    final completed = completedEntries.map((entry) => entry.key).toList();
 
     if (completed.isEmpty) {
       return _buildEmptyState(
@@ -862,7 +869,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                                 ),
                                 if (stars == 0)
                                   const Icon(
-                                    Icons.check,
+                                    Icons.star_outline,
                                     color: Colors.white,
                                     size: 14,
                                   ),

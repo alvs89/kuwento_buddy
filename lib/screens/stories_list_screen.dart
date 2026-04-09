@@ -72,11 +72,15 @@ class StoriesListScreen extends StatelessWidget {
         }
       } else {
         final selectedCategory = _categoryByRoute[category ?? ''];
-        stories = selectedCategory == null
-            ? baseStories
-            : baseStories
-                .where((s) => s.categories.contains(selectedCategory))
-                .toList();
+        if (selectedCategory == StoryCategory.filipinoTales) {
+          stories = storyService.getFilipinoTales();
+        } else {
+          stories = selectedCategory == null
+              ? baseStories
+              : baseStories
+                  .where((s) => s.categories.contains(selectedCategory))
+                  .toList();
+        }
       }
     } else {
       stories = baseStories;

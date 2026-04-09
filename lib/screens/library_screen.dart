@@ -265,9 +265,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             },
                       stories: filteredStories,
                       onStoryTap: _navigateToStory,
-                      onSeeAll: () => context.push(
-                        '/stories/level/${_selectedLevel?.name ?? 'all'}',
-                      ),
+                      onSeeAll: () {
+                        final rowTitle = _selectedLevel == null
+                            ? 'All Levels'
+                            : '${_selectedLevel!.name[0].toUpperCase()}${_selectedLevel!.name.substring(1)} Stories';
+                        context.push(
+                          Uri(
+                            path:
+                                '/stories/level/${_selectedLevel?.name ?? 'all'}',
+                            queryParameters: {'title': rowTitle},
+                          ).toString(),
+                        );
+                      },
                       titleAddon: _buildLevelDropdown(context, isDark),
                     ),
                   ),
@@ -297,8 +306,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       emoji: '🇵🇭',
                       stories: filipinoTales,
                       onStoryTap: _navigateToStory,
-                      onSeeAll: () =>
-                          context.push('/stories/category/filipino-tales'),
+                      onSeeAll: () => context.push(
+                        Uri(
+                          path: '/stories/category/filipino-tales',
+                          queryParameters: {'title': 'Filipino Tales'},
+                        ).toString(),
+                      ),
                     ),
                   ),
                 ),
@@ -313,8 +326,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       emoji: '🧭',
                       stories: adventureJourney,
                       onStoryTap: _navigateToStory,
-                      onSeeAll: () =>
-                          context.push('/stories/category/adventure-journey'),
+                      onSeeAll: () => context.push(
+                        Uri(
+                          path: '/stories/category/adventure-journey',
+                          queryParameters: {
+                            'title': 'Adventure & Journey Stories',
+                          },
+                        ).toString(),
+                      ),
                     ),
                   ),
                 ),
@@ -329,8 +348,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       emoji: '🌍',
                       stories: socialStories,
                       onStoryTap: _navigateToStory,
-                      onSeeAll: () =>
-                          context.push('/stories/category/social-stories'),
+                      onSeeAll: () => context.push(
+                        Uri(
+                          path: '/stories/category/social-stories',
+                          queryParameters: {
+                            'title': 'Real-life / Social Stories',
+                          },
+                        ).toString(),
+                      ),
                     ),
                   ),
                 ),

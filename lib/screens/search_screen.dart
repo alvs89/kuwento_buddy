@@ -42,6 +42,16 @@ class _SearchScreenState extends State<SearchScreen> {
       ]),
     ),
     _BrowseGenreMeta(
+      title: 'Filipino Family & Heritage Tales',
+      emoji: '🏠',
+      color: KuwentoColors.pastelBlue,
+      subtitle: 'Homecoming, memory, and healing across generations',
+      matches: (story) => _containsAnyTitle(story, const [
+        'ang pamana ng lumang duyan',
+        'pamana ng lumang duyan',
+      ]),
+    ),
+    _BrowseGenreMeta(
       title: 'Ocean & Travel Adventures',
       emoji: '🌊',
       color: KuwentoColors.deepTeal,

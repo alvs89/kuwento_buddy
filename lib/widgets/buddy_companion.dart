@@ -30,6 +30,8 @@ class BuddyCompanion extends StatefulWidget {
   final bool speechBubbleInitiallyVisible;
   final bool disableHighlightEffects;
   final Color? bodyColor;
+  final Duration? speechBubbleCountdownDuration;
+  final int? speechBubbleInstanceId;
 
   const BuddyCompanion({
     super.key,
@@ -45,6 +47,8 @@ class BuddyCompanion extends StatefulWidget {
     this.speechBubbleInitiallyVisible = false,
     this.disableHighlightEffects = false,
     this.bodyColor,
+    this.speechBubbleCountdownDuration,
+    this.speechBubbleInstanceId,
   });
 
   @override
@@ -400,7 +404,7 @@ class _BuddyCompanionState extends State<BuddyCompanion>
                       child: shouldShowSpeechBubble
                           ? RepaintBoundary(
                               key: ValueKey<String>(
-                                '${widget.state.name}:${_activeSpeechText ?? ''}',
+                                '${widget.state.name}:${_activeSpeechText ?? ''}:${widget.speechBubbleInstanceId ?? 0}',
                               ),
                               child: BuddySpeechBubble(
                                 message: _activeSpeechText ?? '',
@@ -409,6 +413,8 @@ class _BuddyCompanionState extends State<BuddyCompanion>
                                 arrowOnLowerRight: true,
                                 maxWidth: bubbleMaxWidth,
                                 titleOverride: widget.speechTitle,
+                                countdownDuration:
+                                    widget.speechBubbleCountdownDuration,
                               ),
                             )
                           : const SizedBox.shrink(),
@@ -679,6 +685,7 @@ class BuddySpeechBubble extends StatelessWidget {
   final bool arrowOnLowerRight;
   final double? maxWidth;
   final String? titleOverride;
+  final Duration? countdownDuration;
 
   const BuddySpeechBubble({
     super.key,
@@ -688,6 +695,7 @@ class BuddySpeechBubble extends StatelessWidget {
     this.arrowOnLowerRight = false,
     this.maxWidth,
     this.titleOverride,
+    this.countdownDuration,
   });
 
   Color get _bubbleColor {
@@ -771,11 +779,14 @@ class BuddySpeechBubble extends StatelessWidget {
         ? _bubbleColor.withValues(alpha: 0.08)
         : _bubbleColor.withValues(alpha: 0.14);
     final borderColor = _bubbleColor.withValues(alpha: isDark ? 0.46 : 0.3);
+    final hasCountdown = countdownDuration != null;
     final titleStyle = theme.textTheme.labelLarge?.copyWith(
       color: isDark ? Colors.white : KuwentoColors.textPrimary,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.2,
-      fontSize: compactScreen ? 11.0 : (wideScreen ? 12.0 : 11.5),
+      fontSize: compactScreen
+          ? (hasCountdown ? 10.0 : 11.0)
+          : (wideScreen ? (hasCountdown ? 11.0 : 12.0) : (hasCountdown ? 10.8 : 11.5)),
       height: 1.0,
     );
     final messageStyle = theme.textTheme.bodyMedium?.copyWith(
@@ -845,7 +856,7 @@ class BuddySpeechBubble extends StatelessWidget {
                   : CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
                       width: compactScreen ? 28 : 30,
@@ -862,15 +873,30 @@ class BuddySpeechBubble extends StatelessWidget {
                         color: _bubbleColor,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        titleText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
+                    SizedBox(width: hasCountdown ? 8 : 10),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            titleText,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: titleStyle,
+                          ),
+                        ),
                       ),
                     ),
+                    if (countdownDuration != null) ...[
+                      const SizedBox(width: 8),
+                      _BuddySpeechCountdown(
+                        duration: countdownDuration!,
+                        color: _bubbleColor,
+                        compact: compactScreen,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -952,6 +978,108 @@ class BuddySpeechBubble extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _BuddySpeechCountdown extends StatefulWidget {
+  final Duration duration;
+  final Color color;
+  final bool compact;
+
+  const _BuddySpeechCountdown({
+    required this.duration,
+    required this.color,
+    required this.compact,
+  });
+
+  @override
+  State<_BuddySpeechCountdown> createState() => _BuddySpeechCountdownState();
+}
+
+class _BuddySpeechCountdownState extends State<_BuddySpeechCountdown>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant _BuddySpeechCountdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      _controller.duration = widget.duration;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dimension = widget.compact ? 28.0 : 32.0;
+    final strokeWidth = widget.compact ? 2.8 : 3.2;
+    final trackColor = widget.color.withValues(alpha: isDark ? 0.16 : 0.12);
+    final fillColor = widget.color.withValues(alpha: isDark ? 0.18 : 0.10);
+
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final progress = (1 - _controller.value).clamp(0.0, 1.0);
+          final remainingMilliseconds =
+              (widget.duration.inMilliseconds * progress).ceil();
+          final secondsLeft = math.max(
+            0,
+            (remainingMilliseconds / 1000).ceil(),
+          );
+
+          return Semantics(
+            label: '$secondsLeft seconds remaining',
+            child: Container(
+              width: dimension,
+              height: dimension,
+              decoration: BoxDecoration(
+                color: fillColor,
+                shape: BoxShape.circle,
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.square(
+                    dimension: dimension,
+                    child: CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: strokeWidth,
+                      backgroundColor: trackColor,
+                      valueColor: AlwaysStoppedAnimation<Color>(widget.color),
+                    ),
+                  ),
+                  Text(
+                    '$secondsLeft',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isDark ? Colors.white : KuwentoColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: widget.compact ? 9.5 : 10.5,
+                      height: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

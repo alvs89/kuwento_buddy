@@ -662,7 +662,7 @@ At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Is
     id: 'pamana-ng-lumang-duyan',
     title: 'Ang Pamana ng Lumang Duyan',
     author: 'Kuwento Buddy Original',
-    coverImage: 'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+    coverImage: 'assets/images/ang-pamana-ng-lumang-duyan-cover-photo.png',
     description:
         'Sa muling pag-uwi ng isang pamilyang unti-unting nagkakalayo, isang lumang duyan, isang tahanan, at isang gabing may bagyo ang magpapaalala na ang tunay na pamana ay hindi lupa o bahay lamang, kundi ang kakayahang makinig, magpatawad, at muling magkaugnay bilang pamilya.',
     level: StoryLevel.advanced,
@@ -685,8 +685,7 @@ At doon nila naunawaan na ang butil ng tala ay hindi lamang mahiwagang bagay. Is
     segments: [
       StorySegment(
         id: 'pamana-duyan-opening',
-        image:
-            'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-cover-photo.png',
         content: '''Page 1 (Opening Page)
 Title: Ang Pamana ng Lumang Duyan
 Genre: Filipino Tale
@@ -706,7 +705,7 @@ Pinakamainam para sa mas malalim na pag-unawa, pagninilay, at talakayan.''',
       ),
       StorySegment(
         id: 'pamana-duyan-1',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page1.png',
         content:
             '''Makulimlim ang hapon nang makarating sina Mina, ang kanyang nakababatang kapatid na si Elias, at ang kanilang mga magulang sa bahay ni Lola Sabel. Ang lumang tahanan ay nakatindig pa rin sa tabi ng kawayanan, ngunit ang pintuan nito ay wari bang may sariling buntong-hininga sa bawat bukas at sara.
 
@@ -736,7 +735,7 @@ Napansin ni Mina na maingat magsalita ang kanyang ama, at mas maingat pang manah
       ),
       StorySegment(
         id: 'pamana-duyan-2',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page2.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page2.png',
         content:
             '''Nang lumalim ang gabi at isa-isang namatay ang mga ilaw sa kabahayan, hindi agad dinalaw ng antok si Mina. Mula sa silid na tinulugan niya noon bata pa siya, narinig niya ang banayad na langitngit ng lumang duyan sa may bintana.
 
@@ -766,7 +765,7 @@ Hinaplos ni Mina ang telang walang pangalan. Hindi siya natakot; sa halip, nakar
       ),
       StorySegment(
         id: 'pamana-duyan-3',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page3.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page3.png',
         content:
             '''Kinabukasan, habang magkaharap sila sa hapag, unang nagsalita ang ama ni Mina matapos ang mahabang katahimikan. May bumibili raw sa likod na bahagi ng lupain, at kung isasama pati ang lumang bahay, sapat na ang halaga upang mabayaran ang kanilang mga utang sa siyudad at ang ilan pang gastusin sa pagpapagamot ni Lola Sabel.
 
@@ -796,8 +795,7 @@ Ang tanong na iyon ang tila nagbitak sa katahimikan. Naunawaan ni Mina na ang us
       ),
       StorySegment(
         id: 'pamana-duyan-4',
-        image:
-            'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page4.png',
         content:
             '''Nang sila'y nag-iisa na ni Lola Sabel sa may bintana, itinuro ng matanda ang mga telang nakatali sa duyan. Ipinaliwanag niyang sa tuwing may batang unang pinatutulog sa duyang iyon, nagtatahi siya ng maliit na piraso ng tela bilang pananda na may isa na namang buhay na iniingatan ng bahay at ng pamilya.
 
@@ -827,7 +825,7 @@ Hindi agad nakaimik si Mina. Sa unang pagkakataon, naisip niyang ang pamana ay m
       ),
       StorySegment(
         id: 'pamana-duyan-5',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page5.png',
         content:
             '''Sa ilalim ng hagdan, natagpuan nina Mina at Elias ang isang kahong kinalawang ang bisagra. Sa loob nito ay may mga liham, lumang talaan ng ani, resibo ng gamot, at isang kuwadernong may sulat-kamay ng kanilang ina noong dalaga pa ito.
 
@@ -857,7 +855,7 @@ Habang binabasa iyon, napagtanto ni Mina na ang bahay ay hindi nanatili dahil la
       ),
       StorySegment(
         id: 'pamana-duyan-6',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page2.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page6.png',
         content:
             '''Kinagabihan, iminungkahi ni Mina na maghanda sila ng "hapag ng mga alaala." Hindi iyon engrandeng salu-salo. Mula lamang iyon sa natitirang kalabasa, munggo, daing, at gulay sa bakuran. Ngunit hiniling niya na ang bawat magluluto ay magbahagi rin ng isang alaala kung kailan sila inalagaan ng bahay o ng isa sa pamilya.
 
@@ -887,7 +885,7 @@ Sa halip na pagtatalo ang sumunod, unti-unting umusbong ang pakikinig. Hindi na 
       ),
       StorySegment(
         id: 'pamana-duyan-7',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page3.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page7.png',
         content:
             '''Hindi pa man lubusang natatapos ang kanilang pag-uusap ay dumating ang malakas na ulan. Sumunod ang hangin, at hindi naglaon ay may kumatok na kapitbahay na may kargang bata. Tumaas ang tubig sa mababang bahagi ng baryo at may ilang tahanang pinasok na ng baha.
 
@@ -917,8 +915,7 @@ Sa gitna ng unos, ang bahay ay hindi na naging paksa ng pagtatalo. Naging tahana
       ),
       StorySegment(
         id: 'pamana-duyan-8',
-        image:
-            'assets/images/huni-ng-duyan-sa-punong-kawayan-cover-photo.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page8.png',
         content:
             '''Nang tumila ang ulan kinabukasan, matagal na nakatanaw sa bakuran ang ama ni Mina. Hindi niya agad binitiwan ang pasyang nais niyang gawin, ngunit iba na ang bigat ng kanyang tinig nang muli siyang magsalita.
 
@@ -948,7 +945,7 @@ Hindi nito agad binura ang lahat ng kanilang problema, ngunit nagbukas ito ng is
       ),
       StorySegment(
         id: 'pamana-duyan-9',
-        image: 'assets/images/huni-ng-duyan-sa-punong-kawayan-page1.png',
+        image: 'assets/images/ang-pamana-ng-lumang-duyan-page9.png',
         content:
             '''Bago sila maghiwa-hiwalay ng silid nang sumunod na gabi, kumuha si Lola Sabel ng karayom, sinulid, at isang maliit na piraso ng tela. Ibinigay niya ito kay Mina, ngunit hiniling niyang lahat sila ay maglagay ng isang tahi.
 
@@ -1078,7 +1075,7 @@ Her map still pointed forward, but now she understood that the companion beside 
           correctAnswerIndex: 0,
           hint: 'What did Lia do when she saw the bridge sway?',
           encouragement:
-              'Tama! Pinili ni Lia ang ligtas na paraan para sa kanilang dalawa.',
+              'Correct! Lia chose the safest way forward for both of them.',
           buddyHintParagraph:
               'She held out her hand and told Pio to step slowly and match her pace.',
         ),
@@ -1349,7 +1346,7 @@ The classroom seemed brighter, even though nothing had changed on the walls.''',
           correctAnswerIndex: 0,
           hint: 'Think about what makes a new place feel safer.',
           encouragement:
-              'Tama! Ang simpleng pagbabahagi ay malaking tulong sa bagong kaklase.',
+              'Correct! Sharing her crayons was a kind way to help a new classmate feel included.',
           buddyHintParagraph:
               'She slid the box toward him and said, “You can borrow these.”',
         ),
@@ -1483,7 +1480,7 @@ The seller blinked, then smiled with relief.''',
           correctAnswerIndex: 0,
           hint: 'Think about trust, not just desire.',
           encouragement:
-              'Tama! Ang pagbalik ng sobrang sukli ay pagprotekta sa tiwala.',
+              'Correct! Returning the extra change protected the trust placed in Jun.',
           buddyHintParagraph:
               'He placed the extra coins back into his palm and turned toward the stall.',
         ),

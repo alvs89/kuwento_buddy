@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:async';
 import 'dart:math' as math;
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import 'package:kuwentobuddy/theme.dart';
@@ -29,13 +32,20 @@ class CelebrationOverlay extends StatefulWidget {
 
 class _CelebrationOverlayState extends State<CelebrationOverlay>
     with TickerProviderStateMixin {
+  static const double _celebrationSoundVolume = 1.0;
+  static const String _celebrationSoundAsset =
+      'audio/Celebration_Sound_Effect.wav';
+
   late ConfettiController _confettiController;
   late AnimationController _scaleController;
   late AnimationController _starController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _starAnimation;
+  late final AudioPlayer _celebrationPlayer;
   late final bool _isZeroOutcome;
+  late final bool _hasCelebrationReward;
   late final String _supportiveTitle;
+  late final AudioContext _celebrationAudioContext;
   final List<String> _supportiveMessages = const [
     "It's okay, Buddy! Let's bounce back. 🤜🤛",
     'Try again? You can do it! 💪',
@@ -47,8 +57,16 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
     super.initState();
 
     _isZeroOutcome = widget.starsEarned == 0;
+    _hasCelebrationReward = widget.starsEarned > 0;
     _supportiveTitle =
         _supportiveMessages[math.Random().nextInt(_supportiveMessages.length)];
+    _celebrationAudioContext = AudioContextConfig(
+      route: AudioContextConfigRoute.speaker,
+      focus: AudioContextConfigFocus.gain,
+      respectSilence: false,
+    ).build();
+    _celebrationPlayer = AudioPlayer();
+    unawaited(_prepareCelebrationSound());
 
     // Confetti controller
     _confettiController = ConfettiController(
@@ -79,14 +97,43 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
     _scaleController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       _starController.forward();
-      if (!_isZeroOutcome) {
+      if (_hasCelebrationReward) {
         _confettiController.play();
+        unawaited(_playCelebrationSound());
       }
     });
   }
 
+  Future<void> _playCelebrationSound() async {
+    try {
+      await _celebrationPlayer.stop();
+      await AudioPlayer.global.setAudioContext(_celebrationAudioContext);
+      await _celebrationPlayer.play(
+        AssetSource(_celebrationSoundAsset),
+        volume: _celebrationSoundVolume,
+        ctx: _celebrationAudioContext,
+        mode: PlayerMode.mediaPlayer,
+      );
+    } catch (error) {
+      debugPrint('Celebration sound failed to play: $error');
+    }
+  }
+
+  Future<void> _prepareCelebrationSound() async {
+    try {
+      await _celebrationPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+      await _celebrationPlayer.setAudioContext(_celebrationAudioContext);
+      await _celebrationPlayer.setReleaseMode(ReleaseMode.stop);
+      await _celebrationPlayer.setVolume(_celebrationSoundVolume);
+      await _celebrationPlayer.setSource(AssetSource(_celebrationSoundAsset));
+    } catch (error) {
+      debugPrint('Celebration sound failed to prepare: $error');
+    }
+  }
+
   @override
   void dispose() {
+    unawaited(_celebrationPlayer.dispose());
     _confettiController.dispose();
     _scaleController.dispose();
     _starController.dispose();
