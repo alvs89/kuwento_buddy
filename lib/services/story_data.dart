@@ -1258,7 +1258,7 @@ Rafael realized the clock was not simply a family treasure. It was a promise tha
     author: 'Kuwento Buddy Original',
     coverImage: 'assets/images/empty-seat-by-the-window-cover-photo.png',
     description:
-        'Isang bagong mag-aaral ang dumarating sa klase, at natututuhan ni Mara na ang simpleng pagbati at pagbabahagi ay maaaring magpaluwag ng kaba ng iba.',
+        'A new student arrives in class, and Mara learns that a simple greeting and a willingness to share can ease someone else\'s nerves.',
     localizedTitles: {'fil': 'Ang Bakanteng Upuan sa Bintana'},
     level: StoryLevel.beginner,
     categories: [StoryCategory.socialStories],
@@ -1267,10 +1267,10 @@ Rafael realized the clock was not simply a family treasure. It was a promise tha
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
     sequenceActivity: [
-      'Napansin ni Mara ang isang bakanteng upuan sa tabi ng bintana.',
-      'Nakilala niya ang bagong mag-aaral na mahigpit ang hawak sa kuwaderno.',
-      'Ibinahagi niya ang mga krayola at pinakilala ang mga gawain sa silid.',
-      'Naging mas masaya ang proyekto nang tumulong ang buong klase.',
+      'Mara noticed an empty seat by the window.',
+      'She met the new student holding his notebook tightly.',
+      'She shared her crayons and introduced the classroom activities.',
+      'The project felt happier when the whole class helped.',
     ],
     segments: [
       StorySegment(
@@ -1388,7 +1388,7 @@ She understood that kindness is often quiet at the beginning but can grow loud i
     author: 'Kuwento Buddy Original',
     coverImage: 'assets/images/saturday-market-list-cover-photo.png',
     description:
-        'Pinagkakatiwalaang bumili ni Jun ng mga pangangailangan sa palengke, at natutuhan niyang ang pagbabalik ng sobrang sukli ay bumubuo ng tiwala.',
+        'Jun is trusted to buy the family\'s needs at the market, and he learns that returning extra change builds trust.',
     localizedTitles: {
       'fil': 'Ang Talaan ng Pamimili sa Pamilihan tuwing Sabado',
     },
@@ -1399,10 +1399,10 @@ She understood that kindness is often quiet at the beginning but can grow loud i
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
     sequenceActivity: [
-      'Binigyan si Jun ng listahan at eksaktong pera.',
-      'Napansin niya ang sobrang sukli sa palengke.',
-      'Naaamoy niya ang mainit na pandesal at naisip ang baon.',
-      'Ibinalik niya ang sobrang sukli at nakuha ang tiwala ng nanay niya.',
+      'Jun was given a list and exact money.',
+      'He noticed the extra change at the market.',
+      'The smell of warm bread made him think about his snack.',
+      'He returned the extra change and earned his mother\'s trust.',
     ],
     segments: [
       StorySegment(
@@ -1464,7 +1464,7 @@ Then he looked at the seller, who was busy serving another customer. The man’s
 
 Jun took a slow breath. He placed the extra coins back into his palm and turned toward the stall.
 
-“Nanghingi po ako ng sobra,” he said.
+"I asked for more than I should have," he said.
 
 The seller blinked, then smiled with relief.''',
         question: QuestionModel(

@@ -37,7 +37,7 @@ class StorySessionScreen extends StatefulWidget {
 
 class _StorySessionScreenState extends State<StorySessionScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  static const Duration _hintBubbleDuration = Duration(seconds: 6);
+  static const Duration _hintBubbleDuration = Duration(seconds: 8);
   static const String _correctAnswerSoundAsset = 'audio/correct_answer.wav';
   static const String _wrongAnswerSoundAsset = 'audio/wrong_answer.wav';
   static const double _answerFeedbackVolume = 0.9;
@@ -468,6 +468,7 @@ class _StorySessionScreenState extends State<StorySessionScreen>
 
   static const Set<String> _femalePronounStoryIds = {
     'alamat-ng-pinya',
+    'alamat-ng-bulkang-mayon',
     'alamat-ng-parol',
     'huni-ng-duyan-sa-punong-kawayan',
     'pamana-ng-lumang-duyan',
@@ -939,7 +940,8 @@ class _StorySessionScreenState extends State<StorySessionScreen>
     if (_correctAnswerAudioPool != null || _wrongAnswerAudioPool != null) {
       unawaited(
         Future.wait([
-          if (_correctAnswerAudioPool != null) _correctAnswerAudioPool!.dispose(),
+          if (_correctAnswerAudioPool != null)
+            _correctAnswerAudioPool!.dispose(),
           if (_wrongAnswerAudioPool != null) _wrongAnswerAudioPool!.dispose(),
         ]),
       );

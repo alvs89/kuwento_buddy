@@ -45,6 +45,10 @@ class UserService {
   CollectionReference<Map<String, dynamic>> _progressCol(String uid) =>
       _targetDoc(uid).collection('storyProgress');
 
+  CollectionReference<Map<String, dynamic>> storyProgressCollection(
+          String uid) =>
+      _progressCol(uid);
+
   CollectionReference<Map<String, dynamic>> _favoritesCol(String uid) =>
       _targetDoc(uid).collection('favorites');
 
@@ -237,13 +241,11 @@ class UserService {
               appStoryId,
               fallback: data['storyTitle'] as String? ?? doc.id,
             ),
-            currentSegmentIndex:
-                _asInt(data['currentSegmentIndex']) ??
+            currentSegmentIndex: _asInt(data['currentSegmentIndex']) ??
                 _asInt(data['lastPage']) ??
                 0,
             totalSegments: _asInt(data['totalSegments']) ?? 0,
-            isCompleted:
-                data['isCompleted'] as bool? ??
+            isCompleted: data['isCompleted'] as bool? ??
                 data['completed'] as bool? ??
                 false,
             correctAnswers: _asInt(data['correctAnswers']) ?? 0,
@@ -324,18 +326,17 @@ class UserService {
 
       final legacyProgress =
           (baseData['storyProgress'] as Map<String, dynamic>?)?.map(
-            (k, v) =>
-                MapEntry(k, StoryProgress.fromJson(v as Map<String, dynamic>)),
-          ) ??
-          {};
+                (k, v) => MapEntry(
+                    k, StoryProgress.fromJson(v as Map<String, dynamic>)),
+              ) ??
+              {};
 
       final legacyFavorites = List<String>.from(
         baseData['favoriteStoryIds'] ?? const <String>[],
       );
 
-      final mergedFavorites = subFavorites.isNotEmpty
-          ? subFavorites
-          : legacyFavorites;
+      final mergedFavorites =
+          subFavorites.isNotEmpty ? subFavorites : legacyFavorites;
 
       final completedCount = completedSnap.docs.length;
 
@@ -400,13 +401,11 @@ class UserService {
               appStoryId,
               fallback: data['storyTitle'] as String?,
             ),
-            currentSegmentIndex:
-                _asInt(data['currentSegmentIndex']) ??
+            currentSegmentIndex: _asInt(data['currentSegmentIndex']) ??
                 _asInt(data['lastPage']) ??
                 0,
             totalSegments: _asInt(data['totalSegments']) ?? 0,
-            isCompleted:
-                data['isCompleted'] as bool? ??
+            isCompleted: data['isCompleted'] as bool? ??
                 data['completed'] as bool? ??
                 false,
             correctAnswers: _asInt(data['correctAnswers']) ?? 0,
@@ -899,25 +898,28 @@ class UserService {
 
     final writes = _firestore.batch();
 
-    writes.set(_progressCol(userId).doc(storyKey), {
-      'appStoryId':
-          progress.storyId, // canonical app story id for fast resolution
-      'storyId': storyKey,
-      if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-      'currentSegmentIndex': progress.currentSegmentIndex,
-      'comprehensionScore': progress.comprehensionScore,
-      'isCompleted': false,
-      'correctAnswers': progress.correctAnswers,
-      'totalQuestions': progress.totalQuestions,
-      'starsEarned': progress.starsEarned,
-      'totalSegments': progress.totalSegments,
-      'skillCorrect': progress.skillCorrect,
-      'skillTotal': progress.skillTotal,
-      'hintAttemptsUsed': progress.hintAttemptsUsed,
-      'startedAt': Timestamp.fromDate(progress.startedAt),
-      'completedAt': null,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    writes.set(
+        _progressCol(userId).doc(storyKey),
+        {
+          'appStoryId':
+              progress.storyId, // canonical app story id for fast resolution
+          'storyId': storyKey,
+          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+          'currentSegmentIndex': progress.currentSegmentIndex,
+          'comprehensionScore': progress.comprehensionScore,
+          'isCompleted': false,
+          'correctAnswers': progress.correctAnswers,
+          'totalQuestions': progress.totalQuestions,
+          'starsEarned': progress.starsEarned,
+          'totalSegments': progress.totalSegments,
+          'skillCorrect': progress.skillCorrect,
+          'skillTotal': progress.skillTotal,
+          'hintAttemptsUsed': progress.hintAttemptsUsed,
+          'startedAt': Timestamp.fromDate(progress.startedAt),
+          'completedAt': null,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true));
 
     for (final doc in completedSnap.docs) {
       final data = doc.data();
@@ -999,9 +1001,8 @@ class UserService {
         .where((id) => id.isNotEmpty)
         .toSet();
 
-    final desiredKeys = desired
-        .map((id) => _storyKeyForFirestore(appStoryId: id))
-        .toSet();
+    final desiredKeys =
+        desired.map((id) => _storyKeyForFirestore(appStoryId: id)).toSet();
 
     final existingDocs = await _favoritesCol(userId).get();
 
@@ -1073,8 +1074,8 @@ class UserService {
       if (byId != null) return byId.id;
 
       final byTitle = _storyService.getAllStories().where(
-        (story) => _normalizeKey(story.title) == _normalizeKey(candidate),
-      );
+            (story) => _normalizeKey(story.title) == _normalizeKey(candidate),
+          );
 
       if (byTitle.isNotEmpty) return byTitle.first.id;
 
@@ -1200,11 +1201,14 @@ class UserService {
     for (final id in favoriteIds.toSet()) {
       final storyKey = _storyKeyForFirestore(appStoryId: id);
       final resolvedTitle = _resolveStoryTitle(id);
-      batch.set(_favoritesCol(userId).doc(storyKey), {
-        'storyId': storyKey,
-        'storyTitle': resolvedTitle ?? storyKey,
-        'addedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+          _favoritesCol(userId).doc(storyKey),
+          {
+            'storyId': storyKey,
+            'storyTitle': resolvedTitle ?? storyKey,
+            'addedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
       hasWrites = true;
     }
 
@@ -1220,39 +1224,45 @@ class UserService {
       );
 
       if (progress.isCompleted) {
-        batch.set(_completedCol(userId).doc(storyKey), {
-          'storyId': storyKey,
-          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-          'score': progress.comprehensionScore,
-          'correctAnswers': progress.correctAnswers,
-          'totalQuestions': progress.totalQuestions,
-          'starsEarned': progress.starsEarned,
-          'totalSegments': progress.totalSegments,
-          'skillCorrect': progress.skillCorrect,
-          'skillTotal': progress.skillTotal,
-          'completedAt': progress.completedAt != null
-              ? Timestamp.fromDate(progress.completedAt!)
-              : FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        batch.set(
+            _completedCol(userId).doc(storyKey),
+            {
+              'storyId': storyKey,
+              if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+              'score': progress.comprehensionScore,
+              'correctAnswers': progress.correctAnswers,
+              'totalQuestions': progress.totalQuestions,
+              'starsEarned': progress.starsEarned,
+              'totalSegments': progress.totalSegments,
+              'skillCorrect': progress.skillCorrect,
+              'skillTotal': progress.skillTotal,
+              'completedAt': progress.completedAt != null
+                  ? Timestamp.fromDate(progress.completedAt!)
+                  : FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
       } else {
-        batch.set(_progressCol(userId).doc(storyKey), {
-          'appStoryId': progress.storyId,
-          'storyId': storyKey,
-          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-          'currentSegmentIndex': progress.currentSegmentIndex,
-          'comprehensionScore': progress.comprehensionScore,
-          'isCompleted': false,
-          'correctAnswers': progress.correctAnswers,
-          'totalQuestions': progress.totalQuestions,
-          'starsEarned': progress.starsEarned,
-          'totalSegments': progress.totalSegments,
-          'skillCorrect': progress.skillCorrect,
-          'skillTotal': progress.skillTotal,
-          'hintAttemptsUsed': progress.hintAttemptsUsed,
-          'startedAt': Timestamp.fromDate(progress.startedAt),
-          'completedAt': null,
-          'updatedAt': Timestamp.fromDate(progress.updatedAt),
-        }, SetOptions(merge: true));
+        batch.set(
+            _progressCol(userId).doc(storyKey),
+            {
+              'appStoryId': progress.storyId,
+              'storyId': storyKey,
+              if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+              'currentSegmentIndex': progress.currentSegmentIndex,
+              'comprehensionScore': progress.comprehensionScore,
+              'isCompleted': false,
+              'correctAnswers': progress.correctAnswers,
+              'totalQuestions': progress.totalQuestions,
+              'starsEarned': progress.starsEarned,
+              'totalSegments': progress.totalSegments,
+              'skillCorrect': progress.skillCorrect,
+              'skillTotal': progress.skillTotal,
+              'hintAttemptsUsed': progress.hintAttemptsUsed,
+              'startedAt': Timestamp.fromDate(progress.startedAt),
+              'completedAt': null,
+              'updatedAt': Timestamp.fromDate(progress.updatedAt),
+            },
+            SetOptions(merge: true));
       }
       hasWrites = true;
     }
@@ -1271,9 +1281,9 @@ class UserService {
   }) {
     final normalizedPrefs =
         _sanitizePreferencesMap(existingData['preferences']) ??
-        (existingData['preferences'] is Map
-            ? Map<String, dynamic>.from(existingData['preferences'])
-            : const UserPreferences().toJson());
+            (existingData['preferences'] is Map
+                ? Map<String, dynamic>.from(existingData['preferences'])
+                : const UserPreferences().toJson());
 
     final createdAt = existingData['createdAt'];
 
@@ -1292,9 +1302,8 @@ class UserService {
           : <String, dynamic>{},
       'preferences': normalizedPrefs,
       'schemaVersion': 2,
-      'isGuest': existingData['isGuest'] is bool
-          ? existingData['isGuest']
-          : false,
+      'isGuest':
+          existingData['isGuest'] is bool ? existingData['isGuest'] : false,
       if (createdAt is Timestamp) 'createdAt': createdAt,
       if (createdAt is! Timestamp) 'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -1402,39 +1411,45 @@ class UserService {
         );
 
         if (legacy.isCompleted) {
-          writes.set(_completedCol(userId).doc(storyKey), {
-            'storyId': storyKey,
-            if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-            'score': legacy.comprehensionScore,
-            'correctAnswers': legacy.correctAnswers,
-            'totalQuestions': legacy.totalQuestions,
-            'starsEarned': legacy.starsEarned,
-            'totalSegments': legacy.totalSegments,
-            'skillCorrect': legacy.skillCorrect,
-            'skillTotal': legacy.skillTotal,
-            'completedAt': legacy.completedAt != null
-                ? Timestamp.fromDate(legacy.completedAt!)
-                : FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          writes.set(
+              _completedCol(userId).doc(storyKey),
+              {
+                'storyId': storyKey,
+                if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+                'score': legacy.comprehensionScore,
+                'correctAnswers': legacy.correctAnswers,
+                'totalQuestions': legacy.totalQuestions,
+                'starsEarned': legacy.starsEarned,
+                'totalSegments': legacy.totalSegments,
+                'skillCorrect': legacy.skillCorrect,
+                'skillTotal': legacy.skillTotal,
+                'completedAt': legacy.completedAt != null
+                    ? Timestamp.fromDate(legacy.completedAt!)
+                    : FieldValue.serverTimestamp(),
+              },
+              SetOptions(merge: true));
 
           hasWrites = true;
         } else {
-          writes.set(_progressCol(userId).doc(storyKey), {
-            'storyId': storyKey,
-            if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-            'currentSegmentIndex': legacy.currentSegmentIndex,
-            'comprehensionScore': legacy.comprehensionScore,
-            'isCompleted': false,
-            'correctAnswers': legacy.correctAnswers,
-            'totalQuestions': legacy.totalQuestions,
-            'starsEarned': legacy.starsEarned,
-            'totalSegments': legacy.totalSegments,
-            'skillCorrect': legacy.skillCorrect,
-            'skillTotal': legacy.skillTotal,
-            'startedAt': Timestamp.fromDate(legacy.startedAt),
-            'completedAt': null,
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          writes.set(
+              _progressCol(userId).doc(storyKey),
+              {
+                'storyId': storyKey,
+                if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+                'currentSegmentIndex': legacy.currentSegmentIndex,
+                'comprehensionScore': legacy.comprehensionScore,
+                'isCompleted': false,
+                'correctAnswers': legacy.correctAnswers,
+                'totalQuestions': legacy.totalQuestions,
+                'starsEarned': legacy.starsEarned,
+                'totalSegments': legacy.totalSegments,
+                'skillCorrect': legacy.skillCorrect,
+                'skillTotal': legacy.skillTotal,
+                'startedAt': Timestamp.fromDate(legacy.startedAt),
+                'completedAt': null,
+                'updatedAt': FieldValue.serverTimestamp(),
+              },
+              SetOptions(merge: true));
 
           hasWrites = true;
         }
@@ -1451,11 +1466,14 @@ class UserService {
 
         final resolvedTitle = _resolveStoryTitle(storyId);
 
-        writes.set(_favoritesCol(userId).doc(storyKey), {
-          'storyId': storyKey,
-          'storyTitle': resolvedTitle ?? storyKey,
-          'addedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        writes.set(
+            _favoritesCol(userId).doc(storyKey),
+            {
+              'storyId': storyKey,
+              'storyTitle': resolvedTitle ?? storyKey,
+              'addedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
 
         hasWrites = true;
       }
@@ -1484,12 +1502,15 @@ class UserService {
       );
 
       if (doc.id.trim() != storyKey) {
-        writes.set(_progressCol(userId).doc(storyKey), {
-          ...data,
-          'storyId': storyKey,
-          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        writes.set(
+            _progressCol(userId).doc(storyKey),
+            {
+              ...data,
+              'storyId': storyKey,
+              if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
 
         writes.delete(_progressCol(userId).doc(doc.id));
 
@@ -1502,18 +1523,21 @@ class UserService {
       if (isCompletedInProgress) {
         final completedAt = _asDateTime(data['completedAt']) ?? DateTime.now();
 
-        writes.set(_completedCol(userId).doc(storyKey), {
-          'storyId': storyKey,
-          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-          'score': (data['comprehensionScore'] as num?)?.toDouble() ?? 0,
-          'correctAnswers': _asInt(data['correctAnswers']) ?? 0,
-          'totalQuestions': _asInt(data['totalQuestions']) ?? 0,
-          'starsEarned': _asInt(data['starsEarned']) ?? 0,
-          'totalSegments': _asInt(data['totalSegments']) ?? 0,
-          'skillCorrect': _asStringIntMap(data['skillCorrect']),
-          'skillTotal': _asStringIntMap(data['skillTotal']),
-          'completedAt': Timestamp.fromDate(completedAt),
-        }, SetOptions(merge: true));
+        writes.set(
+            _completedCol(userId).doc(storyKey),
+            {
+              'storyId': storyKey,
+              if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+              'score': (data['comprehensionScore'] as num?)?.toDouble() ?? 0,
+              'correctAnswers': _asInt(data['correctAnswers']) ?? 0,
+              'totalQuestions': _asInt(data['totalQuestions']) ?? 0,
+              'starsEarned': _asInt(data['starsEarned']) ?? 0,
+              'totalSegments': _asInt(data['totalSegments']) ?? 0,
+              'skillCorrect': _asStringIntMap(data['skillCorrect']),
+              'skillTotal': _asStringIntMap(data['skillTotal']),
+              'completedAt': Timestamp.fromDate(completedAt),
+            },
+            SetOptions(merge: true));
 
         writes.delete(_progressCol(userId).doc(storyKey));
 
@@ -1528,11 +1552,14 @@ class UserService {
 
       if (resolvedTitle != null &&
           (data['storyTitle'] as String?)?.trim() != resolvedTitle) {
-        writes.set(_progressCol(userId).doc(storyKey), {
-          'storyId': storyKey,
-          'storyTitle': resolvedTitle,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        writes.set(
+            _progressCol(userId).doc(storyKey),
+            {
+              'storyId': storyKey,
+              'storyTitle': resolvedTitle,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
 
         hasWrites = true;
       }
@@ -1561,11 +1588,14 @@ class UserService {
       );
 
       if (doc.id.trim() != storyKey) {
-        writes.set(_favoritesCol(userId).doc(storyKey), {
-          ...data,
-          'storyId': storyKey,
-          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-        }, SetOptions(merge: true));
+        writes.set(
+            _favoritesCol(userId).doc(storyKey),
+            {
+              ...data,
+              'storyId': storyKey,
+              if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+            },
+            SetOptions(merge: true));
 
         writes.delete(_favoritesCol(userId).doc(doc.id));
 
@@ -1574,10 +1604,13 @@ class UserService {
 
       if (resolvedTitle != null &&
           (data['storyTitle'] as String?)?.trim() != resolvedTitle) {
-        writes.set(_favoritesCol(userId).doc(storyKey), {
-          'storyId': storyKey,
-          'storyTitle': resolvedTitle,
-        }, SetOptions(merge: true));
+        writes.set(
+            _favoritesCol(userId).doc(storyKey),
+            {
+              'storyId': storyKey,
+              'storyTitle': resolvedTitle,
+            },
+            SetOptions(merge: true));
 
         hasWrites = true;
       }
@@ -1606,11 +1639,14 @@ class UserService {
       );
 
       if (doc.id.trim() != storyKey) {
-        writes.set(_completedCol(userId).doc(storyKey), {
-          ...data,
-          'storyId': storyKey,
-          if (resolvedTitle != null) 'storyTitle': resolvedTitle,
-        }, SetOptions(merge: true));
+        writes.set(
+            _completedCol(userId).doc(storyKey),
+            {
+              ...data,
+              'storyId': storyKey,
+              if (resolvedTitle != null) 'storyTitle': resolvedTitle,
+            },
+            SetOptions(merge: true));
 
         writes.delete(_completedCol(userId).doc(doc.id));
 
@@ -1619,10 +1655,13 @@ class UserService {
 
       if (resolvedTitle != null &&
           (data['storyTitle'] as String?)?.trim() != resolvedTitle) {
-        writes.set(_completedCol(userId).doc(storyKey), {
-          'storyId': storyKey,
-          'storyTitle': resolvedTitle,
-        }, SetOptions(merge: true));
+        writes.set(
+            _completedCol(userId).doc(storyKey),
+            {
+              'storyId': storyKey,
+              'storyTitle': resolvedTitle,
+            },
+            SetOptions(merge: true));
 
         hasWrites = true;
       }
@@ -1631,16 +1670,19 @@ class UserService {
     final shouldPruneLegacyProgress =
         hasLegacyProgressField && (hasSubProgress || legacyProgress.isNotEmpty);
 
-    final shouldPruneLegacyFavorites =
-        hasLegacyFavoritesField &&
+    final shouldPruneLegacyFavorites = hasLegacyFavoritesField &&
         (hasSubFavorites || legacyFavorites.isNotEmpty);
 
     if (shouldPruneLegacyProgress || shouldPruneLegacyFavorites) {
-      writes.set(_userDoc(userId), {
-        if (shouldPruneLegacyProgress) 'storyProgress': FieldValue.delete(),
-        if (shouldPruneLegacyFavorites) 'favoriteStoryIds': FieldValue.delete(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      writes.set(
+          _userDoc(userId),
+          {
+            if (shouldPruneLegacyProgress) 'storyProgress': FieldValue.delete(),
+            if (shouldPruneLegacyFavorites)
+              'favoriteStoryIds': FieldValue.delete(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
 
       hasWrites = true;
     }
@@ -1731,8 +1773,8 @@ class UserService {
       final updatedComparison = right.updatedAt.compareTo(left.updatedAt);
       if (updatedComparison != 0) return updatedComparison;
       return left.displayName.toLowerCase().compareTo(
-        right.displayName.toLowerCase(),
-      );
+            right.displayName.toLowerCase(),
+          );
     });
 
     return hydratedProfiles;
@@ -1860,9 +1902,8 @@ class UserService {
       final profileRef = _profilesCol(parentUid).doc(profileId);
       final progressSnap = await profileRef.collection('storyProgress').get();
       final favoritesSnap = await profileRef.collection('favorites').get();
-      final completedSnap = await profileRef
-          .collection('completedStories')
-          .get();
+      final completedSnap =
+          await profileRef.collection('completedStories').get();
 
       final subProgress = <String, StoryProgress>{};
 
@@ -1883,13 +1924,11 @@ class UserService {
               appStoryId,
               fallback: progressData['storyTitle'] as String? ?? doc.id,
             ),
-            currentSegmentIndex:
-                _asInt(progressData['currentSegmentIndex']) ??
+            currentSegmentIndex: _asInt(progressData['currentSegmentIndex']) ??
                 _asInt(progressData['lastPage']) ??
                 0,
             totalSegments: _asInt(progressData['totalSegments']) ?? 0,
-            isCompleted:
-                progressData['isCompleted'] as bool? ??
+            isCompleted: progressData['isCompleted'] as bool? ??
                 progressData['completed'] as bool? ??
                 false,
             correctAnswers: _asInt(progressData['correctAnswers']) ?? 0,

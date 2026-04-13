@@ -15,6 +15,8 @@ class TranslationService {
   static const Map<String, String> _targetedTranslationOverrides = {
     'en->tl::Correct! Returning the extra change protected the trust placed in Jun.':
         'Tama! Sa pagbabalik ni Jun ng sobrang sukli, napangalagaan niya ang tiwalang ibinigay sa kanya.',
+    'tl->en::Ngunit hindi lahat ay nasiyahan sa kanilang pagmamahalan.':
+      'But not everyone was pleased with their love.',
   };
 
   final Map<String, String> _cache = {};

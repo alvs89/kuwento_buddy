@@ -76,6 +76,7 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
 
   static const Set<String> _femalePronounStoryIds = {
     'alamat-ng-pinya',
+    'alamat-ng-bulkang-mayon',
     'alamat-ng-parol',
     'huni-ng-duyan-sa-punong-kawayan',
     'pamana-ng-lumang-duyan',
@@ -148,26 +149,26 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
       _uiText(en: 'Put It in Order', fil: 'Ayusin sa Tamang Ayos');
 
   String get _instructionsText => _uiText(
-    en: 'Tap events in the order they happened in the story',
-    fil: 'I-tap ang mga pangyayari ayon sa pagkakasunod-sunod sa kuwento',
-  );
+        en: 'Tap events in the order they happened in the story',
+        fil: 'I-tap ang mga pangyayari ayon sa pagkakasunod-sunod sa kuwento',
+      );
 
   String get _introBuddyMessage => _uiText(
-    en: 'Put the story events in the right order! Tap each one to arrange them.',
-    fil:
-        'Ayusin ang mga pangyayari sa tamang pagkakasunod-sunod! I-tap ang bawat isa para ayusin.',
-  );
+        en: 'Put the story events in the right order! Tap each one to arrange them.',
+        fil:
+            'Ayusin ang mga pangyayari sa tamang pagkakasunod-sunod! I-tap ang bawat isa para ayusin.',
+      );
 
   String get _successBuddyMessage => _uiText(
-    en: 'Well done! You got the story order correct! 🎉',
-    fil: 'Magaling! Tama ang pagkakasunod-sunod ng kuwento mo! 🎉',
-  );
+        en: 'Well done! You got the story order correct! 🎉',
+        fil: 'Magaling! Tama ang pagkakasunod-sunod ng kuwento mo! 🎉',
+      );
 
   String get _failureBuddyMessage => _uiText(
-    en: 'Almost! Let\'s try again. Think about what happened first in the story.',
-    fil:
-        'Malapit na! Subukan ulit. Isipin kung ano ang unang nangyari sa kuwento.',
-  );
+        en: 'Almost! Let\'s try again. Think about what happened first in the story.',
+        fil:
+            'Malapit na! Subukan ulit. Isipin kung ano ang unang nangyari sa kuwento.',
+      );
 
   String get _perfectSequenceToast =>
       _uiText(en: 'Perfect sequence!', fil: 'Perpektong pagkakasunod-sunod!');
@@ -176,9 +177,9 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
       _uiText(en: 'Leave activity?', fil: 'Lalabas sa gawain?');
 
   String get _leaveActivityMessage => _uiText(
-    en: 'Do you want to exit this activity and return to the Home screen?',
-    fil: 'Gusto mo bang lumabas sa gawaing ito at bumalik sa Home screen?',
-  );
+        en: 'Do you want to exit this activity and return to the Home screen?',
+        fil: 'Gusto mo bang lumabas sa gawaing ito at bumalik sa Home screen?',
+      );
 
   String get _cancelLabel => _uiText(en: 'Cancel', fil: 'Kanselahin');
 
@@ -353,25 +354,23 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
 
     final existingProgress = userSnapshot.storyProgress[story.id];
     final now = DateTime.now();
-    final completedProgress =
-        (existingProgress ??
-                StoryProgress(
-                  storyId: story.id,
-                  storyTitle: story.title,
-                  totalSegments: story.totalSegments,
-                  startedAt: now,
-                  updatedAt: now,
-                ))
-            .copyWith(
-              storyTitle: existingProgress?.storyTitle ?? story.title,
-              currentSegmentIndex: story.totalSegments > 0
-                  ? story.totalSegments - 1
-                  : 0,
+    final completedProgress = (existingProgress ??
+            StoryProgress(
+              storyId: story.id,
+              storyTitle: story.title,
               totalSegments: story.totalSegments,
-              isCompleted: true,
-              completedAt: now,
+              startedAt: now,
               updatedAt: now,
-            );
+            ))
+        .copyWith(
+      storyTitle: existingProgress?.storyTitle ?? story.title,
+      currentSegmentIndex:
+          story.totalSegments > 0 ? story.totalSegments - 1 : 0,
+      totalSegments: story.totalSegments,
+      isCompleted: true,
+      completedAt: now,
+      updatedAt: now,
+    );
 
     final wasAlreadyCompleted = existingProgress?.isCompleted == true;
 
@@ -496,10 +495,10 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                 child: Text(
                   _instructionsText,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isDark
-                        ? Colors.white70
-                        : KuwentoColors.textSecondary,
-                  ),
+                        color: isDark
+                            ? Colors.white70
+                            : KuwentoColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -533,9 +532,8 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                             : KuwentoColors.softCoral;
                       } else {
                         backgroundColor = Colors.transparent;
-                        borderColor = isDark
-                            ? Colors.white24
-                            : KuwentoColors.creamDark;
+                        borderColor =
+                            isDark ? Colors.white24 : KuwentoColors.creamDark;
                       }
                     } else if (isSelected) {
                       backgroundColor = KuwentoColors.pastelBlue.withValues(
@@ -543,12 +541,10 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                       );
                       borderColor = KuwentoColors.pastelBlue;
                     } else {
-                      backgroundColor = isDark
-                          ? KuwentoColors.cardDark
-                          : Colors.white;
-                      borderColor = isDark
-                          ? Colors.white24
-                          : KuwentoColors.creamDark;
+                      backgroundColor =
+                          isDark ? KuwentoColors.cardDark : Colors.white;
+                      borderColor =
+                          isDark ? Colors.white24 : KuwentoColors.creamDark;
                     }
 
                     return Padding(
@@ -604,7 +600,9 @@ class _SequenceActivityScreenState extends State<SequenceActivityScreen> {
                               Expanded(
                                 child: Text(
                                   _displayText(event.text),
-                                  style: Theme.of(context).textTheme.bodyMedium
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
                                       ?.copyWith(
                                         color: isDark
                                             ? Colors.white

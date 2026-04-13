@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -133,10 +134,31 @@ class AuthService extends ChangeNotifier {
   AuthStatus get status => _status;
   UserModel? get currentUser => _currentUser;
   String? get parentUid => _auth.currentUser?.uid;
+  String? get activeProfileId => _userService.activeProfileId;
+  bool get hasActiveProfile => _userService.hasActiveProfile;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isGuest => _status == AuthStatus.guest;
   bool get _hasFirebaseSession => _auth.currentUser != null;
+
+  String? get storyProgressScopeKey {
+    final firebaseUid = _auth.currentUser?.uid;
+    if (firebaseUid == null) {
+      final guestId = _currentUser?.id;
+      if (guestId == null || guestId.isEmpty) return null;
+      return 'guest:$guestId';
+    }
+
+    final profileId = _userService.activeProfileId;
+    return '$firebaseUid:${profileId ?? 'parent'}';
+  }
+
+  CollectionReference<Map<String, dynamic>>?
+      storyProgressCollectionForCurrentScope() {
+    final firebaseUid = _auth.currentUser?.uid;
+    if (firebaseUid == null) return null;
+    return _userService.storyProgressCollection(firebaseUid);
+  }
 
   /// Initialize auth state
   Future<void> initialize() async {

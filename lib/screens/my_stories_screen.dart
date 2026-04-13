@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:kuwentobuddy/models/story_model.dart';
@@ -25,6 +24,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   final StoryService _storyService = StoryService();
   int _selectedTabIndex = 0;
   List<MapEntry<StoryModel, StoryProgress>> _cachedProgressEntries = [];
+  String? _lastProgressScopeKey;
 
   @override
   void initState() {
@@ -77,6 +77,21 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
     final user = authService.currentUser;
+    final progressScopeKey = authService.storyProgressScopeKey;
+    final scopeChanged = progressScopeKey != _lastProgressScopeKey;
+    final cachedProgressEntries = scopeChanged
+        ? const <MapEntry<StoryModel, StoryProgress>>[]
+        : _cachedProgressEntries;
+
+    if (scopeChanged) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _lastProgressScopeKey = progressScopeKey;
+          _cachedProgressEntries = [];
+        });
+      });
+    }
     final favoritesCount = user?.favoriteStoryIds.toSet().length ?? 0;
 
     return Scaffold(
@@ -196,7 +211,11 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
                     ),
 
                     // Active tab content (single page-level vertical scroll)
-                    _buildActiveTabContent(user),
+                    _buildActiveTabContent(
+                      user,
+                      authService,
+                      cachedProgressEntries,
+                    ),
                   ],
                 ),
               ),
@@ -207,7 +226,11 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     );
   }
 
-  Widget _buildActiveTabContent(UserModel? user) {
+  Widget _buildActiveTabContent(
+    UserModel? user,
+    AuthService authService,
+    List<MapEntry<StoryModel, StoryProgress>> cachedProgressEntries,
+  ) {
     switch (_selectedTabIndex) {
       case 1:
         return _buildCompletedTab(user);
@@ -215,7 +238,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
         return _buildFavoritesTab(user);
       case 0:
       default:
-        return _buildInProgressTab(user);
+        return _buildInProgressTab(user, authService, cachedProgressEntries);
     }
   }
 
@@ -493,24 +516,22 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
     );
   }
 
-  Widget _buildInProgressTab(UserModel? user) {
-    final auth = context.watch<AuthService>();
-    final firebaseUid = FirebaseAuth.instance.currentUser?.uid;
-    final uid = auth.currentUser?.id ?? firebaseUid;
+  Widget _buildInProgressTab(
+    UserModel? user,
+    AuthService authService,
+    List<MapEntry<StoryModel, StoryProgress>> cachedProgressEntries,
+  ) {
     final cachedFromUser = _resolvedStoryProgressEntries(user);
     final baseFallback = _dedupeByStoryId([
-      ..._cachedProgressEntries,
+      ...cachedProgressEntries,
       ...cachedFromUser,
     ]);
+    final progressCollection =
+        authService.storyProgressCollectionForCurrentScope();
 
-    // Stream progress directly from Firestore whenever we have a Firebase user id.
-    if (uid != null) {
+    if (progressCollection != null) {
       return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .collection('storyProgress')
-            .snapshots(),
+        stream: progressCollection.snapshots(),
         builder: (context, snapshot) {
           // Use cached data to avoid UI flicker while listening.
           if (snapshot.connectionState == ConnectionState.waiting &&
@@ -527,7 +548,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
 
           final merged = [
             ...progressEntries,
-            ..._cachedProgressEntries,
+            ...cachedProgressEntries,
             ...cachedFromUser,
           ];
           final deduped = _dedupeByStoryId(merged);
@@ -539,7 +560,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
 
           // Final fallback: one-time fetch in case snapshots haven't emitted yet.
           return FutureBuilder<List<MapEntry<StoryModel, StoryProgress>>>(
-            future: _fetchProgressOnce(uid),
+            future: _fetchProgressOnce(progressCollection),
             builder: (context, futureSnap) {
               if (futureSnap.connectionState == ConnectionState.waiting) {
                 return _buildInProgressContent(baseFallback);
@@ -547,7 +568,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
               final once = futureSnap.data ?? const [];
               final mergedOnce = _dedupeByStoryId([
                 ...once,
-                ..._cachedProgressEntries,
+                ...cachedProgressEntries,
                 ...cachedFromUser,
               ]);
               _cachedProgressEntries = mergedOnce;
@@ -1108,14 +1129,10 @@ class _MyStoriesScreenState extends State<MyStoriesScreen>
   }
 
   Future<List<MapEntry<StoryModel, StoryProgress>>> _fetchProgressOnce(
-    String uid,
+    CollectionReference<Map<String, dynamic>> collection,
   ) async {
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('storyProgress')
-          .get();
+      final snap = await collection.get();
       return _mapProgressDocsToEntries(snap.docs);
     } catch (e) {
       debugPrint('MyStoriesScreen: one-time progress fetch failed: $e');
